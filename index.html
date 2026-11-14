@@ -1,45 +1,537 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ENCONTRE UMA SAÍDA! | AB GAMES</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENCONTRE UMA SAÍDA! | AB GAMES</title>
 
-    body {
-      background: #08090d;
-      color: white;
-      font-family: Arial, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-    h1 {
-      color: #d71920;
-      font-size: clamp(30px, 7vw, 65px);
-      text-shadow: 0 0 20px #d7192070;
-    }
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse at center, #351014 0%, #10090c 48%, #050507 100%);
+  color: white;
+  font-family: Arial, sans-serif;
+  overflow-x: hidden;
+}
 
-    p {
-      color: #aaa;
-      margin-top: 15px;
-      letter-spacing: 3px;
-    }
-  </style>
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, #00000055, transparent),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      transparent 3px,
+      #ffffff05 4px
+    );
+}
+
+.screen {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 25px;
+}
+
+.panel {
+  width: 100%;
+  max-width: 520px;
+  text-align: center;
+}
+
+.brand {
+  color: #e31c2b;
+  font-weight: 900;
+  letter-spacing: 9px;
+  font-size: 18px;
+  margin-bottom: 20px;
+  text-shadow: 0 0 20px #e31c2b88;
+}
+
+h1 {
+  font-size: clamp(36px, 8vw, 65px);
+  line-height: 1.05;
+  font-weight: 900;
+  text-shadow: 0 0 25px #ff152755;
+}
+
+h1 span {
+  color: #e51b2b;
+}
+
+.subtitle {
+  color: #999;
+  font-size: 11px;
+  letter-spacing: 5px;
+  margin-top: 17px;
+  margin-bottom: 35px;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 330px;
+  margin: auto;
+}
+
+button {
+  width: 100%;
+  padding: 16px;
+  border: 1px solid #68151e;
+  background: #171114;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+button:hover {
+  background: #361016;
+  border-color: #ed2434;
+  transform: scale(1.025);
+}
+
+button.primary {
+  background: #b81525;
+  border-color: #ed3443;
+}
+
+button.primary:hover {
+  background: #e21d30;
+  box-shadow: 0 0 25px #e21d3066;
+}
+
+button:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.footer {
+  color: #666;
+  font-size: 10px;
+  letter-spacing: 3px;
+  margin-top: 40px;
+}
+
+.page {
+  display: none;
+  width: 100%;
+  max-width: 520px;
+}
+
+.page.active {
+  display: block;
+}
+
+.page h2 {
+  color: #ed2637;
+  font-size: 29px;
+  letter-spacing: 3px;
+  margin-bottom: 25px;
+}
+
+.option {
+  text-align: left;
+  margin-bottom: 22px;
+  padding: 15px;
+  background: #151014;
+  border: 1px solid #382027;
+}
+
+.option label {
+  display: block;
+  font-size: 12px;
+  color: #ddd;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.option select,
+.option input[type="range"] {
+  width: 100%;
+}
+
+.option select {
+  padding: 11px;
+  background: #09080a;
+  border: 1px solid #68202a;
+  color: white;
+}
+
+.option input[type="range"] {
+  accent-color: #e21d30;
+  cursor: pointer;
+}
+
+.checkline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.checkline input {
+  accent-color: #e21d30;
+  width: 18px;
+  height: 18px;
+}
+
+.value {
+  color: #e84a57;
+  float: right;
+}
+
+.description {
+  color: #aaa;
+  font-size: 13px;
+  line-height: 1.8;
+  margin-bottom: 25px;
+}
+
+.back {
+  margin-top: 15px;
+}
+
+.notice {
+  font-size: 11px;
+  color: #777;
+  margin-top: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 480px) {
+  .screen {
+    padding: 18px;
+  }
+
+  .brand {
+    letter-spacing: 6px;
+  }
+
+  button {
+    padding: 15px;
+  }
+}
+</style>
 </head>
+
 <body>
-  <main>
-    <h1>ENCONTRE UMA SAÍDA!</h1>
-    <p>AB GAMES</p>
-    <p>DESENVOLVIMENTO EM ANDAMENTO...</p>
+
+<div class="screen">
+
+  <!-- MENU PRINCIPAL -->
+  <main class="panel page active" id="menu">
+
+    <div class="brand">AB GAMES</div>
+
+    <h1>ENCONTRE<br>UMA <span>SAÍDA!</span></h1>
+
+    <div class="subtitle">
+      UMA EXPERIÊNCIA DE SOBREVIVÊNCIA 3D
+    </div>
+
+    <div class="buttons">
+      <button class="primary" onclick="startGame()">
+        JOGAR
+      </button>
+
+      <button id="continueButton" onclick="continueGame()" disabled>
+        CONTINUAR
+      </button>
+
+      <button onclick="showPage('settings')">
+        CONFIGURAÇÕES
+      </button>
+
+      <button onclick="showPage('credits')">
+        CRÉDITOS
+      </button>
+
+      <button onclick="showPage('news')">
+        NOVIDADES
+      </button>
+    </div>
+
+    <div class="footer">
+      AB GAMES • PROJETO EM DESENVOLVIMENTO
+    </div>
+
   </main>
+
+  <!-- CONFIGURAÇÕES -->
+  <section class="panel page" id="settings">
+
+    <h2>CONFIGURAÇÕES</h2>
+
+    <div class="option">
+      <label>
+        VOLUME GERAL
+        <span class="value" id="volumeValue">45%</span>
+      </label>
+      <input type="range" id="volume" min="0" max="100" value="45">
+    </div>
+
+    <div class="option">
+      <label>QUALIDADE GRÁFICA</label>
+      <select id="graphics">
+        <option value="low">BAIXO</option>
+        <option value="medium" selected>MÉDIO</option>
+        <option value="high">ALTO</option>
+      </select>
+    </div>
+
+    <div class="option">
+      <label>
+        SENSIBILIDADE DA CÂMERA
+        <span class="value" id="sensitivityValue">5</span>
+      </label>
+      <input type="range" id="sensitivity"
+             min="1" max="10" value="5">
+    </div>
+
+    <div class="option">
+      <label class="checkline">
+        <input type="checkbox" id="invertCamera">
+        INVERTER CÂMERA
+      </label>
+    </div>
+
+    <div class="option">
+      <label class="checkline">
+        <input type="checkbox" id="reduceEffects">
+        REDUZIR EFEITOS VISUAIS
+      </label>
+    </div>
+
+    <div class="option">
+      <label>LIMITADOR DE FPS</label>
+      <select id="fps">
+        <option value="30">30 FPS</option>
+        <option value="60" selected>60 FPS</option>
+      </select>
+    </div>
+
+    <div class="option">
+      <label class="checkline">
+        <input type="checkbox" id="fullscreen">
+        TELA CHEIA
+      </label>
+    </div>
+
+    <button class="primary" onclick="saveSettings()">
+      SALVAR CONFIGURAÇÕES
+    </button>
+
+    <p class="notice" id="saveMessage">
+      As configurações são salvas automaticamente.
+    </p>
+
+    <button class="back" onclick="showPage('menu')">
+      VOLTAR
+    </button>
+
+  </section>
+
+  <!-- CRÉDITOS -->
+  <section class="panel page" id="credits">
+
+    <h2>CRÉDITOS</h2>
+
+    <p class="description">
+      <strong>ENCONTRE UMA SAÍDA!</strong><br><br>
+      Um projeto original da AB GAMES.<br><br>
+      Desenvolvimento: AB GAMES<br>
+      Projeto: Sobrevivência 3D<br>
+      Plataforma: PC e dispositivos móveis<br><br>
+      DESAFIE SEUS LIMITES.
+    </p>
+
+    <button class="back" onclick="showPage('menu')">
+      VOLTAR
+    </button>
+
+  </section>
+
+  <!-- NOVIDADES -->
+  <section class="panel page" id="news">
+
+    <h2>NOVIDADES</h2>
+
+    <p class="description">
+      <strong>VERSÃO 0.1</strong><br>
+      Criação do menu principal.<br>
+      Primeiras configurações.<br>
+      Início do projeto.<br><br>
+
+      <strong>PRÓXIMAS ETAPAS</strong><br>
+      Sistema de movimentação 3D.<br>
+      Lanterna.<br>
+      Sistema de pegar objetos.<br>
+      Primeiro andar: Enfermaria.
+    </p>
+
+    <button class="back" onclick="showPage('menu')">
+      VOLTAR
+    </button>
+
+  </section>
+
+  <!-- TELA DE INÍCIO -->
+  <section class="panel page" id="game">
+
+    <div class="brand">AB GAMES</div>
+
+    <h2>ENCONTRE UMA SAÍDA!</h2>
+
+    <p class="description">
+      ANDAR 01 — ENFERMARIA<br><br>
+      O desenvolvimento do cenário 3D está começando.<br><br>
+      Prepare-se para descobrir o que aconteceu nesta instalação.
+    </p>
+
+    <button class="primary" onclick="showPage('menu')">
+      VOLTAR AO MENU
+    </button>
+
+    <p class="notice">
+      PRIMEIRO ANDAR EM DESENVOLVIMENTO
+    </p>
+
+  </section>
+
+</div>
+
+<script>
+const pages = document.querySelectorAll(".page");
+
+function showPage(id) {
+  pages.forEach(page => page.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+const elements = [
+  "volume",
+  "graphics",
+  "sensitivity",
+  "invertCamera",
+  "reduceEffects",
+  "fps"
+];
+
+function updateValues() {
+  document.getElementById("volumeValue").textContent =
+    document.getElementById("volume").value + "%";
+
+  document.getElementById("sensitivityValue").textContent =
+    document.getElementById("sensitivity").value;
+}
+
+function saveSettings() {
+  const settings = {};
+
+  elements.forEach(id => {
+    const element = document.getElementById(id);
+
+    settings[id] = element.type === "checkbox"
+      ? element.checked
+      : element.value;
+  });
+
+  localStorage.setItem("ab_game_settings", JSON.stringify(settings));
+
+  updateValues();
+
+  document.getElementById("saveMessage").textContent =
+    "CONFIGURAÇÕES SALVAS!";
+}
+
+function loadSettings() {
+  const saved = localStorage.getItem("ab_game_settings");
+
+  if (saved) {
+    const settings = JSON.parse(saved);
+
+    elements.forEach(id => {
+      const element = document.getElementById(id);
+
+      if (settings[id] !== undefined) {
+        if (element.type === "checkbox") {
+          element.checked = settings[id];
+        } else {
+          element.value = settings[id];
+        }
+      }
+    });
+  }
+
+  updateValues();
+}
+
+elements.forEach(id => {
+  const element = document.getElementById(id);
+
+  element.addEventListener("input", () => {
+    updateValues();
+    saveSettings();
+  });
+
+  element.addEventListener("change", saveSettings);
+});
+
+document.getElementById("fullscreen").addEventListener("change", async function() {
+  if (this.checked) {
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (error) {
+      this.checked = false;
+      alert("Não foi possível ativar a tela cheia.");
+    }
+  } else if (document.fullscreenElement) {
+    await document.exitFullscreen();
+  }
+
+  saveSettings();
+});
+
+document.addEventListener("fullscreenchange", () => {
+  document.getElementById("fullscreen").checked =
+    !!document.fullscreenElement;
+});
+
+function startGame() {
+  localStorage.setItem("ab_game_started", "true");
+  document.getElementById("continueButton").disabled = false;
+  showPage("game");
+}
+
+function continueGame() {
+  showPage("game");
+}
+
+if (localStorage.getItem("ab_game_started") === "true") {
+  document.getElementById("continueButton").disabled = false;
+}
+
+loadSettings();
+</script>
+
 </body>
 </html>
+

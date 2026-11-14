@@ -970,5 +970,120 @@ $("lookArea").addEventListener("pointermove",e=>{
 
 /* FIM DO JOGO */
 </script>
+ 
+<script>
+/* SISTEMA DE SEGURANÇA DO MENU AB GAMES */
+(function () {
+  let voltarParaPausa = false;
+
+  const ids = [
+    "menu", "settings", "credits",
+    "pause", "errorBox"
+  ];
+
+  function esconderTelas() {
+    ids.forEach(id => {
+      document.getElementById(id)?.classList.add("hidden");
+    });
+  }
+
+  function abrirTela(id) {
+    esconderTelas();
+    document.getElementById(id)?.classList.remove("hidden");
+  }
+
+  function voltarMenu() {
+    if (typeof showMenu === "function") {
+      showMenu();
+    } else {
+      abrirTela("menu");
+      document.getElementById("hud")?.classList.add("hidden");
+      document.getElementById("controls")?.classList.add("hidden");
+    }
+  }
+
+  document.addEventListener("click", function (e) {
+    const botao = e.target.closest("button");
+    if (!botao) return;
+
+    const id = botao.id;
+
+    const botoesDoMenu = [
+      "play", "continue", "openSettings",
+      "openCredits", "closeCredits", "saveSettings",
+      "pauseSettings", "backMenu", "resume",
+      "pauseButton", "retry", "errorBack"
+    ];
+
+    if (!botoesDoMenu.includes(id)) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    switch (id) {
+      case "openSettings":
+        voltarParaPausa = false;
+        abrirTela("settings");
+        break;
+
+      case "openCredits":
+        abrirTela("credits");
+        break;
+
+      case "closeCredits":
+        voltarMenu();
+        break;
+
+      case "saveSettings":
+        if (typeof applySettings === "function") {
+          applySettings();
+        }
+        abrirTela(voltarParaPausa ? "pause" : "menu");
+        break;
+
+      case "pauseSettings":
+        voltarParaPausa = true;
+        abrirTela("settings");
+        break;
+
+      case "backMenu":
+      case "errorBack":
+        voltarMenu();
+        break;
+
+      case "resume":
+        if (typeof paused !== "undefined") paused = false;
+        document.getElementById("pause")?.classList.add("hidden");
+        break;
+
+      case "pauseButton":
+        if (typeof pauseGame === "function") pauseGame();
+        break;
+
+      case "play":
+      case "continue":
+        if (typeof startGame === "function") {
+          startGame(id === "play");
+        } else {
+          const status = document.getElementById("loadingStatus");
+          if (status) {
+            status.textContent =
+              "Erro ao iniciar o jogo. Verifique o código JavaScript.";
+          }
+        }
+        break;
+
+      case "retry":
+        abrirTela("menu");
+        if (typeof startGame === "function") {
+          startGame(false);
+        }
+        break;
+    }
+  }, true);
+})();
+</script>
+</body>
+</html>
 </body>
 </html>

@@ -15,46 +15,37 @@ body{
  font-family:Arial,sans-serif;
  overflow:hidden;
 }
-button,select,input{font:inherit}
 button{
  color:white;
  background:#211010;
- border:1px solid #a52b2b;
- border-radius:7px;
- padding:13px;
+ border:1px solid #b52d2d;
+ border-radius:8px;
+ padding:16px 28px;
+ font-size:16px;
+ font-weight:bold;
  cursor:pointer;
 }
-button:active{background:#8c2020}
-.screen{
+button:active{background:#a02020}
+
+#menu{
  position:fixed;
  inset:0;
  z-index:20;
  display:flex;
+ align-items:center;
  justify-content:center;
- align-items:center;
  text-align:center;
- padding:20px;
  background:radial-gradient(circle,#292929,#050505 75%);
+ padding:20px;
 }
-.hidden{display:none!important}
-.panel{width:min(100%,420px)}
-h1{
+#menu h1{
  color:#ed3030;
- font-size:clamp(30px,7vw,46px);
- text-shadow:0 0 18px #a00000;
+ font-size:clamp(30px,8vw,48px);
+ text-shadow:0 0 20px #a00000;
 }
-.subtitle{color:#aaa;letter-spacing:4px;font-size:12px}
-.buttons{display:grid;gap:12px;margin-top:25px}
-.small{color:#888;font-size:11px}
-.setting{
- display:flex;
- justify-content:space-between;
- align-items:center;
- gap:12px;
- margin:17px 0;
-}
-.setting input{width:120px}
-.setting select{max-width:130px}
+#menu p{color:#aaa}
+#play{width:220px;margin-top:25px}
+#status{font-size:12px;color:#aaa;margin-top:20px}
 
 #hud{
  position:fixed;
@@ -64,29 +55,31 @@ h1{
 }
 #crosshair{
  position:absolute;
- top:50%;left:50%;
+ top:50%;
+ left:50%;
  transform:translate(-50%,-50%);
- font-size:23px;
+ font-size:24px;
 }
 #inventory,#battery{
  position:absolute;
  top:12px;
+ background:#000a;
+ border:1px solid #ffffff44;
  padding:10px;
- border:1px solid #ffffff33;
- background:#0009;
  border-radius:5px;
  font-size:12px;
 }
-#inventory{left:12px}
-#battery{right:12px}
+#inventory{left:10px}
+#battery{right:10px}
 #message{
  position:absolute;
- bottom:17%;
+ bottom:18%;
  width:100%;
  text-align:center;
- font-size:14px;
  text-shadow:0 2px 5px black;
+ font-size:14px;
 }
+
 #controls{
  position:fixed;
  inset:0;
@@ -95,18 +88,18 @@ h1{
 }
 #movePad{
  position:absolute;
- bottom:22px;
+ bottom:20px;
  left:15px;
  display:grid;
- grid-template-columns:53px 53px 53px;
- grid-template-rows:53px 53px;
+ grid-template-columns:52px 52px 52px;
+ grid-template-rows:52px 52px;
  gap:5px;
  pointer-events:auto;
 }
 #movePad button,#actions button{
+ padding:5px;
  background:#111c;
  border:1px solid #ffffff66;
- padding:5px;
  touch-action:none;
 }
 #forward{grid-column:2;grid-row:1}
@@ -116,89 +109,39 @@ h1{
 #actions{
  position:absolute;
  right:15px;
- bottom:25px;
+ bottom:24px;
  display:flex;
  flex-direction:column;
  gap:8px;
  pointer-events:auto;
 }
-#actions button{min-width:76px;min-height:45px;font-size:11px}
+#actions button{
+ min-width:75px;
+ min-height:45px;
+ font-size:11px;
+}
 #lookArea{
  position:absolute;
- right:0;top:0;
- width:60%;height:70%;
+ right:0;
+ top:0;
+ width:60%;
+ height:70%;
  pointer-events:auto;
  touch-action:none;
 }
-#errorText{color:#ddd;line-height:1.6}
+.hidden{display:none!important}
 </style>
 </head>
 
 <body>
 
-<div id="menu" class="screen">
- <div class="panel">
-  <div class="subtitle">AB GAMES APRESENTA</div>
+<div id="menu">
+ <div>
+  <small>AB GAMES APRESENTA</small>
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
-  <div class="buttons">
-   <button id="play">JOGAR</button>
-   <button id="continue">CONTINUAR</button>
-   <button id="openSettings">CONFIGURAÇÕES</button>
-   <button id="openCredits">CRÉDITOS</button>
-  </div>
-  <p class="small">AB GAMES • VERSÃO 0.5</p>
-  <p id="loadingStatus" class="small">Preparando o jogo...</p>
- </div>
-</div>
-
-<div id="settings" class="screen hidden">
- <div class="panel">
-  <h1>CONFIGURAÇÕES</h1>
-  <div class="setting">
-   <label>Qualidade gráfica</label>
-   <select id="quality">
-    <option value="low">BAIXO</option>
-    <option value="medium" selected>MÉDIO</option>
-    <option value="high">ALTO</option>
-   </select>
-  </div>
-  <div class="setting">
-   <label>Volume</label>
-   <input id="volume" type="range" min="0" max="100" value="45">
-  </div>
-  <div class="setting">
-   <label>Sensibilidade</label>
-   <input id="sensitivity" type="range" min="1" max="10" value="5">
-  </div>
-  <div class="setting">
-   <label>Reduzir efeitos</label>
-   <input id="effects" type="checkbox">
-  </div>
-  <div class="buttons">
-   <button id="saveSettings">SALVAR E VOLTAR</button>
-  </div>
- </div>
-</div>
-
-<div id="credits" class="screen hidden">
- <div class="panel">
-  <h1>CRÉDITOS</h1>
-  <p>Desenvolvimento: AB GAMES</p>
-  <p>ENCONTRE UMA SAÍDA!</p>
-  <p class="small">Um projeto original AB GAMES.</p>
-  <button id="closeCredits">VOLTAR</button>
- </div>
-</div>
-
-<div id="pause" class="screen hidden">
- <div class="panel">
-  <h1>PAUSADO</h1>
-  <div class="buttons">
-   <button id="resume">CONTINUAR</button>
-   <button id="pauseSettings">CONFIGURAÇÕES</button>
-   <button id="backMenu">MENU PRINCIPAL</button>
-  </div>
+  <button id="play">JOGAR</button>
+  <div id="status">VERSÃO 0.6</div>
  </div>
 </div>
 
@@ -211,279 +154,134 @@ h1{
 
 <div id="controls" class="hidden">
  <div id="lookArea"></div>
+
  <div id="movePad">
   <button id="forward">▲</button>
   <button id="left">◀</button>
   <button id="back">▼</button>
   <button id="right">▶</button>
  </div>
+
  <div id="actions">
   <button id="use">PEGAR</button>
   <button id="drop">SOLTAR</button>
   <button id="light">LUZ</button>
-  <button id="pauseButton">PAUSAR</button>
- </div>
-</div>
-
-<div id="errorBox" class="screen hidden">
- <div class="panel">
-  <h1>ERRO AO CARREGAR</h1>
-  <p id="errorText"></p>
-  <div class="buttons">
-   <button id="retry">TENTAR NOVAMENTE</button>
-   <button id="errorBack">VOLTAR AO MENU</button>
-  </div>
  </div>
 </div>
 
 <script>
 "use strict";
 
-/* =================================
-   ELEMENTOS E MENU
-================================= */
-
 const $=id=>document.getElementById(id);
 
-const menu=$("menu");
-const settings=$("settings");
-const credits=$("credits");
-const pauseScreen=$("pause");
-const hud=$("hud");
-const controls=$("controls");
-const errorBox=$("errorBox");
-
-let gameStarted=false;
-let paused=false;
-let returnToPause=false;
-let loading=false;
-
-function hideScreens(){
- menu.classList.add("hidden");
- settings.classList.add("hidden");
- credits.classList.add("hidden");
- pauseScreen.classList.add("hidden");
- errorBox.classList.add("hidden");
-}
-
-function showMenu(){
- hideScreens();
- menu.classList.remove("hidden");
- hud.classList.add("hidden");
- controls.classList.add("hidden");
- gameStarted=false;
- paused=false;
- document.exitPointerLock?.();
-}
-
-$("openSettings").onclick=()=>{
- returnToPause=false;
- hideScreens();
- settings.classList.remove("hidden");
-};
-
-$("openCredits").onclick=()=>{
- hideScreens();
- credits.classList.remove("hidden");
-};
-
-$("closeCredits").onclick=showMenu;
-
-$("saveSettings").onclick=()=>{
- applySettings();
- settings.classList.add("hidden");
- if(returnToPause){
-  pauseScreen.classList.remove("hidden");
- }else{
-  menu.classList.remove("hidden");
- }
-};
-
-$("pauseSettings").onclick=()=>{
- returnToPause=true;
- pauseScreen.classList.add("hidden");
- settings.classList.remove("hidden");
-};
-
-$("backMenu").onclick=showMenu;
-
-$("resume").onclick=()=>{
- paused=false;
- pauseScreen.classList.add("hidden");
- if(!isMobile()) renderer?.domElement.requestPointerLock?.();
-};
-
-$("pauseButton").onclick=pauseGame;
-
-$("errorBack").onclick=()=>{
- errorBox.classList.add("hidden");
- showMenu();
-};
-
-$("retry").onclick=()=>{
- errorBox.classList.add("hidden");
- startGame(false);
-};
-
-$("play").onclick=()=>startGame(true);
-$("continue").onclick=()=>startGame(false);
-
-/* =================================
-   CARREGAMENTO DO THREE.JS
-================================= */
-
-let threePromise=null;
-
-function loadThree(){
- if(window.THREE)return Promise.resolve(window.THREE);
- if(threePromise)return threePromise;
-
- const sources=[
-  "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js",
-  "https://unpkg.com/three@0.160.0/build/three.min.js",
-  "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"
- ];
-
- threePromise=(async()=>{
-  for(const url of sources){
-   try{
-    $("loadingStatus").textContent="Carregando biblioteca 3D...";
-
-    await new Promise((resolve,reject)=>{
-     const script=document.createElement("script");
-     script.src=url;
-     script.async=true;
-     script.onload=()=>{
-      if(window.THREE)resolve();
-      else reject(new Error("Biblioteca não encontrada."));
-     };
-     script.onerror=()=>reject(new Error("Falha no endereço."));
-     document.head.appendChild(script);
-    });
-
-    if(window.THREE){
-     $("loadingStatus").textContent="Biblioteca 3D carregada.";
-     return window.THREE;
-    }
-   }catch(error){
-    console.warn("Falha ao carregar:",url,error);
-   }
-  }
-
-  throw new Error(
-   "Não foi possível baixar o Three.js. Verifique a internet ou tente novamente."
-  );
- })();
-
- try{
-  return await threePromise;
- }catch(error){
-  threePromise=null;
-  throw error;
- }
-}
-
-/* =================================
-   VARIÁVEIS DO JOGO
-================================= */
-
-let scene=null;
-let camera=null;
-let renderer=null;
-let clock=null;
+let THREE=null;
+let scene,camera,renderer,clock;
 let items=[];
 let selectedItem=null;
 let heldItem=null;
 let flashlightOn=false;
 let battery=100;
+let gameStarted=false;
+let animationStarted=false;
 let sensitivity=.0025;
-let keys={};
-let movement={
+let lastTouch=null;
+
+const keys={};
+const movement={
  forward:false,
  back:false,
  left:false,
  right:false
 };
-let lastTouch=null;
-let animationStarted=false;
 
-/* =================================
-   INICIAR E PAUSAR
-================================= */
+/* CARREGAR THREE.JS */
 
-function isMobile(){
- return matchMedia("(pointer:coarse)").matches;
+async function loadThree(){
+ if(window.THREE)return window.THREE;
+
+ const sources=[
+  "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.149.0/three.min.js",
+  "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"
+ ];
+
+ for(const url of sources){
+  try{
+   await new Promise((resolve,reject)=>{
+    const script=document.createElement("script");
+    script.src=url;
+    script.onload=()=>window.THREE?resolve():reject();
+    script.onerror=reject;
+    document.head.appendChild(script);
+   });
+   if(window.THREE)return window.THREE;
+  }catch(e){
+   console.warn("Falha ao carregar:",url);
+  }
+ }
+
+ throw new Error("Não foi possível carregar o sistema 3D. Verifique sua internet.");
 }
 
-async function startGame(newGame){
- if(loading)return;
- loading=true;
+/* BOTÃO JOGAR */
+
+$("play").addEventListener("click",async()=>{
+ if(gameStarted)return;
 
  $("play").disabled=true;
- $("continue").disabled=true;
- $("loadingStatus").textContent="Carregando...";
+ $("status").textContent="CARREGANDO JOGO...";
 
  try{
-  await loadThree();
+  THREE=await loadThree();
 
-  if(!scene)init3D();
+  if(!scene)initGame();
 
-  if(newGame){
-   camera.position.set(0,1.65,4.2);
-   camera.rotation.set(0,0,0);
-   heldItem=null;
-   flashlightOn=false;
-   battery=100;
-   $("inventory").textContent="MÃO: VAZIA";
-   $("battery").textContent="LANTERNA: DESLIGADA";
-  }
-
-  hideScreens();
-  hud.classList.remove("hidden");
-  controls.classList.remove("hidden");
+  $("menu").classList.add("hidden");
+  $("hud").classList.remove("hidden");
+  $("controls").classList.remove("hidden");
 
   gameStarted=true;
-  paused=false;
-  clock.start();
 
   if(!isMobile()){
    renderer.domElement.requestPointerLock?.();
   }
 
+  $("status").textContent="JOGO INICIADO";
  }catch(error){
+  $("status").textContent=error.message;
   console.error(error);
-  hideScreens();
-  errorBox.classList.remove("hidden");
-  $("errorText").textContent=error.message;
  }finally{
-  loading=false;
   $("play").disabled=false;
-  $("continue").disabled=false;
  }
+});
+
+/* DETECTAR CELULAR */
+
+function isMobile(){
+ return matchMedia("(pointer:coarse)").matches;
 }
 
-function pauseGame(){
- if(!gameStarted||paused)return;
- paused=true;
- pauseScreen.classList.remove("hidden");
- document.exitPointerLock?.();
+/* MATERIAIS E OBJETOS */
+
+function material(color){
+ return new THREE.MeshStandardMaterial({
+  color:color,
+  roughness:.9
+ });
 }
 
-function applySettings(){
- sensitivity=Number($("sensitivity").value)*.0005;
-
- if(renderer){
-  const quality=$("quality").value;
-  const ratio=quality==="low"?1:quality==="medium"?1.3:1.5;
-  renderer.setPixelRatio(Math.min(devicePixelRatio,ratio));
- }
+function box(w,h,d,x,y,z,color){
+ const mesh=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),
+  material(color)
+ );
+ mesh.position.set(x,y,z);
+ scene.add(mesh);
+ return mesh;
 }
 
-/* =================================
-   CENÁRIO 3D
-================================= */
+/* CRIAR CENÁRIO */
 
-function init3D(){
+function initGame(){
  scene=new THREE.Scene();
  scene.background=new THREE.Color(0x080b0e);
  scene.fog=new THREE.FogExp2(0x080b0e,.035);
@@ -494,7 +292,9 @@ function init3D(){
  camera.position.set(0,1.65,4.2);
  camera.rotation.order="YXZ";
 
- renderer=new THREE.WebGLRenderer({antialias:false});
+ renderer=new THREE.WebGLRenderer({
+  antialias:false
+ });
  renderer.setSize(innerWidth,innerHeight);
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.3));
  renderer.shadowMap.enabled=false;
@@ -503,7 +303,9 @@ function init3D(){
 
  clock=new THREE.Clock();
 
- scene.add(new THREE.HemisphereLight(0x8995a4,0x161820,.55));
+ scene.add(new THREE.HemisphereLight(
+  0x8995a4,0x161820,.55
+ ));
 
  const ceiling=new THREE.PointLight(0x9ca8bd,1.1,13);
  ceiling.position.set(0,2.8,0);
@@ -523,40 +325,21 @@ function init3D(){
  }
 }
 
-function mat(color){
- return new THREE.MeshStandardMaterial({
-  color,
-  roughness:.9
- });
-}
-
-function box(w,h,d,x,y,z,color){
- const mesh=new THREE.Mesh(
-  new THREE.BoxGeometry(w,h,d),
-  mat(color)
- );
- mesh.position.set(x,y,z);
- scene.add(mesh);
- return mesh;
-}
+/* SALA */
 
 function createRoom(){
- // Piso e teto
  box(16,.2,12,0,0,0,0x30343a);
  box(16,.2,12,0,3.5,0,0x171a1e);
 
- // Paredes
  box(16,3.5,.2,0,1.75,-6,0x45494e);
  box(16,3.5,.2,0,1.75,6,0x45494e);
  box(.2,3.5,12,-8,1.75,0,0x45494e);
  box(.2,3.5,12,8,1.75,0,0x45494e);
 
- // Porta
  box(1.8,2.8,.18,0,1.4,-5.87,0x252a30);
  box(1.5,2.55,.08,0,1.35,-5.75,0x444b52);
  box(.08,.08,.08,.55,1.3,-5.65,0xb02b2b);
 
- // Luz de emergência
  const red=new THREE.PointLight(0xc90000,1.8,7);
  red.position.set(-3,2.7,-4.8);
  scene.add(red);
@@ -568,6 +351,8 @@ function createRoom(){
  bulb.position.copy(red.position);
  scene.add(bulb);
 }
+
+/* MÓVEIS */
 
 function createFurniture(){
  // Maca
@@ -610,22 +395,22 @@ function createFurniture(){
  box(.7,.1,.12,4,1,1.25,0x34383c);
 }
 
-/* =================================
-   OBJETOS PEGÁVEIS
-================================= */
+/* OBJETOS PEGÁVEIS */
 
 function makeItem(type,x,y,z){
  const group=new THREE.Group();
 
  group.userData.type=type;
- group.userData.name=type==="flashlight"?"Lanterna":"Cartão de acesso";
+ group.userData.name=
+  type==="flashlight"?"Lanterna":"Cartão de acesso";
  group.userData.pickable=true;
- group.userData.restHeight=type==="flashlight"?.075:.013;
+ group.userData.restHeight=
+  type==="flashlight"?.075:.013;
 
  if(type==="flashlight"){
   const body=new THREE.Mesh(
    new THREE.CylinderGeometry(.075,.075,.48,10),
-   mat(0x22272d)
+   material(0x22272d)
   );
   body.rotation.x=Math.PI/2;
   group.add(body);
@@ -640,13 +425,13 @@ function makeItem(type,x,y,z){
  }else{
   const card=new THREE.Mesh(
    new THREE.BoxGeometry(.24,.025,.16),
-   mat(0xb5c8d0)
+   material(0xb5c8d0)
   );
   group.add(card);
 
   const stripe=new THREE.Mesh(
    new THREE.BoxGeometry(.15,.006,.025),
-   mat(0x273c4a)
+   material(0x273c4a)
   );
   stripe.position.y=.016;
   group.add(stripe);
@@ -659,24 +444,25 @@ function makeItem(type,x,y,z){
 }
 
 function createItems(){
- // Mesa: topo em y=1.225
  makeItem("flashlight",2.5,1.30,-1);
  makeItem("card",3.65,1.238,-1.25);
 }
+
+/* MÃO */
 
 function createHand(){
  const hand=new THREE.Group();
 
  const palm=new THREE.Mesh(
   new THREE.BoxGeometry(.17,.12,.2),
-  mat(0xb58b70)
+  material(0xb58b70)
  );
  hand.add(palm);
 
  for(let i=0;i<4;i++){
   const finger=new THREE.Mesh(
    new THREE.BoxGeometry(.035,.12,.045),
-   mat(0xb58b70)
+   material(0xb58b70)
   );
   finger.position.set(-.065+i*.043,-.09,-.035);
   hand.add(finger);
@@ -687,20 +473,22 @@ function createHand(){
  scene.add(camera);
 }
 
+/* LANTERNA */
+
 function createFlashlight(){
  const light=new THREE.SpotLight(
   0xffffff,0,18,Math.PI/8,.45,1
  );
+
  light.position.set(0,0,0);
  light.target.position.set(0,0,-1);
+
  camera.add(light);
  camera.add(light.target);
  camera.userData.flashlight=light;
 }
 
-/* =================================
-   PEGAR, SEGURAR E SOLTAR
-================================= */
+/* IDENTIFICAR OBJETO */
 
 function updateRaycast(){
  if(heldItem){
@@ -712,7 +500,10 @@ function updateRaycast(){
  const ray=new THREE.Raycaster();
  ray.setFromCamera(new THREE.Vector2(0,0),camera);
 
- const hits=ray.intersectObjects(items.filter(i=>i.visible),true);
+ const hits=ray.intersectObjects(
+  items.filter(i=>i.visible),true
+ );
+
  selectedItem=null;
 
  if(hits.length){
@@ -724,13 +515,16 @@ function updateRaycast(){
 
   if(obj.userData.pickable){
    selectedItem=obj;
-   $("message").textContent="E / PEGAR: "+obj.userData.name;
+   $("message").textContent=
+    "E / PEGAR: "+obj.userData.name;
    return;
   }
  }
 
  $("message").textContent="Explore a enfermaria.";
 }
+
+/* PEGAR */
 
 function pickItem(){
  if(heldItem){
@@ -750,9 +544,13 @@ function pickItem(){
  heldItem.rotation.set(0,0,0);
  camera.add(heldItem);
 
- $("inventory").textContent="MÃO: "+heldItem.userData.name.toUpperCase();
+ $("inventory").textContent=
+  "MÃO: "+heldItem.userData.name.toUpperCase();
+
  selectedItem=null;
 }
+
+/* SOLTAR */
 
 function dropItem(){
  if(!heldItem){
@@ -772,44 +570,42 @@ function dropItem(){
  position.x=THREE.MathUtils.clamp(position.x,-7,7);
  position.z=THREE.MathUtils.clamp(position.z,-5.5,5.5);
 
- // Área da mesa
  const onTable=
   position.x>2.05&&position.x<3.95&&
-  position.z>-.55&&position.z<-1.45;
+  position.z<-.55&&position.z>-1.45;
 
- if(onTable){
-  position.y=1.225+item.userData.restHeight;
- }else{
-  position.y=.1+item.userData.restHeight;
- }
+ position.y=onTable?
+  1.225+item.userData.restHeight:
+  .1+item.userData.restHeight;
 
  item.position.copy(position);
  item.rotation.set(0,Math.random()*.5,0);
  scene.add(item);
 
  heldItem=null;
+
  $("inventory").textContent="MÃO: VAZIA";
  $("message").textContent="Objeto solto.";
 }
 
-/* =================================
-   LANTERNA
-================================= */
+/* LIGAR LANTERNA */
 
 function toggleLight(){
- flashlightOn=!flashlightOn;
-
- if(camera?.userData.flashlight){
-  camera.userData.flashlight.intensity=flashlightOn?3.2:0;
+ if(battery<=0){
+  $("message").textContent="A bateria acabou.";
+  return;
  }
 
- $("battery").textContent="LANTERNA: "+
-  (flashlightOn?"LIGADA":"DESLIGADA");
+ flashlightOn=!flashlightOn;
+
+ camera.userData.flashlight.intensity=
+  flashlightOn?3.2:0;
+
+ $("battery").textContent=
+  "LANTERNA: "+(flashlightOn?"LIGADA":"DESLIGADA");
 }
 
-/* =================================
-   MOVIMENTAÇÃO
-================================= */
+/* MOVIMENTO */
 
 function updateMovement(dt){
  const forward=new THREE.Vector3();
@@ -834,14 +630,16 @@ function updateMovement(dt){
   camera.position.add(move);
  }
 
- camera.position.x=THREE.MathUtils.clamp(camera.position.x,-7.3,7.3);
- camera.position.z=THREE.MathUtils.clamp(camera.position.z,-5.3,5.3);
+ camera.position.x=THREE.MathUtils.clamp(
+  camera.position.x,-7.3,7.3
+ );
+ camera.position.z=THREE.MathUtils.clamp(
+  camera.position.z,-5.3,5.3
+ );
  camera.position.y=1.65;
 }
 
-/* =================================
-   LOOP DO JOGO
-================================= */
+/* LOOP */
 
 function animate(){
  requestAnimationFrame(animate);
@@ -850,7 +648,7 @@ function animate(){
 
  const dt=Math.min(clock.getDelta(),.05);
 
- if(gameStarted&&!paused){
+ if(gameStarted){
   updateMovement(dt);
   updateRaycast();
 
@@ -868,6 +666,8 @@ function animate(){
  renderer.render(scene,camera);
 }
 
+/* REDIMENSIONAR */
+
 function resize(){
  if(!camera||!renderer)return;
 
@@ -876,51 +676,37 @@ function resize(){
  renderer.setSize(innerWidth,innerHeight);
 }
 
-/* =================================
-   TECLADO E MOUSE
-================================= */
-
-$("use").onclick=()=>{
- if(heldItem)dropItem();
- else pickItem();
-};
-
-$("drop").onclick=dropItem;
-$("light").onclick=toggleLight;
+/* TECLADO */
 
 document.addEventListener("keydown",e=>{
  keys[e.code]=true;
 
+ if(!gameStarted)return;
+
  if(e.code==="KeyE")pickItem();
  if(e.code==="KeyQ")dropItem();
  if(e.code==="KeyF")toggleLight();
-
- if(e.code==="Escape"&&gameStarted&&!paused){
-  pauseGame();
- }
 });
 
 document.addEventListener("keyup",e=>{
  keys[e.code]=false;
 });
 
+/* MOUSE */
+
 document.addEventListener("mousemove",e=>{
  if(!renderer||document.pointerLockElement!==renderer.domElement)return;
- if(paused||!gameStarted)return;
+ if(!gameStarted)return;
 
- const sens=sensitivity;
-
- camera.rotation.y-=e.movementX*sens;
- camera.rotation.x-=e.movementY*sens;
+ camera.rotation.y-=e.movementX*sensitivity;
+ camera.rotation.x-=e.movementY*sensitivity;
 
  camera.rotation.x=THREE.MathUtils.clamp(
   camera.rotation.x,-1.4,1.4
  );
 });
 
-/* =================================
-   CONTROLES DO CELULAR
-================================= */
+/* CONTROLES CELULAR */
 
 function bindMove(id,direction){
  const button=$(id);
@@ -947,7 +733,7 @@ $("lookArea").addEventListener("pointerdown",e=>{
 });
 
 $("lookArea").addEventListener("pointermove",e=>{
- if(!lastTouch||!gameStarted||paused||!camera)return;
+ if(!lastTouch||!gameStarted)return;
 
  const dx=e.clientX-lastTouch.x;
  const dy=e.clientY-lastTouch.y;
@@ -968,122 +754,16 @@ $("lookArea").addEventListener("pointermove",e=>{
  });
 });
 
-/* FIM DO JOGO */
+/* BOTÕES DE AÇÃO */
+
+$("use").onclick=()=>{
+ if(heldItem)dropItem();
+ else pickItem();
+};
+
+$("drop").onclick=dropItem;
+$("light").onclick=toggleLight;
+
 </script>
- 
-<script>
-/* SISTEMA DE SEGURANÇA DO MENU AB GAMES */
-(function () {
-  let voltarParaPausa = false;
-
-  const ids = [
-    "menu", "settings", "credits",
-    "pause", "errorBox"
-  ];
-
-  function esconderTelas() {
-    ids.forEach(id => {
-      document.getElementById(id)?.classList.add("hidden");
-    });
-  }
-
-  function abrirTela(id) {
-    esconderTelas();
-    document.getElementById(id)?.classList.remove("hidden");
-  }
-
-  function voltarMenu() {
-    if (typeof showMenu === "function") {
-      showMenu();
-    } else {
-      abrirTela("menu");
-      document.getElementById("hud")?.classList.add("hidden");
-      document.getElementById("controls")?.classList.add("hidden");
-    }
-  }
-
-  document.addEventListener("click", function (e) {
-    const botao = e.target.closest("button");
-    if (!botao) return;
-
-    const id = botao.id;
-
-    const botoesDoMenu = [
-      "play", "continue", "openSettings",
-      "openCredits", "closeCredits", "saveSettings",
-      "pauseSettings", "backMenu", "resume",
-      "pauseButton", "retry", "errorBack"
-    ];
-
-    if (!botoesDoMenu.includes(id)) return;
-
-    e.preventDefault();
-    e.stopImmediatePropagation();
-
-    switch (id) {
-      case "openSettings":
-        voltarParaPausa = false;
-        abrirTela("settings");
-        break;
-
-      case "openCredits":
-        abrirTela("credits");
-        break;
-
-      case "closeCredits":
-        voltarMenu();
-        break;
-
-      case "saveSettings":
-        if (typeof applySettings === "function") {
-          applySettings();
-        }
-        abrirTela(voltarParaPausa ? "pause" : "menu");
-        break;
-
-      case "pauseSettings":
-        voltarParaPausa = true;
-        abrirTela("settings");
-        break;
-
-      case "backMenu":
-      case "errorBack":
-        voltarMenu();
-        break;
-
-      case "resume":
-        if (typeof paused !== "undefined") paused = false;
-        document.getElementById("pause")?.classList.add("hidden");
-        break;
-
-      case "pauseButton":
-        if (typeof pauseGame === "function") pauseGame();
-        break;
-
-      case "play":
-      case "continue":
-        if (typeof startGame === "function") {
-          startGame(id === "play");
-        } else {
-          const status = document.getElementById("loadingStatus");
-          if (status) {
-            status.textContent =
-              "Erro ao iniciar o jogo. Verifique o código JavaScript.";
-          }
-        }
-        break;
-
-      case "retry":
-        abrirTela("menu");
-        if (typeof startGame === "function") {
-          startGame(false);
-        }
-        break;
-    }
-  }, true);
-})();
-</script>
-</body>
-</html>
 </body>
 </html>

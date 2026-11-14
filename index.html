@@ -5,134 +5,72 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ENCONTRE UMA SAÍDA! | AB GAMES</title>
-
 <style>
 *{box-sizing:border-box}
 body{
- margin:0;
- background:#080a0c;
- color:white;
- font-family:Arial,sans-serif;
- overflow:hidden;
+ margin:0;background:#080a0c;color:white;
+ font-family:Arial,sans-serif;overflow:hidden;
 }
 button{
- color:white;
- background:#241010;
- border:1px solid #a52b2b;
- border-radius:7px;
- padding:14px;
- font-weight:bold;
- cursor:pointer;
- touch-action:none;
+ color:white;background:#241010;border:1px solid #a52b2b;
+ border-radius:7px;padding:13px;font-weight:bold;
+ cursor:pointer;touch-action:none;
 }
 button:active{background:#8c2020}
-
 #menu{
- position:fixed;
- inset:0;
- z-index:20;
- display:flex;
- align-items:center;
- justify-content:center;
- text-align:center;
- padding:20px;
+ position:fixed;inset:0;z-index:20;
+ display:flex;align-items:center;justify-content:center;
+ text-align:center;padding:20px;
  background:radial-gradient(circle,#292929,#050505 75%);
 }
 #menu h1{
- color:#ed3030;
- font-size:clamp(30px,8vw,48px);
+ color:#ed3030;font-size:clamp(30px,8vw,48px);
  text-shadow:0 0 18px #a00000;
 }
 #play{width:220px;margin-top:25px}
 #status{font-size:12px;color:#aaa;margin-top:20px}
-
-#hud{
- position:fixed;
- inset:0;
- z-index:5;
- pointer-events:none;
-}
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none}
 #crosshair{
- position:absolute;
- top:50%;
- left:50%;
- transform:translate(-50%,-50%);
- font-size:24px;
+ position:absolute;top:50%;left:50%;
+ transform:translate(-50%,-50%);font-size:24px;
 }
 #inventory,#battery{
- position:absolute;
- top:12px;
- padding:10px;
- background:#000a;
- border:1px solid #ffffff44;
- border-radius:5px;
- font-size:12px;
+ position:absolute;top:12px;padding:10px;
+ background:#000a;border:1px solid #ffffff44;
+ border-radius:5px;font-size:12px;
 }
 #inventory{left:10px}
 #battery{right:10px}
 #message{
- position:absolute;
- bottom:18%;
- width:100%;
- text-align:center;
- text-shadow:0 2px 5px black;
- font-size:14px;
+ position:absolute;bottom:18%;width:100%;
+ text-align:center;text-shadow:0 2px 5px black;font-size:14px;
 }
-
-#controls{
- position:fixed;
- inset:0;
- z-index:8;
- pointer-events:none;
-}
+#controls{position:fixed;inset:0;z-index:8;pointer-events:none}
 #movePad{
- position:absolute;
- bottom:20px;
- left:15px;
- display:grid;
- grid-template-columns:52px 52px 52px;
- grid-template-rows:52px 52px;
- gap:5px;
- pointer-events:auto;
+ position:absolute;bottom:20px;left:15px;
+ display:grid;grid-template-columns:52px 52px 52px;
+ grid-template-rows:52px 52px;gap:5px;pointer-events:auto;
 }
 #movePad button,#actions button{
- padding:5px;
- background:#111c;
- border:1px solid #ffffff66;
+ padding:5px;background:#111c;border:1px solid #ffffff66;
  touch-action:none;
 }
 #forward{grid-column:2;grid-row:1}
 #left{grid-column:1;grid-row:2}
 #back{grid-column:2;grid-row:2}
 #right{grid-column:3;grid-row:2}
-
 #actions{
- position:absolute;
- right:15px;
- bottom:24px;
- display:flex;
- flex-direction:column;
- gap:8px;
- pointer-events:auto;
+ position:absolute;right:15px;bottom:24px;
+ display:flex;flex-direction:column;gap:8px;pointer-events:auto;
 }
-#actions button{
- min-width:75px;
- min-height:45px;
- font-size:11px;
-}
+#actions button{min-width:75px;min-height:45px;font-size:11px}
 #lookArea{
- position:absolute;
- right:0;
- top:0;
- width:60%;
- height:70%;
- pointer-events:auto;
- touch-action:none;
+ position:absolute;right:0;top:0;width:60%;height:70%;
+ pointer-events:auto;touch-action:none;
 }
 .hidden{display:none!important}
 </style>
 </head>
-
 <body>
 
 <div id="menu">
@@ -141,7 +79,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 0.8 • GRÁFICOS BAIXOS</div>
+  <div id="status">VERSÃO 1.1 • ENFERMARIA ABANDONADA</div>
  </div>
 </div>
 
@@ -154,14 +92,12 @@ button:active{background:#8c2020}
 
 <div id="controls" class="hidden">
  <div id="lookArea"></div>
-
  <div id="movePad">
   <button id="forward">▲</button>
   <button id="left">◀</button>
   <button id="back">▼</button>
   <button id="right">▶</button>
  </div>
-
  <div id="actions">
   <button id="use">INTERAGIR</button>
   <button id="drop">SOLTAR</button>
@@ -175,155 +111,121 @@ button:active{background:#8c2020}
 const $=id=>document.getElementById(id);
 
 let scene,camera,renderer,clock;
-let items=[];
-let selectedItem=null;
-let heldItem=null;
-let flashlightOn=false;
-let battery=100;
-let gameStarted=false;
-let animationStarted=false;
+let items=[],selectedItem=null,heldItem=null;
+let flashlightOn=false,battery=100;
+let gameStarted=false,animationStarted=false;
 let lastTouch=null;
-
-let cabinetDoorPivot=null;
-let cabinetTarget=null;
-let cabinetOpen=false;
-let currentTarget="";
+let cabinetDoorPivot=null,cabinetTarget=null;
+let cabinetOpen=false,currentTarget="";
+let flashlightBeam=null;
 
 const keys={};
-
-const movement={
- forward:false,
- back:false,
- left:false,
- right:false
-};
-
-/* CARREGAR THREE.JS */
+const movement={forward:false,back:false,left:false,right:false};
 
 async function loadThree(){
  if(window.THREE)return window.THREE;
-
  const sources=[
   "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.149.0/three.min.js",
   "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"
  ];
-
  for(const url of sources){
   try{
    await new Promise((resolve,reject)=>{
-    const script=document.createElement("script");
-    script.src=url;
-    script.onload=()=>window.THREE?resolve():reject();
-    script.onerror=reject;
-    document.head.appendChild(script);
+    const s=document.createElement("script");
+    s.src=url;
+    s.onload=()=>window.THREE?resolve():reject();
+    s.onerror=reject;
+    document.head.appendChild(s);
    });
-
    if(window.THREE)return window.THREE;
-  }catch(e){
-   console.warn("Falha ao carregar:",url);
-  }
+  }catch(e){console.warn("Falha ao carregar:",url)}
  }
-
  throw new Error("Não foi possível carregar o sistema 3D. Verifique sua internet.");
 }
 
-/* JOGAR */
-
 $("play").addEventListener("click",async()=>{
  if(gameStarted)return;
-
  $("play").disabled=true;
  $("status").textContent="CARREGANDO ENFERMARIA...";
-
  try{
   await loadThree();
-
   if(!scene)initGame();
-
   $("menu").classList.add("hidden");
   $("hud").classList.remove("hidden");
   $("controls").classList.remove("hidden");
-
   gameStarted=true;
-
-  if(!isMobile()){
-   renderer.domElement.requestPointerLock?.();
-  }
-
+  if(!isMobile())renderer.domElement.requestPointerLock?.();
   $("status").textContent="JOGO INICIADO";
  }catch(error){
   $("status").textContent=error.message;
   console.error(error);
- }finally{
-  $("play").disabled=false;
- }
+ }finally{$("play").disabled=false}
 });
 
-function isMobile(){
- return matchMedia("(pointer:coarse)").matches;
+function isMobile(){return matchMedia("(pointer:coarse)").matches}
+
+function mat(color,roughness=1,metalness=0){
+ return new THREE.MeshStandardMaterial({color,roughness,metalness});
 }
 
-/* MATERIAIS */
-
-function material(color){
- return new THREE.MeshStandardMaterial({
-  color:color,
-  roughness:1,
-  metalness:0
- });
+function box(w,h,d,x,y,z,color,rotation=0){
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
+ mesh.position.set(x,y,z);
+ mesh.rotation.y=rotation;
+ scene.add(mesh);
+ return mesh;
 }
 
-function box(w,h,d,x,y,z,color){
+function cylinder(rt,rb,h,x,y,z,color,segments=10){
  const mesh=new THREE.Mesh(
-  new THREE.BoxGeometry(w,h,d),
-  material(color)
+  new THREE.CylinderGeometry(rt,rb,h,segments),mat(color)
  );
  mesh.position.set(x,y,z);
  scene.add(mesh);
  return mesh;
 }
 
-/* INICIAR CENÁRIO */
+function sphere(x,y,z,sx,sy,sz,color){
+ const mesh=new THREE.Mesh(
+  new THREE.SphereGeometry(1,10,8),mat(color)
+ );
+ mesh.position.set(x,y,z);
+ mesh.scale.set(sx,sy,sz);
+ scene.add(mesh);
+ return mesh;
+}
 
 function initGame(){
  scene=new THREE.Scene();
- scene.background=new THREE.Color(0x202426);
- scene.fog=new THREE.FogExp2(0x202426,.025);
+ scene.background=new THREE.Color(0x171c1d);
+ scene.fog=new THREE.FogExp2(0x171c1d,.035);
 
- camera=new THREE.PerspectiveCamera(
-  75,innerWidth/innerHeight,.1,80
- );
-
+ camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
  camera.position.set(0,1.65,4.2);
  camera.rotation.order="YXZ";
 
  renderer=new THREE.WebGLRenderer({
-  antialias:false,
-  powerPreference:"low-power"
+  antialias:false,powerPreference:"low-power"
  });
-
  renderer.setSize(innerWidth,innerHeight);
- renderer.setPixelRatio(1);
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
  renderer.shadowMap.enabled=false;
  renderer.outputColorSpace=THREE.SRGBColorSpace;
-
  document.body.appendChild(renderer.domElement);
 
  clock=new THREE.Clock();
 
- scene.add(new THREE.HemisphereLight(
-  0xc5d0d0,0x343638,.65
- ));
+ scene.add(new THREE.HemisphereLight(0xaeb9b9,0x252827,.45));
 
- const ceilingLight=new THREE.PointLight(
-  0xd8d8c8,.85,15
- );
+ const ceilingLight=new THREE.PointLight(0xb8b9a9,.38,13);
  ceilingLight.position.set(0,3.1,0);
  scene.add(ceilingLight);
 
  createRoom();
+ createWallDamage();
  createFurniture();
  createMedicalEquipment();
+ createFloorClutter();
  createItems();
  createHand();
  createFlashlight();
@@ -336,272 +238,239 @@ function initGame(){
  }
 }
 
-/* ENFERMARIA */
+/* CENÁRIO PRINCIPAL */
 
 function createRoom(){
+ box(16,.2,12,0,0,0,0x454947);
+ box(16,.2,12,0,3.5,0,0x292e2d);
 
- box(16,.2,12,0,0,0,0x777a78);
- box(16,.2,12,0,3.5,0,0x454a49);
+ box(.2,3.5,12,-8,1.75,0,0x777a73);
+ box(.2,3.5,12,8,1.75,0,0x777a73);
+ box(16,3.5,.2,0,1.75,6,0x777a73);
 
- box(.2,3.5,12,-8,1.75,0,0xb8b9b2);
- box(.2,3.5,12,8,1.75,0,0xb8b9b2);
+ box(6.8,3.5,.2,-4.6,1.75,-6,0x777a73);
+ box(6.8,3.5,.2,4.6,1.75,-6,0x777a73);
+ box(2.4,.65,.2,0,3.175,-6,0x777a73);
 
- box(16,3.5,.2,0,1.75,6,0xb8b9b2);
+ // Rodapés
+ box(15.8,.14,.12,0,.17,5.85,0x444945);
+ box(.12,.14,11.8,-7.85,.17,0,0x444945);
+ box(.12,.14,11.8,7.85,.17,0,0x444945);
 
- box(6.8,3.5,.2,-4.6,1.75,-6,0xb8b9b2);
- box(6.8,3.5,.2,4.6,1.75,-6,0xb8b9b2);
- box(2.4,.65,.2,0,3.175,-6,0xb8b9b2);
-
- box(15.8,.14,.12,0,.17,5.85,0x777c79);
- box(.12,.14,11.8,-7.85,.17,0,0x777c79);
- box(.12,.14,11.8,7.85,.17,0,0x777c79);
-
- box(2.05,2.7,.12,0,1.35,-5.92,0x686b67);
-
- box(.12,2.85,.18,-1.1,1.425,-5.83,0x535753);
- box(.12,2.85,.18,1.1,1.425,-5.83,0x535753);
- box(2.3,.12,.18,0,2.85,-5.83,0x535753);
-
- box(.65,.45,.025,0,2.15,-5.84,0x30434a);
- box(.07,.07,.08,.75,1.25,-5.78,0xb5a77e);
-
- box(1.15,.28,.05,0,3.05,-5.74,0x3b5053);
+ // Porta ao fundo
+ box(2.05,2.7,.12,0,1.35,-5.92,0x383e3d);
+ box(.12,2.85,.18,-1.1,1.425,-5.83,0x292e2d);
+ box(.12,2.85,.18,1.1,1.425,-5.83,0x292e2d);
+ box(2.3,.12,.18,0,2.85,-5.83,0x292e2d);
+ box(.65,.45,.025,0,2.15,-5.84,0x1b3035);
+ sphere(.75,1.25,-5.78,.045,.045,.045,0x9b906e);
 
  // Cortina hospitalar
- box(.08,2.1,.08,-5,1.4,.5,0x888c8a);
- box(.08,2.1,.08,-1.5,1.4,.5,0x888c8a);
- box(3.6,.06,.06,-3.25,2.5,.5,0x555c5d);
+ box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
+ box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
+ box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
 
  for(let i=0;i<5;i++){
   const curtain=new THREE.Mesh(
    new THREE.BoxGeometry(.67,1.9,.035),
    new THREE.MeshStandardMaterial({
-    color:0xb4bdb5,
-    roughness:1,
-    transparent:true,
-    opacity:.85
+    color:0x737d78,roughness:1,transparent:true,opacity:.72
    })
   );
   curtain.position.set(-4.8+i*.7,1.45,.5);
   scene.add(curtain);
  }
 
- // Luminária
- box(1.8,.06,.35,0,3.37,0,0xd9d9ce);
- box(1.8,.025,.3,0,3.32,0,0xe4e2d4);
+ // Luminária danificada
+ box(1.8,.06,.35,0,3.37,0,0x77796f);
+ box(1.8,.025,.3,0,3.32,0,0x99998a);
 
- // Luz de emergência
- const red=new THREE.PointLight(0xc90000,.8,6);
+ // Luz vermelha de emergência
+ const red=new THREE.PointLight(0xb90000,.85,7);
  red.position.set(-3,2.8,-4.8);
  scene.add(red);
-
- const redBulb=new THREE.Mesh(
-  new THREE.BoxGeometry(.25,.12,.12),
-  new THREE.MeshBasicMaterial({color:0xff1111})
- );
- redBulb.position.copy(red.position);
- scene.add(redBulb);
+ box(.25,.12,.12,-3,2.8,-4.8,0xb80000);
 }
 
-/* MOBILIÁRIO HOSPITALAR */
+/* PAREDES DANIFICADAS */
+
+function createWallDamage(){
+ // Manchas e áreas descascadas na parede
+ const stains=[
+  [-7.87,1.0,-3,.025,.65,1.2],
+  [-7.87,2.5,2,.025,.55,.8],
+  [7.87,1.2,-3,.025,.8,1.1],
+  [7.87,2.6,2,.025,.5,.7],
+  [-4,1.0,-5.87,1.4,.45,.025],
+  [4,2.5,-5.87,1.2,.5,.025],
+  [1,1.0,5.87,1.3,.35,.025]
+ ];
+ for(const s of stains){
+  box(s[3],s[4],s[5],s[0],s[1],s[2],0x505650);
+ }
+
+ // Descascados menores
+ for(let i=0;i<18;i++){
+  const side=i%2===0?-7.87:7.87;
+  const patch=box(
+   .025+Math.random()*.03,
+   .08+Math.random()*.28,
+   .1+Math.random()*.5,
+   side,
+   .4+Math.random()*2.5,
+   -4.8+Math.random()*9.5,
+   i%3===0?0x373d39:0x65675f
+  );
+  patch.rotation.z=(Math.random()-.5)*.25;
+ }
+}
+
+/* MOBILIÁRIO */
 
 function createFurniture(){
-
- // MACA
- box(2.3,.15,1.05,-3,.85,-1,0x777f82);
- box(2.18,.16,.94,-3,1.02,-1,0xe1e0d9);
- box(.58,.13,.65,-3,1.17,-.65,0xf0eee6);
-
- box(2.25,.1,.12,-3,.72,-1.5,0x555e61);
- box(2.25,.1,.12,-3,.72,-.5,0x555e61);
+ // Maca hospitalar
+ box(2.3,.15,1.05,-3,.85,-1,0x535d5e);
+ box(2.18,.16,.94,-3,1.02,-1,0xaaa99e);
+ box(.58,.13,.65,-3,1.17,-.65,0xc2bfb1);
+ box(2.25,.1,.12,-3,.72,-1.5,0x3e4849);
+ box(2.25,.1,.12,-3,.72,-.5,0x3e4849);
 
  for(const x of [-3.95,-2.05]){
   for(const z of [-1.4,-.6]){
-   box(.09,.7,.09,x,.38,z,0x666d70);
-
-   const wheel=new THREE.Mesh(
-    new THREE.CylinderGeometry(.07,.07,.07,8),
-    material(0x25292a)
-   );
-   wheel.rotation.z=Math.PI/2;
-   wheel.position.set(x,.08,z);
-   scene.add(wheel);
+   box(.09,.7,.09,x,.38,z,0x505858);
+   cylinder(.07,.07,.07,x,.08,z,0x202526,8);
   }
  }
+ box(2.3,.35,.08,-3,1.35,-1.53,0x777e79);
+ box(2.3,.35,.08,-3,1.35,-.47,0x777e79);
 
- box(2.3,.35,.08,-3,1.35,-1.53,0xd0d2cc);
- box(2.3,.35,.08,-3,1.35,-.47,0xd0d2cc);
+ // Mesa de cabeceira
+ box(.72,.65,.62,-4.65,.55,-.9,0x686f6a);
+ box(.75,.07,.65,-4.65,.9,-.9,0x4d5551);
+ box(.55,.22,.035,-4.65,.65,-.57,0x555c58);
+ box(.08,.035,.035,-4.65,.65,-.53,0x9a9a8c);
 
- // MESA DE CABECEIRA
- box(.72,.65,.62,-4.65,.55,-.9,0x9b9e99);
- box(.75,.07,.65,-4.65,.9,-.9,0x747a77);
- box(.55,.22,.035,-4.65,.65,-.57,0x707774);
- box(.08,.035,.035,-4.65,.65,-.53,0xc0c2b8);
-
- // MESA DE ATENDIMENTO
- box(2.1,.14,.85,3,1.15,-1,0xa0a19a);
-
+ // Mesa de atendimento
+ box(2.1,.14,.85,3,1.15,-1,0x777b74);
  for(const x of [2.1,3.9]){
   for(const z of [-1.32,-.68]){
-   box(.09,1.05,.09,x,.53,z,0x555d5e);
+   box(.09,1.05,.09,x,.53,z,0x424a49);
   }
  }
-
  for(let i=0;i<3;i++){
-  box(.55,.19,.045,3.55,.96-i*.23,-.54,0x777c77);
-  box(.09,.035,.035,3.55,.96-i*.23,-.50,0xc3c3b9);
+  box(.55,.19,.045,3.55,.96-i*.23,-.54,0x555c58);
+  box(.09,.035,.035,3.55,.96-i*.23,-.50,0x989b8d);
  }
 
- // MONITOR
- box(.85,.58,.12,3,1.58,-.95,0x272d30);
- box(.72,.43,.025,3,1.59,-.875,0x28454b);
- box(.15,.2,.15,3,1.23,-.95,0x42484a);
- box(.48,.025,.18,3,1.25,-.65,0x292f31);
+ // Monitor antigo
+ box(.85,.58,.12,3,1.58,-.95,0x171e20);
+ box(.72,.43,.025,3,1.59,-.875,0x172c30);
+ box(.15,.2,.15,3,1.23,-.95,0x343a3a);
+ box(.48,.025,.18,3,1.25,-.65,0x252a29);
 
- // CADEIRA DE ESCRITÓRIO
- box(.65,.12,.65,4.5,.65,.3,0x343d40);
- box(.65,.55,.12,4.5,.95,.58,0x343d40);
- box(.12,.6,.12,4.5,.3,.3,0x555d5f);
- box(.65,.08,.65,4.5,.08,.3,0x555d5f);
+ // Cadeira de escritório
+ box(.65,.12,.65,4.5,.65,.3,0x292f30);
+ box(.65,.55,.12,4.5,.95,.58,0x292f30);
+ box(.12,.6,.12,4.5,.3,.3,0x42494a);
+ box(.65,.08,.65,4.5,.08,.3,0x42494a);
 
- // CADEIRA DE ACOMPANHANTE
- box(.65,.12,.65,2.1,.55,1.7,0x596366);
- box(.65,.55,.12,2.1,.85,2,0x596366);
- box(.12,.5,.12,2.1,.27,1.7,0x555d5f);
+ // Cadeira de acompanhante
+ box(.65,.12,.65,2.1,.55,1.7,0x444d4d);
+ box(.65,.55,.12,2.1,.85,2,0x444d4d);
+ box(.12,.5,.12,2.1,.27,1.7,0x3b4444);
 
- // ARMÁRIO DE MEDICAMENTOS INTERATIVO
+ // Armário interativo
  createInteractiveCabinet();
 
- // ARMÁRIO BAIXO
- box(1.5,.9,.6,-6,.48,.2,0x858a87);
- box(1.5,.08,.62,-6,.95,.2,0x555d5a);
+ // Armário baixo
+ box(1.5,.9,.6,-6,.48,.2,0x686e69);
+ box(1.5,.08,.62,-6,.95,.2,0x454c49);
 
- // PIA
- box(1.15,.12,.65,5,1.1,-2.5,0xb9bcb9);
- box(1.15,.75,.12,5,.65,-2.8,0x858d8c);
- box(.18,.45,.18,5,1.35,-2.5,0x9da6a5);
+ // Pia
+ box(1.15,.12,.65,5,1.1,-2.5,0x858b85);
+ box(1.15,.75,.12,5,.65,-2.8,0x5d6562);
+ box(.18,.45,.18,5,1.35,-2.5,0x747c79);
+ box(.06,.3,.06,5,1.35,-2.7,0x41494a);
+ box(.25,.06,.06,5.1,1.49,-2.7,0x41494a);
+ box(1.1,.65,.55,5,.48,-2.5,0x656b66);
 
- // Torneira
- box(.06,.3,.06,5,1.35,-2.7,0x555e60);
- box(.25,.06,.06,5.1,1.49,-2.7,0x555e60);
-
- // Armário inferior da pia
- box(1.1,.65,.55,5,.48,-2.5,0x8b908c);
-
- // Dispensador de papel
- box(.35,.45,.12,6.2,1.6,-2.7,0xe0e1dc);
- box(.12,.08,.025,6.2,1.38,-2.62,0xaaaaa3);
+ // Dispensador
+ box(.35,.45,.12,6.2,1.6,-2.7,0x9b9d94);
+ box(.12,.08,.025,6.2,1.38,-2.62,0x70756e);
 
  // Quadro de avisos
- box(1.15,.8,.06,5.9,2.3,-5.75,0x555d5a);
- box(1.02,.66,.025,5.9,2.3,-5.70,0xd2d0c5);
+ box(1.15,.8,.06,5.9,2.3,-5.75,0x424a47);
+ box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
 }
 
 /* ARMÁRIO INTERATIVO */
 
 function createInteractiveCabinet(){
+ const x=-6,z=-2.7;
 
- const x=-6;
- const z=-2.7;
+ box(1.12,2.35,.82,x,1.25,z,0x555e5b);
+ box(.96,2.15,.045,x,1.25,z-.37,0x272e2c);
+ box(.06,2.15,.7,x-.49,1.25,z,0x7c817a);
+ box(.06,2.15,.7,x+.49,1.25,z,0x7c817a);
+ box(1.02,.08,.72,x,2.4,z,0x777e76);
+ box(1.02,.08,.72,x,.1,z,0x777e76);
 
- // Corpo externo
- box(1.12,2.35,.82,x,1.25,z,0x777e7b);
-
- // Fundo interno
- box(.96,2.15,.045,x,1.25,z-.37,0x343b39);
-
- // Laterais internas
- box(.06,2.15,.7,x-.49,1.25,z,0xa6aaa3);
- box(.06,2.15,.7,x+.49,1.25,z,0xa6aaa3);
-
- // Parte superior e inferior
- box(1.02,.08,.72,x,2.4,z,0x9da19a);
- box(1.02,.08,.72,x,.1,z,0x9da19a);
-
- // Prateleiras
  for(let i=0;i<3;i++){
   const shelfY=.72+i*.55;
-  box(.98,.045,.68,x,shelfY,z,0xb4b8b0);
-
-  // Pequena borda frontal
-  box(.98,.07,.045,x,shelfY+.055,z+.34,0x777e79);
+  box(.98,.045,.68,x,shelfY,z,0x888e85);
+  box(.98,.07,.045,x,shelfY+.055,z+.34,0x555c57);
  }
 
- // Alguns materiais médicos dentro
+ // Frascos e caixas
  for(let i=0;i<3;i++){
-  const bottle=new THREE.Mesh(
-   new THREE.CylinderGeometry(.065,.065,.23,8),
-   material(i===1?0xd6d8ce:0x9caeb0)
-  );
-  bottle.position.set(-6.28,.87+i*.55,-2.73);
-  scene.add(bottle);
-
-  const cap=new THREE.Mesh(
-   new THREE.CylinderGeometry(.07,.07,.045,8),
-   material(0x647477)
-  );
-  cap.position.set(-6.28,1.01+i*.55,-2.73);
-  scene.add(cap);
+  cylinder(.065,.065,.23,-6.28,.87+i*.55,-2.73,
+   i===1?0xb4b8aa:0x71888a,8);
+  cylinder(.07,.07,.045,-6.28,1.01+i*.55,-2.73,0x424d4b,8);
  }
-
- // Segunda pilha de caixas
  for(let i=0;i<2;i++){
-  box(.2,.18,.22,-5.76,1.0+i*.55,-2.72,0xc4c5bb);
+  box(.2,.18,.22,-5.76,1.0+i*.55,-2.72,0x9b9b8e);
  }
 
- // Porta com dobradiça
+ // Porta articulada
  cabinetDoorPivot=new THREE.Group();
  cabinetDoorPivot.position.set(-6.53,.1,-2.26);
  scene.add(cabinetDoorPivot);
 
  const door=new THREE.Mesh(
-  new THREE.BoxGeometry(.98,2.3,.09),
-  material(0xadb2aa)
+  new THREE.BoxGeometry(.98,2.3,.09),mat(0x777e78)
  );
  door.position.set(.49,1.15,0);
  cabinetDoorPivot.add(door);
 
- // Visor da porta
  const windowMesh=new THREE.Mesh(
   new THREE.BoxGeometry(.52,.75,.018),
   new THREE.MeshStandardMaterial({
-   color:0x50666a,
-   roughness:.35,
-   metalness:.1
+   color:0x354b4e,roughness:.35,metalness:.1
   })
  );
  windowMesh.position.set(.49,1.62,.055);
  cabinetDoorPivot.add(windowMesh);
 
- // Puxador
  const handle=new THREE.Mesh(
-  new THREE.BoxGeometry(.045,.28,.07),
-  material(0x444b49)
+  new THREE.BoxGeometry(.045,.28,.07),mat(0x333b39)
  );
  handle.position.set(.84,1.05,.08);
  cabinetDoorPivot.add(handle);
 
- // Dobradiças
  for(const y of [.35,1.95]){
   const hinge=new THREE.Mesh(
-   new THREE.BoxGeometry(.08,.16,.12),
-   material(0x555d5b)
+   new THREE.BoxGeometry(.08,.16,.12),mat(0x444c49)
   );
   hinge.position.set(.04,y,0);
   cabinetDoorPivot.add(hinge);
  }
 
- // Placa de identificação
- box(.45,.16,.025,-6,2.48,-2.23,0x354346);
+ box(.45,.16,.025,-6,2.48,-2.23,0x293638);
 
- // Alvo invisível para detectar a porta fechada
  cabinetTarget=new THREE.Mesh(
   new THREE.BoxGeometry(1.08,2.25,.15),
   new THREE.MeshBasicMaterial({
-   transparent:true,
-   opacity:0,
-   colorWrite:false,
-   depthWrite:false
+   transparent:true,opacity:0,colorWrite:false,depthWrite:false
   })
  );
  cabinetTarget.position.set(-6,1.25,-2.18);
@@ -611,46 +480,124 @@ function createInteractiveCabinet(){
 /* EQUIPAMENTOS MÉDICOS */
 
 function createMedicalEquipment(){
-
  // Suporte de soro
- box(.055,1.9,.055,-5.6,1.1,1.7,0x929b9c);
- box(.7,.05,.05,-5.6,2.05,1.7,0x929b9c);
- box(.12,.12,.12,-5.6,2.1,1.7,0x929b9c);
- box(.75,.06,.75,-5.6,.1,1.7,0x555e60);
+ cylinder(.028,.028,1.9,-5.6,1.1,1.7,0x727b79,8);
+ box(.7,.05,.05,-5.6,2.05,1.7,0x727b79);
+ sphere(-5.6,2.1,1.7,.06,.06,.06,0x727b79);
+ box(.75,.06,.75,-5.6,.1,1.7,0x414a48);
 
  for(let i=0;i<4;i++){
   const hook=new THREE.Mesh(
-   new THREE.TorusGeometry(.09,.018,5,8,Math.PI),
-   material(0x9da4a3)
+   new THREE.TorusGeometry(.09,.018,5,8,Math.PI),mat(0x858c87)
   );
   hook.position.set(-5.6+i*.12,2,1.7);
   scene.add(hook);
  }
 
  // Lixeira
- box(.48,.65,.48,6,.33,.5,0x66766d);
- box(.5,.06,.5,6,.68,.5,0x414b46);
+ box(.48,.65,.48,6,.33,.5,0x4b5a52);
+ box(.5,.06,.5,6,.68,.5,0x303b36);
 
  // Mesa auxiliar
- box(.75,.08,.55,-5,.9,3,0x9fa5a1);
- box(.08,.8,.08,-5,.45,3,0x596264);
- box(.08,.8,.08,-4.35,.45,3,0x596264);
+ box(.75,.08,.55,-5,.9,3,0x747b76);
+ box(.08,.8,.08,-5,.45,3,0x424a48);
+ box(.08,.8,.08,-4.35,.45,3,0x424a48);
 
  // Carrinho médico
- box(.9,.12,.55,5,.8,1.5,0x9da5a2);
- box(.08,.7,.08,4.65,.4,1.3,0x555f60);
- box(.08,.7,.08,5.35,.4,1.3,0x555f60);
- box(.9,.08,.55,5,.42,1.5,0x727b78);
+ box(.9,.12,.55,5,.8,1.5,0x777f7a);
+ box(.08,.7,.08,4.65,.4,1.3,0x454e4b);
+ box(.08,.7,.08,5.35,.4,1.3,0x454e4b);
+ box(.9,.08,.55,5,.42,1.5,0x515b56);
 
- // Rodinhas do carrinho
  for(const x of [4.65,5.35]){
-  const wheel=new THREE.Mesh(
-   new THREE.CylinderGeometry(.07,.07,.06,8),
-   material(0x25292a)
+  cylinder(.07,.07,.06,x,.08,1.5,0x202526,8);
+ }
+}
+
+/* OBJETOS CAÍDOS NO CHÃO */
+
+function createFloorClutter(){
+ // Cadeira tombada
+ const chair=new THREE.Group();
+ const seat=new THREE.Mesh(
+  new THREE.BoxGeometry(.75,.12,.72),mat(0x343d3e)
+ );
+ seat.position.set(0,0,0);
+ chair.add(seat);
+
+ const back=new THREE.Mesh(
+  new THREE.BoxGeometry(.75,.7,.12),mat(0x343d3e)
+ );
+ back.position.set(0,.36,-.3);
+ chair.add(back);
+
+ for(const x of [-.29,.29]){
+  for(const z of [-.27,.27]){
+   const leg=new THREE.Mesh(
+    new THREE.BoxGeometry(.08,.42,.08),mat(0x444d4d)
+   );
+   leg.position.set(x,-.18,z);
+   chair.add(leg);
+  }
+ }
+ chair.position.set(-1.5,.42,2.2);
+ chair.rotation.set(.9,0,.55);
+ scene.add(chair);
+
+ // Bandeja caída
+ const tray=box(.85,.055,.55,1.2,.045,2.4,0x666e6b,.45);
+ tray.rotation.z=.08;
+
+ // Caixa médica aberta
+ box(.55,.12,.42,2.3,.07,2.8,0x686d65,.3);
+ box(.55,.05,.06,2.3,.19,2.59,0x85867a,.3);
+ box(.06,.22,.42,2.05,.14,2.8,0x85867a,.3);
+
+ // Frascos espalhados
+ const bottle1=cylinder(.065,.065,.22,.7,.08,2.8,0x687c7c,8);
+ bottle1.rotation.z=1.25;
+ const bottle2=cylinder(.055,.055,.19,1.7,.07,1.9,0x8b958b,8);
+ bottle2.rotation.x=1.15;
+
+ // Papéis caídos
+ for(let i=0;i<7;i++){
+  const paper=box(
+   .32+Math.random()*.18,.012,.23+Math.random()*.12,
+   -2+Math.random()*4,.015,1+Math.random()*3,
+   i%2?0xb5b2a4:0x85877e,
+   Math.random()*2
   );
-  wheel.rotation.z=Math.PI/2;
-  wheel.position.set(x,.08,1.5);
-  scene.add(wheel);
+  paper.rotation.z=(Math.random()-.5)*.08;
+ }
+
+ // Pedaços de madeira e metal
+ for(let i=0;i<9;i++){
+  const length=.35+Math.random()*.65;
+  const plank=box(
+   length,.045,.09,
+   -3+Math.random()*6,.035,
+   -3+Math.random()*6,
+   i%2?0x51483b:0x3d4747,
+   Math.random()*Math.PI
+  );
+  plank.rotation.z=(Math.random()-.5)*.12;
+ }
+
+ // Tubo metálico caído
+ const pipe=cylinder(.035,.035,1.7,4,.055,3.2,0x525b59,8);
+ pipe.rotation.z=Math.PI/2;
+ pipe.rotation.y=.3;
+
+ // Pequenos destroços
+ for(let i=0;i<16;i++){
+  const debris=box(
+   .08+Math.random()*.2,.025,.07+Math.random()*.2,
+   -6+Math.random()*12,.02,
+   -4.5+Math.random()*9,
+   i%2?0x414641:0x696b60,
+   Math.random()*3
+  );
+  debris.rotation.z=(Math.random()-.5)*.15;
  }
 }
 
@@ -658,24 +605,20 @@ function createMedicalEquipment(){
 
 function makeItem(type,x,y,z){
  const group=new THREE.Group();
-
  group.userData.type=type;
- group.userData.name=
-  type==="flashlight"?"Lanterna":"Cartão de acesso";
+ group.userData.name=type==="flashlight"?"Lanterna":"Cartão de acesso";
  group.userData.pickable=true;
- group.userData.restHeight=
-  type==="flashlight"?.075:.013;
+ group.userData.restHeight=type==="flashlight"?.075:.013;
 
  if(type==="flashlight"){
   const body=new THREE.Mesh(
-   new THREE.CylinderGeometry(.075,.075,.48,8),
-   material(0x22272d)
+   new THREE.CylinderGeometry(.075,.075,.48,10),mat(0x20272b)
   );
   body.rotation.x=Math.PI/2;
   group.add(body);
 
   const lens=new THREE.Mesh(
-   new THREE.CylinderGeometry(.078,.078,.025,8),
+   new THREE.CylinderGeometry(.078,.078,.025,10),
    new THREE.MeshBasicMaterial({color:0xd7e6ec})
   );
   lens.rotation.x=Math.PI/2;
@@ -683,23 +626,18 @@ function makeItem(type,x,y,z){
   group.add(lens);
 
   const grip=new THREE.Mesh(
-   new THREE.CylinderGeometry(.08,.08,.12,8),
-   material(0x555c60)
+   new THREE.CylinderGeometry(.08,.08,.12,10),mat(0x4b5558)
   );
   grip.rotation.x=Math.PI/2;
   grip.position.z=.12;
   group.add(grip);
-
  }else{
   const card=new THREE.Mesh(
-   new THREE.BoxGeometry(.24,.025,.16),
-   material(0xb5c8d0)
+   new THREE.BoxGeometry(.24,.025,.16),mat(0xb5c8d0)
   );
   group.add(card);
-
   const stripe=new THREE.Mesh(
-   new THREE.BoxGeometry(.15,.006,.025),
-   material(0x273c4a)
+   new THREE.BoxGeometry(.15,.006,.025),mat(0x273c4a)
   );
   stripe.position.y=.016;
   group.add(stripe);
@@ -712,34 +650,26 @@ function makeItem(type,x,y,z){
 }
 
 function createItems(){
-
- // Lanterna dentro do armário, na prateleira inferior
  makeItem("flashlight",-6,.82,-2.72);
-
- // Cartão sobre a mesa de atendimento
  makeItem("card",3.5,1.238,-1.25);
 }
 
-/* MÃO DO JOGADOR */
+/* MÃO */
 
 function createHand(){
  const hand=new THREE.Group();
-
  const palm=new THREE.Mesh(
-  new THREE.BoxGeometry(.17,.12,.2),
-  material(0xb58b70)
+  new THREE.BoxGeometry(.17,.12,.2),mat(0x98745f)
  );
  hand.add(palm);
 
  for(let i=0;i<4;i++){
   const finger=new THREE.Mesh(
-   new THREE.BoxGeometry(.035,.12,.045),
-   material(0xb58b70)
+   new THREE.BoxGeometry(.035,.12,.045),mat(0x98745f)
   );
   finger.position.set(-.065+i*.043,-.09,-.035);
   hand.add(finger);
  }
-
  hand.position.set(.4,-.38,-.72);
  camera.add(hand);
  scene.add(camera);
@@ -748,60 +678,44 @@ function createHand(){
 /* LANTERNA */
 
 function createFlashlight(){
- const light=new THREE.SpotLight(
-  0xffffff,0,18,Math.PI/8,.45,1
- );
-
+ const light=new THREE.SpotLight(0xffffff,0,18,Math.PI/8,.45,1);
  light.position.set(0,0,0);
  light.target.position.set(0,0,-1);
-
  camera.add(light);
  camera.add(light.target);
  camera.userData.flashlight=light;
 }
 
-/* DETECTAR ARMÁRIO */
+/* ARMÁRIO */
 
 function isAimingAtOpenCabinet(){
  if(!cabinetOpen)return false;
-
  const direction=new THREE.Vector3();
  camera.getWorldDirection(direction);
-
  const target=new THREE.Vector3(-6,1.25,-2.7);
  const toCabinet=target.sub(camera.position);
  const distance=toCabinet.length();
-
  toCabinet.normalize();
-
  return distance<3.5&&direction.dot(toCabinet)>.88;
 }
 
 function updateCabinetDoor(dt){
  if(!cabinetDoorPivot)return;
-
  const target=cabinetOpen?-1.35:0;
-
  cabinetDoorPivot.rotation.y=THREE.MathUtils.lerp(
-  cabinetDoorPivot.rotation.y,
-  target,
-  Math.min(1,dt*5)
+  cabinetDoorPivot.rotation.y,target,Math.min(1,dt*5)
  );
 }
 
 function toggleCabinet(){
  cabinetOpen=!cabinetOpen;
-
- $("message").textContent=
-  cabinetOpen?
+ $("message").textContent=cabinetOpen?
   "Você abriu o armário. Há alguns materiais médicos aqui.":
   "Você fechou o armário.";
-
- $("use").textContent=
-  cabinetOpen?"FECHAR":"ABRIR";
+ $("use").textContent=cabinetOpen?"FECHAR":"ABRIR";
 }
 
-/* DETECTAR OBJETOS E INTERAÇÕES */
+/* DETECÇÃO */
 
 function updateRaycast(){
  if(heldItem){
@@ -814,20 +728,12 @@ function updateRaycast(){
 
  const ray=new THREE.Raycaster();
  ray.setFromCamera(new THREE.Vector2(0,0),camera);
-
- const hits=ray.intersectObjects(
-  items.filter(i=>i.visible),true
- );
-
+ const hits=ray.intersectObjects(items.filter(i=>i.visible),true);
  selectedItem=null;
 
  if(hits.length){
   let obj=hits[0].object;
-
-  while(obj.parent&&!obj.userData.pickable){
-   obj=obj.parent;
-  }
-
+  while(obj.parent&&!obj.userData.pickable)obj=obj.parent;
   if(obj.userData.pickable){
    selectedItem=obj;
    currentTarget="item";
@@ -837,10 +743,8 @@ function updateRaycast(){
   }
  }
 
- // Armário fechado: detectar a porta
  if(!cabinetOpen&&cabinetTarget){
   const cabinetHits=ray.intersectObject(cabinetTarget);
-
   if(cabinetHits.length){
    currentTarget="cabinet";
    $("message").textContent="E / ABRIR ARMÁRIO";
@@ -849,7 +753,6 @@ function updateRaycast(){
   }
  }
 
- // Armário aberto: permitir fechar olhando para ele
  if(isAimingAtOpenCabinet()){
   currentTarget="cabinet";
   $("message").textContent="E / FECHAR ARMÁRIO";
@@ -862,19 +765,9 @@ function updateRaycast(){
  $("message").textContent="Explore a enfermaria.";
 }
 
-/* INTERAÇÃO */
-
 function interact(){
- if(currentTarget==="cabinet"){
-  toggleCabinet();
-  return;
- }
-
- if(currentTarget==="item"){
-  pickItem();
-  return;
- }
-
+ if(currentTarget==="cabinet"){toggleCabinet();return}
+ if(currentTarget==="item"){pickItem();return}
  pickItem();
 }
 
@@ -885,7 +778,6 @@ function pickItem(){
   $("message").textContent="Você já está segurando um objeto.";
   return;
  }
-
  if(!selectedItem){
   $("message").textContent="Olhe para um objeto primeiro.";
   return;
@@ -893,17 +785,13 @@ function pickItem(){
 
  heldItem=selectedItem;
  scene.remove(heldItem);
-
  heldItem.position.set(.35,-.28,-.65);
  heldItem.rotation.set(0,0,0);
  camera.add(heldItem);
 
- $("inventory").textContent=
-  "MÃO: "+heldItem.userData.name.toUpperCase();
-
+ $("inventory").textContent="MÃO: "+heldItem.userData.name.toUpperCase();
  selectedItem=null;
  currentTarget="";
-
  $("message").textContent="Objeto pego.";
 }
 
@@ -927,29 +815,28 @@ function dropItem(){
  position.x=THREE.MathUtils.clamp(position.x,-7,7);
  position.z=THREE.MathUtils.clamp(position.z,-5.5,5.5);
 
- const onDesk=
-  position.x>1.9&&position.x<4.1&&
+ const onDesk=position.x>1.9&&position.x<4.1&&
   position.z<-.5&&position.z>-1.5;
 
- const onBedside=
-  position.x>-5.1&&position.x<-4.2&&
+ const onBedside=position.x>-5.1&&position.x<-4.2&&
   position.z<-.5&&position.z>-1.3;
 
- const onCabinet=
-  position.x>-6.5&&position.x<-5.5&&
+ const onCabinet=position.x>-6.5&&position.x<-5.5&&
   position.z<-2.3&&position.z>-3.2;
 
- position.y=(onDesk||onBedside)?
-  1.225+item.userData.restHeight:
-  onCabinet?.82+item.userData.restHeight:
-  .1+item.userData.restHeight;
+ if(onDesk||onBedside){
+  position.y=1.225+item.userData.restHeight;
+ }else if(onCabinet){
+  position.y=.82+item.userData.restHeight;
+ }else{
+  position.y=.1+item.userData.restHeight;
+ }
 
  item.position.copy(position);
  item.rotation.set(0,Math.random()*.5,0);
  scene.add(item);
 
  heldItem=null;
-
  $("inventory").textContent="MÃO: VAZIA";
  $("message").textContent="Objeto solto.";
 }
@@ -961,19 +848,14 @@ function toggleLight(){
   $("message").textContent="Você precisa encontrar e pegar a lanterna primeiro.";
   return;
  }
-
  if(battery<=0){
   $("message").textContent="A bateria acabou.";
   return;
  }
 
  flashlightOn=!flashlightOn;
-
- camera.userData.flashlight.intensity=
-  flashlightOn?3.2:0;
-
- $("battery").textContent=
-  "LANTERNA: "+(flashlightOn?"LIGADA":"DESLIGADA");
+ camera.userData.flashlight.intensity=flashlightOn?3.2:0;
+ $("battery").textContent="LANTERNA: "+(flashlightOn?"LIGADA":"DESLIGADA");
 }
 
 /* MOVIMENTAÇÃO */
@@ -986,11 +868,9 @@ function updateMovement(dt){
 
  const right=new THREE.Vector3()
   .crossVectors(forward,new THREE.Vector3(0,1,0))
-  .normalize()
-  .negate();
+  .normalize().negate();
 
  const move=new THREE.Vector3();
-
  if(keys.KeyW||movement.forward)move.add(forward);
  if(keys.KeyS||movement.back)move.sub(forward);
  if(keys.KeyA||movement.left)move.sub(right);
@@ -1001,22 +881,15 @@ function updateMovement(dt){
   camera.position.add(move);
  }
 
- camera.position.x=THREE.MathUtils.clamp(
-  camera.position.x,-7.3,7.3
- );
-
- camera.position.z=THREE.MathUtils.clamp(
-  camera.position.z,-5.3,5.3
- );
-
+ camera.position.x=THREE.MathUtils.clamp(camera.position.x,-7.3,7.3);
+ camera.position.z=THREE.MathUtils.clamp(camera.position.z,-5.3,5.3);
  camera.position.y=1.65;
 }
 
-/* LOOP DO JOGO */
+/* LOOP */
 
 function animate(){
  requestAnimationFrame(animate);
-
  if(!renderer||!scene)return;
 
  const dt=Math.min(clock.getDelta(),.05);
@@ -1028,7 +901,6 @@ function animate(){
 
   if(flashlightOn){
    battery=Math.max(0,battery-dt*.08);
-
    if(battery<=0){
     flashlightOn=false;
     camera.userData.flashlight.intensity=0;
@@ -1036,7 +908,6 @@ function animate(){
    }
   }
  }
-
  renderer.render(scene,camera);
 }
 
@@ -1044,7 +915,6 @@ function animate(){
 
 function resize(){
  if(!camera||!renderer)return;
-
  camera.aspect=innerWidth/innerHeight;
  camera.updateProjectionMatrix();
  renderer.setSize(innerWidth,innerHeight);
@@ -1054,17 +924,13 @@ function resize(){
 
 document.addEventListener("keydown",e=>{
  keys[e.code]=true;
-
  if(!gameStarted)return;
-
  if(e.code==="KeyE")interact();
  if(e.code==="KeyQ")dropItem();
  if(e.code==="KeyF")toggleLight();
 });
 
-document.addEventListener("keyup",e=>{
- keys[e.code]=false;
-});
+document.addEventListener("keyup",e=>{keys[e.code]=false});
 
 /* MOUSE */
 
@@ -1074,22 +940,17 @@ document.addEventListener("mousemove",e=>{
 
  camera.rotation.y-=e.movementX*.0025;
  camera.rotation.x-=e.movementY*.0025;
-
- camera.rotation.x=THREE.MathUtils.clamp(
-  camera.rotation.x,-1.4,1.4
- );
+ camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-1.4,1.4);
 });
 
-/* CONTROLES DO CELULAR */
+/* CELULAR */
 
 function bindMove(id,direction){
  const button=$(id);
-
  button.addEventListener("pointerdown",e=>{
   e.preventDefault();
   movement[direction]=true;
  });
-
  ["pointerup","pointercancel","pointerleave"].forEach(event=>{
   button.addEventListener(event,()=>{
    movement[direction]=false;
@@ -1108,24 +969,17 @@ $("lookArea").addEventListener("pointerdown",e=>{
 
 $("lookArea").addEventListener("pointermove",e=>{
  if(!lastTouch||!gameStarted)return;
-
  const dx=e.clientX-lastTouch.x;
  const dy=e.clientY-lastTouch.y;
 
  camera.rotation.y-=dx*.004;
  camera.rotation.x-=dy*.004;
-
- camera.rotation.x=THREE.MathUtils.clamp(
-  camera.rotation.x,-1.4,1.4
- );
-
+ camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-1.4,1.4);
  lastTouch={x:e.clientX,y:e.clientY};
 });
 
 ["pointerup","pointercancel","pointerleave"].forEach(event=>{
- $("lookArea").addEventListener(event,()=>{
-  lastTouch=null;
- });
+ $("lookArea").addEventListener(event,()=>{lastTouch=null});
 });
 
 /* BOTÕES */

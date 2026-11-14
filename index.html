@@ -160,38 +160,67 @@ function initGame(){
 
  clock=new THREE.Clock();
 
- // ILUMINAÇÃO AMBIENTE BRANCA E SUAVE
- const ambientLight=new THREE.HemisphereLight(
-  0xd5dedc,0x343b38,.58
- );
- scene.add(ambientLight);
+// ILUMINAÇÃO AMBIENTE BRANCA — VERSÃO MAIS CLARA
+const ambientLight = new THREE.HemisphereLight(
+  0xffffff,
+  0x777970,
+  1.5
+);
+scene.add(ambientLight);
 
- // Luz discreta no teto
- const ceilingLight=new THREE.PointLight(
-  0xe2e6df,.85,17
- );
- ceilingLight.position.set(0,3.25,0);
- scene.add(ceilingLight);
+// LUZ PRINCIPAL DO TETO
+const ceilingLight = new THREE.PointLight(
+  0xffffff,
+  2.5,
+  28
+);
+ceilingLight.position.set(0, 3.25, 0);
+scene.add(ceilingLight);
 
- // Luz suave próxima à enfermaria
- const sideLight=new THREE.PointLight(
-  0xcbd5d0,.32,9
- );
- sideLight.position.set(-5,2.5,1);
- scene.add(sideLight);
+// LUZ DO LADO ESQUERDO
+const sideLight = new THREE.PointLight(
+  0xffffff,
+  1.4,
+  20
+);
+sideLight.position.set(-5, 2.5, 1);
+scene.add(sideLight);
 
- createRoom();
- createWallDamage();
- createFurniture();
- createMedicalEquipment();
- createFloorClutter();
- createRealisticDetails();
- createItems();
- createHand();
- createFlashlight();
+// LUZ DO LADO DIREITO
+const rightLight = new THREE.PointLight(
+  0xffffff,
+  1.4,
+  20
+);
+rightLight.position.set(5, 2.5, 1);
+scene.add(rightLight);
 
- window.addEventListener("resize",resize);
- if(!animationStarted){animationStarted=true;animate()}
+// LUZ DO FUNDO
+const backLight = new THREE.PointLight(
+  0xeaf0ed,
+  1.2,
+  20
+);
+backLight.position.set(0, 2.5, -4);
+scene.add(backLight);
+
+// CONTINUAÇÃO DO JOGO
+createRoom();
+createWallDamage();
+createFurniture();
+createMedicalEquipment();
+createFloorClutter();
+createRealisticDetails();
+createItems();
+createHand();
+createFlashlight();
+
+window.addEventListener("resize", resize);
+
+if (!animationStarted) {
+  animationStarted = true;
+  animate();
+}
 }
 
 /* SALA */

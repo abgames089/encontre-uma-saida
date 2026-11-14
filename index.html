@@ -3,131 +3,133 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ENCONTRE UMA SAÍDA! - AB GAMES</title>
 
 <style>
 *{box-sizing:border-box}
 body{
  margin:0;
  overflow:hidden;
- background:#050607;
+ background:#080808;
  color:white;
  font-family:Arial,sans-serif;
 }
+button,select,input{font:inherit}
 button{
- border:1px solid #922323;
- background:#170d0d;
+ background:#211010;
+ border:1px solid #a52b2b;
  color:white;
- padding:12px 18px;
  border-radius:7px;
- font-weight:bold;
+ padding:13px;
  cursor:pointer;
 }
-button:active{background:#7b1717}
-#menu,#pause,#credits{
+button:active{background:#842020}
+button:disabled{opacity:.5}
+
+.screen{
  position:fixed;
  inset:0;
- z-index:10;
- background:radial-gradient(ellipse at center,#222 0%,#080808 75%);
+ z-index:20;
  display:flex;
  align-items:center;
  justify-content:center;
  text-align:center;
-}
-.panel{width:min(90%,420px)}
-h1{
- color:#e22b2b;
- font-size:clamp(30px,7vw,48px);
- text-shadow:0 0 18px #9b1717;
-}
-.subtitle{color:#aaa;letter-spacing:4px}
-.buttons{
- display:flex;
- flex-direction:column;
- gap:12px;
- margin-top:30px;
+ background:radial-gradient(circle,#242424,#070707 75%);
+ padding:20px;
 }
 .hidden{display:none!important}
+.panel{width:min(100%,420px)}
+h1{
+ color:#e52d2d;
+ font-size:clamp(30px,7vw,46px);
+ text-shadow:0 0 18px #8b1010;
+}
+.subtitle{letter-spacing:4px;color:#aaa;font-size:12px}
+.buttons{display:grid;gap:12px;margin-top:25px}
+.small{font-size:12px;color:#999}
+
+#settings .panel{text-align:left}
+#settings h1{text-align:center}
+.setting{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:12px;
+ margin:18px 0;
+}
+.setting input{width:120px}
+.setting select{max-width:130px}
+
 #hud{
  position:fixed;
  inset:0;
- z-index:3;
  pointer-events:none;
+ z-index:5;
 }
 #crosshair{
  position:absolute;
- left:50%;top:50%;
+ top:50%;left:50%;
  transform:translate(-50%,-50%);
- font-size:22px;
- color:white;
+ font-size:23px;
 }
+#inventory,#battery{
+ position:absolute;
+ top:12px;
+ padding:10px;
+ background:#0009;
+ border:1px solid #ffffff33;
+ border-radius:5px;
+ font-size:12px;
+}
+#inventory{left:12px}
+#battery{right:12px}
 #message{
  position:absolute;
  bottom:17%;
  width:100%;
  text-align:center;
- color:white;
  text-shadow:0 2px 5px black;
  font-size:14px;
 }
-#inventory{
- position:absolute;
- top:15px;left:15px;
- padding:10px;
- background:#0009;
- border:1px solid #ffffff33;
- border-radius:6px;
- font-size:13px;
-}
-#battery{
- position:absolute;
- top:15px;right:15px;
- background:#0009;
- padding:10px;
- border-radius:6px;
-}
+
 #controls{
  position:fixed;
  inset:0;
- z-index:5;
+ z-index:8;
  pointer-events:none;
 }
 #movePad{
  position:absolute;
- bottom:25px;
- left:20px;
+ bottom:22px;
+ left:15px;
  display:grid;
- grid-template-columns:55px 55px 55px;
- grid-template-rows:55px 55px;
- gap:4px;
+ grid-template-columns:53px 53px 53px;
+ grid-template-rows:53px 53px;
+ gap:5px;
  pointer-events:auto;
 }
 #movePad button,#actions button{
  background:#111b;
  border:1px solid #ffffff66;
  padding:5px;
- font-size:18px;
  touch-action:none;
 }
 #forward{grid-column:2;grid-row:1}
 #left{grid-column:1;grid-row:2}
 #back{grid-column:2;grid-row:2}
 #right{grid-column:3;grid-row:2}
+
 #actions{
  position:absolute;
- right:18px;
- bottom:30px;
+ right:15px;
+ bottom:25px;
  display:flex;
  flex-direction:column;
- gap:9px;
+ gap:8px;
  pointer-events:auto;
 }
-#actions button{
- min-width:76px;
- min-height:48px;
- font-size:12px;
-}
+#actions button{min-width:75px;min-height:45px;font-size:11px}
 #lookArea{
  position:absolute;
  right:0;top:0;
@@ -135,28 +137,25 @@ h1{
  pointer-events:auto;
  touch-action:none;
 }
-#settings{
+
+#errorBox{
  position:fixed;
- z-index:12;
+ z-index:30;
  inset:0;
- background:#080808ee;
+ background:#080808f5;
  display:none;
  align-items:center;
  justify-content:center;
+ padding:25px;
+ text-align:center;
 }
-.setting-row{
- margin:15px 0;
- display:flex;
- justify-content:space-between;
- gap:15px;
-}
-select,input{max-width:130px}
 </style>
 </head>
 
 <body>
 
-<div id="menu">
+<!-- MENU PRINCIPAL -->
+<div id="menu" class="screen">
  <div class="panel">
   <div class="subtitle">AB GAMES APRESENTA</div>
   <h1>ENCONTRE UMA SAÍDA!</h1>
@@ -167,11 +166,55 @@ select,input{max-width:130px}
    <button id="openSettings">CONFIGURAÇÕES</button>
    <button id="openCredits">CRÉDITOS</button>
   </div>
-  <p style="color:#666;font-size:11px;margin-top:25px">AB GAMES • VERSÃO 0.3</p>
+  <p class="small">AB GAMES • VERSÃO 0.4</p>
  </div>
 </div>
 
-<div id="pause" class="hidden">
+<!-- CONFIGURAÇÕES -->
+<div id="settings" class="screen hidden">
+ <div class="panel">
+  <h1>CONFIGURAÇÕES</h1>
+  <div class="setting">
+   <label>Qualidade gráfica</label>
+   <select id="quality">
+    <option value="low">BAIXO</option>
+    <option value="medium" selected>MÉDIO</option>
+    <option value="high">ALTO</option>
+   </select>
+  </div>
+  <div class="setting">
+   <label>Volume</label>
+   <input id="volume" type="range" min="0" max="100" value="45">
+  </div>
+  <div class="setting">
+   <label>Sensibilidade</label>
+   <input id="sensitivity" type="range" min="1" max="10" value="5">
+  </div>
+  <div class="setting">
+   <label>Reduzir efeitos</label>
+   <input id="effects" type="checkbox">
+  </div>
+  <div class="buttons">
+   <button id="saveSettings">SALVAR E VOLTAR</button>
+  </div>
+ </div>
+</div>
+
+<!-- CRÉDITOS -->
+<div id="credits" class="screen hidden">
+ <div class="panel">
+  <h1>CRÉDITOS</h1>
+  <p>Desenvolvimento: AB GAMES</p>
+  <p>ENCONTRE UMA SAÍDA!</p>
+  <p class="small">Um projeto original AB GAMES.</p>
+  <div class="buttons">
+   <button id="closeCredits">VOLTAR</button>
+  </div>
+ </div>
+</div>
+
+<!-- PAUSA -->
+<div id="pause" class="screen hidden">
  <div class="panel">
   <h1>PAUSADO</h1>
   <div class="buttons">
@@ -182,44 +225,7 @@ select,input{max-width:130px}
  </div>
 </div>
 
-<div id="credits" class="hidden">
- <div class="panel">
-  <h1>CRÉDITOS</h1>
-  <p>Desenvolvimento: AB GAMES</p>
-  <p>ENCONTRE UMA SAÍDA!</p>
-  <button id="closeCredits">VOLTAR</button>
- </div>
-</div>
-
-<div id="settings">
- <div class="panel">
-  <h1>CONFIGURAÇÕES</h1>
-  <div class="setting-row">
-   <label>Qualidade gráfica</label>
-   <select id="quality">
-    <option value="low">BAIXO</option>
-    <option value="medium" selected>MÉDIO</option>
-    <option value="high">ALTO</option>
-   </select>
-  </div>
-  <div class="setting-row">
-   <label>Volume</label>
-   <input id="volume" type="range" min="0" max="100" value="45">
-  </div>
-  <div class="setting-row">
-   <label>Sensibilidade</label>
-   <input id="sensitivity" type="range" min="1" max="10" value="5">
-  </div>
-  <div class="setting-row">
-   <label>Reduzir efeitos</label>
-   <input id="effects" type="checkbox">
-  </div>
-  <div class="buttons">
-   <button id="saveSettings">SALVAR E VOLTAR</button>
-  </div>
- </div>
-</div>
-
+<!-- HUD -->
 <div id="hud" class="hidden">
  <div id="crosshair">+</div>
  <div id="inventory">MÃO: VAZIA</div>
@@ -227,6 +233,7 @@ select,input{max-width:130px}
  <div id="message">Explore a enfermaria.</div>
 </div>
 
+<!-- CONTROLES CELULAR -->
 <div id="controls" class="hidden">
  <div id="lookArea"></div>
  <div id="movePad">
@@ -243,113 +250,221 @@ select,input{max-width:130px}
  </div>
 </div>
 
+<div id="errorBox">
+ <div class="panel">
+  <h1>ERRO AO CARREGAR</h1>
+  <p id="errorText">Não foi possível carregar o cenário 3D.</p>
+  <button id="errorBack">VOLTAR AO MENU</button>
+ </div>
+</div>
+
+<!-- THREE.JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r160/three.min.js"></script>
 
 <script>
-(() => {
-"use strict";
+/* =================================
+   MENU: FUNCIONA INDEPENDENTEMENTE
+   DO CARREGAMENTO DO THREE.JS
+================================= */
 
 const $ = id => document.getElementById(id);
 
-let scene,camera,renderer,clock;
-let running=false,paused=false;
-let flashlightOn=false;
-let heldItem=null;
-let selectedItem=null;
-let items=[];
-let velocity=new THREE.Vector3();
-let yaw=0,pitch=0;
-let sensitivity=0.0025;
-let keys={};
-let mobileMove={forward:false,back:false,left:false,right:false};
-let lastTouch=null;
-let battery=100;
-let quality="medium";
-let raycaster=new THREE.Raycaster();
+const menu = $("menu");
+const settings = $("settings");
+const credits = $("credits");
+const pauseScreen = $("pause");
+const hud = $("hud");
+const controls = $("controls");
+const errorBox = $("errorBox");
 
-const menu=$("menu");
-const pauseScreen=$("pause");
-const credits=$("credits");
-const settings=$("settings");
-const hud=$("hud");
-const controls=$("controls");
-const message=$("message");
+let gameStarted = false;
+let paused = false;
+let returnToPause = false;
 
-function showMessage(text){
- message.textContent=text;
+function hideScreens(){
+ menu.classList.add("hidden");
+ settings.classList.add("hidden");
+ credits.classList.add("hidden");
+ pauseScreen.classList.add("hidden");
 }
 
-function startGame(){
- menu.classList.add("hidden");
- pauseScreen.classList.add("hidden");
- credits.classList.add("hidden");
- settings.style.display="none";
- hud.classList.remove("hidden");
- controls.classList.remove("hidden");
-
- if(!scene) init3D();
-
- running=true;
+function showMenu(){
+ hideScreens();
+ menu.classList.remove("hidden");
+ hud.classList.add("hidden");
+ controls.classList.add("hidden");
+ gameStarted=false;
  paused=false;
- clock.start();
+ document.exitPointerLock?.();
+}
 
- if(renderer && renderer.domElement.requestPointerLock && !isMobile()){
-  renderer.domElement.requestPointerLock();
+function showError(text){
+ $("errorText").textContent=text;
+ errorBox.style.display="flex";
+}
+
+$("errorBack").onclick=()=>{
+ errorBox.style.display="none";
+ showMenu();
+};
+
+$("openSettings").onclick=()=>{
+ returnToPause=false;
+ hideScreens();
+ settings.classList.remove("hidden");
+};
+
+$("openCredits").onclick=()=>{
+ hideScreens();
+ credits.classList.remove("hidden");
+};
+
+$("closeCredits").onclick=showMenu;
+
+$("saveSettings").onclick=()=>{
+ applySettings();
+ settings.classList.add("hidden");
+
+ if(returnToPause){
+  pauseScreen.classList.remove("hidden");
+ }else{
+  menu.classList.remove("hidden");
+ }
+};
+
+$("pauseSettings").onclick=()=>{
+ returnToPause=true;
+ pauseScreen.classList.add("hidden");
+ settings.classList.remove("hidden");
+};
+
+$("play").onclick=()=>{
+ startGame(true);
+};
+
+$("continue").onclick=()=>{
+ startGame(false);
+};
+
+$("resume").onclick=()=>{
+ paused=false;
+ pauseScreen.classList.add("hidden");
+ if(!isMobile()) renderer?.domElement.requestPointerLock?.();
+};
+
+$("pauseButton").onclick=pauseGame;
+$("backMenu").onclick=showMenu;
+
+/* =================================
+   JOGO 3D
+================================= */
+
+let scene=null;
+let camera=null;
+let renderer=null;
+let clock=null;
+let items=[];
+let selectedItem=null;
+let heldItem=null;
+let flashlightOn=false;
+let battery=100;
+let yaw=0;
+let pitch=0;
+let sensitivity=.0025;
+let keys={};
+let movement={
+ forward:false,
+ back:false,
+ left:false,
+ right:false
+};
+let lastTouch=null;
+
+function isMobile(){
+ return matchMedia("(pointer:coarse)").matches;
+}
+
+function startGame(newGame){
+ if(!window.THREE){
+  showError("O Three.js não carregou. Verifique sua conexão com a internet e tente novamente.");
+  return;
+ }
+
+ try{
+  if(!scene) init3D();
+
+  if(newGame){
+   camera.position.set(0,1.65,4.2);
+   yaw=0;
+   pitch=0;
+   camera.rotation.set(0,0,0);
+   heldItem=null;
+   flashlightOn=false;
+   battery=100;
+  }
+
+  hideScreens();
+  hud.classList.remove("hidden");
+  controls.classList.remove("hidden");
+
+  gameStarted=true;
+  paused=false;
+  clock.start();
+
+  if(!isMobile()) renderer.domElement.requestPointerLock?.();
+
+ }catch(error){
+  console.error(error);
+  showError("Falha ao iniciar o cenário 3D: "+error.message);
  }
 }
 
-function isMobile(){
- return matchMedia("(pointer: coarse)").matches;
-}
-
 function pauseGame(){
- if(!running)return;
+ if(!gameStarted || paused)return;
  paused=true;
  pauseScreen.classList.remove("hidden");
  document.exitPointerLock?.();
 }
 
-function resumeGame(){
- paused=false;
- pauseScreen.classList.add("hidden");
- if(!isMobile()) renderer.domElement.requestPointerLock?.();
-}
+function applySettings(){
+ sensitivity=Number($("sensitivity").value)*.0005;
 
-function backToMenu(){
- running=false;
- paused=false;
- pauseScreen.classList.add("hidden");
- hud.classList.add("hidden");
- controls.classList.add("hidden");
- menu.classList.remove("hidden");
- document.exitPointerLock?.();
+ if(renderer){
+  const quality=$("quality").value;
+  let ratio=1;
+
+  if(quality==="medium")ratio=1.3;
+  if(quality==="high")ratio=1.5;
+
+  renderer.setPixelRatio(Math.min(devicePixelRatio,ratio));
+ }
 }
 
 function init3D(){
  scene=new THREE.Scene();
  scene.background=new THREE.Color(0x080b0e);
- scene.fog=new THREE.FogExp2(0x080b0e,0.035);
+ scene.fog=new THREE.FogExp2(0x080b0e,.035);
 
  camera=new THREE.PerspectiveCamera(
-  75,window.innerWidth/window.innerHeight,0.1,100
+  75,window.innerWidth/window.innerHeight,.1,100
  );
  camera.position.set(0,1.65,4.2);
  camera.rotation.order="YXZ";
 
  renderer=new THREE.WebGLRenderer({antialias:false});
  renderer.setSize(window.innerWidth,window.innerHeight);
- renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1.3));
  renderer.shadowMap.enabled=false;
+
  document.body.appendChild(renderer.domElement);
 
  clock=new THREE.Clock();
 
- const ambient=new THREE.HemisphereLight(0x8995a4,0x161820,0.55);
- scene.add(ambient);
+ scene.add(new THREE.HemisphereLight(0x8995a4,0x161820,.55));
 
- const ceilingLight=new THREE.PointLight(0x9ca8bd,1.1,13);
- ceilingLight.position.set(0,2.8,0);
- scene.add(ceilingLight);
+ const ceiling=new THREE.PointLight(0x9ca8bd,1.1,13);
+ ceiling.position.set(0,2.8,0);
+ scene.add(ceiling);
 
  createRoom();
  createFurniture();
@@ -361,16 +476,17 @@ function init3D(){
  animate();
 }
 
-function material(color,roughness=0.9){
+function mat(color){
  return new THREE.MeshStandardMaterial({
-  color,roughness
+  color:color,
+  roughness:.9
  });
 }
 
 function box(w,h,d,x,y,z,color){
  const mesh=new THREE.Mesh(
   new THREE.BoxGeometry(w,h,d),
-  material(color)
+  mat(color)
  );
  mesh.position.set(x,y,z);
  scene.add(mesh);
@@ -378,10 +494,8 @@ function box(w,h,d,x,y,z,color){
 }
 
 function createRoom(){
- // Chão
+ // Piso e teto
  box(16,.2,12,0,0,0,0x30343a);
-
- // Teto
  box(16,.2,12,0,3.5,0,0x171a1e);
 
  // Paredes
@@ -395,17 +509,17 @@ function createRoom(){
  box(1.5,2.55,.08,0,1.35,-5.75,0x444b52);
  box(.08,.08,.08,.55,1.3,-5.65,0xb02b2b);
 
- // Luz vermelha de emergência
+ // Emergência
  const red=new THREE.PointLight(0xc90000,1.8,7);
  red.position.set(-3,2.7,-4.8);
  scene.add(red);
 
- const redBulb=new THREE.Mesh(
+ const bulb=new THREE.Mesh(
   new THREE.SphereGeometry(.13,8,8),
   new THREE.MeshBasicMaterial({color:0xff1111})
  );
- redBulb.position.copy(red.position);
- scene.add(redBulb);
+ bulb.position.copy(red.position);
+ scene.add(bulb);
 }
 
 function createFurniture(){
@@ -414,8 +528,8 @@ function createFurniture(){
  box(2.2,.15,1,-3,1.05,-1,0x9ba1a4);
  box(2.25,.12,1.05,-3,1.18,-1,0x626c75);
 
- for(let x of [-3.9,-2.1]){
-  for(let z of [-1.4,-.6]){
+ for(const x of [-3.9,-2.1]){
+  for(const z of [-1.4,-.6]){
    box(.12,.8,.12,x,.4,z,0x45494d);
   }
  }
@@ -425,8 +539,9 @@ function createFurniture(){
 
  // Mesa
  box(2,.15,.9,3,1.15,-1,0x6b5040);
- for(let x of [2.1,3.9]){
-  for(let z of [-1.35,-.65]){
+
+ for(const x of [2.1,3.9]){
+  for(const z of [-1.35,-.65]){
    box(.12,1.1,.12,x,.55,z,0x45413d);
   }
  }
@@ -444,20 +559,23 @@ function createFurniture(){
  }
 
  // Cadeira
- box(.7,.12,.7,4,0.65,1,0x292e34);
+ box(.7,.12,.7,4,.65,1,0x292e34);
  box(.12,.7,.12,4,.3,1,0x34383c);
  box(.7,.1,.12,4,1,1.25,0x34383c);
 }
 
 function makeItem(type,x,y,z){
  const group=new THREE.Group();
+
  group.userData.type=type;
  group.userData.name=type==="flashlight"?"Lanterna":"Cartão de acesso";
+ group.userData.pickable=true;
+ group.userData.restHeight=type==="flashlight"?.075:.013;
 
  if(type==="flashlight"){
   const body=new THREE.Mesh(
    new THREE.CylinderGeometry(.075,.075,.48,10),
-   material(0x22272d)
+   mat(0x22272d)
   );
   body.rotation.x=Math.PI/2;
   group.add(body);
@@ -469,38 +587,31 @@ function makeItem(type,x,y,z){
   lens.rotation.x=Math.PI/2;
   lens.position.z=-.245;
   group.add(lens);
-
-  group.userData.restHeight=.075;
  }else{
   const card=new THREE.Mesh(
    new THREE.BoxGeometry(.24,.025,.16),
-   material(0xb5c8d0)
+   mat(0xb5c8d0)
   );
   group.add(card);
 
   const stripe=new THREE.Mesh(
    new THREE.BoxGeometry(.15,.006,.025),
-   material(0x273c4a)
+   mat(0x273c4a)
   );
   stripe.position.y=.016;
   group.add(stripe);
-
-  group.userData.restHeight=.013;
  }
 
  group.position.set(x,y,z);
- group.userData.pickable=true;
  scene.add(group);
  items.push(group);
  return group;
 }
 
 function createItems(){
- // Lanterna apoiada sobre a mesa
+ // Superfície da mesa: altura 1.225
  makeItem("flashlight",2.5,1.30,-1);
-
- // Cartão apoiado sobre a mesa
- makeItem("card",3.65,1.24,-1.25);
+ makeItem("card",3.65,1.238,-1.25);
 }
 
 function createHand(){
@@ -508,14 +619,14 @@ function createHand(){
 
  const palm=new THREE.Mesh(
   new THREE.BoxGeometry(.17,.12,.2),
-  material(0xb58b70)
+  mat(0xb58b70)
  );
  hand.add(palm);
 
  for(let i=0;i<4;i++){
   const finger=new THREE.Mesh(
    new THREE.BoxGeometry(.035,.12,.045),
-   material(0xb58b70)
+   mat(0xb58b70)
   );
   finger.position.set(-.065+i*.043,-.09,-.035);
   hand.add(finger);
@@ -524,12 +635,12 @@ function createHand(){
  hand.position.set(.4,-.38,-.72);
  camera.add(hand);
  scene.add(camera);
- hand.visible=true;
- camera.userData.hand=hand;
 }
 
 function createFlashlight(){
- const light=new THREE.SpotLight(0xffffff,0,18,Math.PI/8,.45,1);
+ const light=new THREE.SpotLight(
+  0xffffff,0,18,Math.PI/8,.45,1
+ );
  light.position.set(0,0,0);
  light.target.position.set(0,0,-1);
  camera.add(light);
@@ -538,54 +649,60 @@ function createFlashlight(){
 }
 
 function updateRaycast(){
- raycaster.setFromCamera(new THREE.Vector2(0,0),camera);
- const targets=items.filter(item=>item.visible);
- const hits=raycaster.intersectObjects(targets,true);
+ if(heldItem){
+  selectedItem=null;
+  $("message").textContent="Q / SOLTAR OBJETO";
+  return;
+ }
 
+ const ray=new THREE.Raycaster();
+ ray.setFromCamera(new THREE.Vector2(0,0),camera);
+
+ const hits=ray.intersectObjects(items.filter(i=>i.visible),true);
  selectedItem=null;
 
  if(hits.length){
   let obj=hits[0].object;
-  while(obj.parent && !obj.userData.pickable){
+
+  while(obj.parent&&!obj.userData.pickable){
    obj=obj.parent;
   }
 
   if(obj.userData.pickable){
    selectedItem=obj;
-   showMessage("E / PEGAR: "+obj.userData.name);
+   $("message").textContent="E / PEGAR: "+obj.userData.name;
    return;
   }
  }
 
- showMessage("Explore a enfermaria.");
+ $("message").textContent="Explore a enfermaria.";
 }
 
 function pickItem(){
  if(heldItem){
-  showMessage("Você já está segurando um objeto.");
+  $("message").textContent="Você já está segurando algo.";
   return;
  }
 
  if(!selectedItem){
-  showMessage("Olhe para um objeto para pegá-lo.");
+  $("message").textContent="Olhe para um objeto primeiro.";
   return;
  }
 
  heldItem=selectedItem;
  scene.remove(heldItem);
 
- heldItem.position.set(0,0,-.32);
+ heldItem.position.set(.35,-.28,-.65);
  heldItem.rotation.set(0,0,0);
  camera.add(heldItem);
 
  $("inventory").textContent="MÃO: "+heldItem.userData.name.toUpperCase();
- showMessage("Objeto pego!");
  selectedItem=null;
 }
 
 function dropItem(){
  if(!heldItem){
-  showMessage("Sua mão está vazia.");
+  $("message").textContent="Sua mão está vazia.";
   return;
  }
 
@@ -595,16 +712,15 @@ function dropItem(){
  const direction=new THREE.Vector3();
  camera.getWorldDirection(direction);
 
- const position=camera.position.clone().add(direction.multiplyScalar(1.15));
+ const position=camera.position.clone()
+  .add(direction.multiplyScalar(1.15));
 
- // Limites do cenário
- position.x=Math.max(-7,Math.min(7,position.x));
- position.z=Math.max(-5.5,Math.min(5.5,position.z));
+ position.x=THREE.MathUtils.clamp(position.x,-7,7);
+ position.z=THREE.MathUtils.clamp(position.z,-5.5,5.5);
 
- // Mesa: área aproximada de x 2 a 4 e z -1.45 a -.55
  const onTable=
-  position.x>2 && position.x<4 &&
-  position.z>-1.45 && position.z<-.55;
+  position.x>2&&position.x<4&&
+  position.z>-.45&&position.z<-1.55;
 
  if(onTable){
   position.y=1.225+item.userData.restHeight;
@@ -618,21 +734,21 @@ function dropItem(){
 
  heldItem=null;
  $("inventory").textContent="MÃO: VAZIA";
- showMessage("Objeto solto.");
+ $("message").textContent="Objeto solto.";
 }
 
-function toggleFlashlight(){
+function toggleLight(){
  flashlightOn=!flashlightOn;
 
- const light=camera.userData.flashlight;
- light.intensity=flashlightOn?3.2:0;
+ if(camera?.userData.flashlight){
+  camera.userData.flashlight.intensity=flashlightOn?3.2:0;
+ }
 
  $("battery").textContent="LANTERNA: "+
   (flashlightOn?"LIGADA":"DESLIGADA");
 }
 
 function updateMovement(dt){
- const speed=3.0;
  const forward=new THREE.Vector3();
  camera.getWorldDirection(forward);
  forward.y=0;
@@ -643,15 +759,15 @@ function updateMovement(dt){
   .normalize()
   .negate();
 
- let move=new THREE.Vector3();
+ const move=new THREE.Vector3();
 
- if(keys.KeyW||mobileMove.forward)move.add(forward);
- if(keys.KeyS||mobileMove.back)move.sub(forward);
- if(keys.KeyA||mobileMove.left)move.sub(right);
- if(keys.KeyD||mobileMove.right)move.add(right);
+ if(keys.KeyW||movement.forward)move.add(forward);
+ if(keys.KeyS||movement.back)move.sub(forward);
+ if(keys.KeyA||movement.left)move.sub(right);
+ if(keys.KeyD||movement.right)move.add(right);
 
  if(move.lengthSq()>0){
-  move.normalize().multiplyScalar(speed*dt);
+  move.normalize().multiplyScalar(3*dt);
   camera.position.add(move);
  }
 
@@ -667,13 +783,14 @@ function animate(){
 
  const dt=Math.min(clock.getDelta(),.05);
 
- if(running&&!paused){
+ if(gameStarted&&!paused){
   updateMovement(dt);
   updateRaycast();
 
   if(flashlightOn){
    battery=Math.max(0,battery-dt*.08);
-   if(battery<=0){
+
+   if(battery===0){
     flashlightOn=false;
     camera.userData.flashlight.intensity=0;
     $("battery").textContent="LANTERNA: SEM BATERIA";
@@ -686,118 +803,60 @@ function animate(){
 
 function resize(){
  if(!camera||!renderer)return;
- camera.aspect=window.innerWidth/window.innerHeight;
+ camera.aspect=innerWidth/innerHeight;
  camera.updateProjectionMatrix();
- renderer.setSize(window.innerWidth,window.innerHeight);
+ renderer.setSize(innerWidth,innerHeight);
 }
 
-function applyQuality(){
- if(!renderer)return;
+/* =================================
+   CONTROLES
+================================= */
 
- quality=$("quality").value;
-
- if(quality==="low"){
-  renderer.setPixelRatio(1);
-  renderer.shadowMap.enabled=false;
- }else if(quality==="medium"){
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.3));
-  renderer.shadowMap.enabled=false;
- }else{
-  renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
-  renderer.shadowMap.enabled=false;
- }
-}
-
-// MENU
-$("play").onclick=startGame;
-$("continue").onclick=startGame;
-$("resume").onclick=resumeGame;
-$("pauseButton").onclick=pauseGame;
-$("backMenu").onclick=backToMenu;
-
-$("openCredits").onclick=()=>{
- credits.classList.remove("hidden");
- menu.classList.add("hidden");
-};
-
-$("closeCredits").onclick=()=>{
- credits.classList.add("hidden");
- menu.classList.remove("hidden");
-};
-
-$("openSettings").onclick=()=>{
- settings.style.display="flex";
-};
-
-$("pauseSettings").onclick=()=>{
- pauseScreen.classList.add("hidden");
- settings.style.display="flex";
-};
-
-$("saveSettings").onclick=()=>{
- sensitivity=Number($("sensitivity").value)*.0005;
- applyQuality();
- settings.style.display="none";
-
- if(running){
-  paused=true;
-  pauseScreen.classList.remove("hidden");
- }
-};
-
-// INTERAÇÕES
 $("use").onclick=()=>{
  if(heldItem)dropItem();
  else pickItem();
 };
 
 $("drop").onclick=dropItem;
-$("light").onclick=toggleFlashlight;
+$("light").onclick=toggleLight;
 
-// TECLADO
 document.addEventListener("keydown",e=>{
  keys[e.code]=true;
 
  if(e.code==="KeyE")pickItem();
  if(e.code==="KeyQ")dropItem();
- if(e.code==="KeyF")toggleFlashlight();
- if(e.code==="Escape"&&running&&!paused)pauseGame();
+ if(e.code==="KeyF")toggleLight();
+
+ if(e.code==="Escape"&&gameStarted&&!paused){
+  pauseGame();
+ }
 });
 
 document.addEventListener("keyup",e=>{
  keys[e.code]=false;
 });
 
-// MOUSE
 document.addEventListener("mousemove",e=>{
- if(document.pointerLockElement!==renderer?.domElement)return;
- if(paused||!running)return;
+ if(!renderer||document.pointerLockElement!==renderer.domElement)return;
+ if(paused||!gameStarted)return;
 
  yaw-=e.movementX*sensitivity;
  pitch-=e.movementY*sensitivity;
  pitch=THREE.MathUtils.clamp(pitch,-1.4,1.4);
-
  camera.rotation.set(pitch,yaw,0);
 });
 
-rendererSetup();
-
-function rendererSetup(){
- // Os eventos de mouse são ativados depois da criação do cenário.
-}
-
-// CELULAR: movimentação
 function bindMove(id,direction){
  const button=$(id);
 
  button.addEventListener("pointerdown",e=>{
   e.preventDefault();
-  mobileMove[direction]=true;
+  movement[direction]=true;
  });
 
  ["pointerup","pointercancel","pointerleave"].forEach(event=>{
   button.addEventListener(event,()=>{
-   mobileMove[direction]=false;
+   movement[direction]=false;
   });
  });
 }
@@ -807,13 +866,12 @@ bindMove("back","back");
 bindMove("left","left");
 bindMove("right","right");
 
-// CELULAR: olhar ao redor
 $("lookArea").addEventListener("pointerdown",e=>{
  lastTouch={x:e.clientX,y:e.clientY};
 });
 
 $("lookArea").addEventListener("pointermove",e=>{
- if(!lastTouch||!running||paused)return;
+ if(!lastTouch||!gameStarted||paused||!camera)return;
 
  const dx=e.clientX-lastTouch.x;
  const dy=e.clientY-lastTouch.y;
@@ -828,10 +886,12 @@ $("lookArea").addEventListener("pointermove",e=>{
 });
 
 ["pointerup","pointercancel","pointerleave"].forEach(event=>{
- $("lookArea").addEventListener(event,()=>lastTouch=null);
+ $("lookArea").addEventListener(event,()=>{
+  lastTouch=null;
+ });
 });
 
-})();
+/* FIM */
 </script>
 </body>
 </html>

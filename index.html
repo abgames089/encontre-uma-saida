@@ -37,7 +37,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 1.3 • AMBIENTE REALISTA</div>
+  <div id="status">VERSÃO 1.3 • ILUMINAÇÃO SUAVE</div>
  </div>
 </div>
 
@@ -145,7 +145,7 @@ function sphere(x,y,z,sx,sy,sz,color){
 function initGame(){
  scene=new THREE.Scene();
  scene.background=new THREE.Color(0x141918);
- scene.fog=new THREE.FogExp2(0x141918,.043);
+ scene.fog=new THREE.FogExp2(0x141918,.035);
 
  camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
  camera.position.set(0,1.65,4.2);
@@ -159,11 +159,26 @@ function initGame(){
  document.body.appendChild(renderer.domElement);
 
  clock=new THREE.Clock();
- scene.add(new THREE.HemisphereLight(0xaeb9b9,0x252827,.34));
 
- const ceilingLight=new THREE.PointLight(0xb8b9a9,.52,13);
- ceilingLight.position.set(0,3.1,0);
+ // ILUMINAÇÃO AMBIENTE BRANCA E SUAVE
+ const ambientLight=new THREE.HemisphereLight(
+  0xd5dedc,0x343b38,.58
+ );
+ scene.add(ambientLight);
+
+ // Luz discreta no teto
+ const ceilingLight=new THREE.PointLight(
+  0xe2e6df,.85,17
+ );
+ ceilingLight.position.set(0,3.25,0);
  scene.add(ceilingLight);
+
+ // Luz suave próxima à enfermaria
+ const sideLight=new THREE.PointLight(
+  0xcbd5d0,.32,9
+ );
+ sideLight.position.set(-5,2.5,1);
+ scene.add(sideLight);
 
  createRoom();
  createWallDamage();
@@ -191,7 +206,7 @@ function createRoom(){
  box(6.8,3.5,.2,4.6,1.75,-6,0x777a73);
  box(2.4,.65,.2,0,3.175,-6,0x777a73);
 
- // Porta da enfermaria
+ // Porta
  box(2.05,2.7,.12,0,1.35,-5.92,0x383e3d);
  box(.12,2.85,.18,-1.1,1.425,-5.83,0x292e2d);
  box(.12,2.85,.18,1.1,1.425,-5.83,0x292e2d);
@@ -202,21 +217,19 @@ function createRoom(){
  box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
  box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
  box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
+
  for(let i=0;i<5;i++){
   const c=new THREE.Mesh(
    new THREE.BoxGeometry(.67,1.9,.035),
-   new THREE.MeshStandardMaterial({color:0x737d78,transparent:true,opacity:.72,roughness:1})
+   new THREE.MeshStandardMaterial({
+    color:0x737d78,transparent:true,opacity:.72,roughness:1
+   })
   );
   c.position.set(-4.8+i*.7,1.45,.5);
   scene.add(c);
  }
 
  box(1.8,.06,.35,0,3.37,0,0x77796f);
-
- const red=new THREE.PointLight(0xb90000,.85,7);
- red.position.set(-3,2.8,-4.8);
- scene.add(red);
- box(.25,.12,.12,-3,2.8,-4.8,0xb80000);
 }
 
 /* PAREDES ENVELHECIDAS */
@@ -238,7 +251,6 @@ function createWallDamage(){
   p.rotation.z=(Math.random()-.5)*.25;
  }
 
- // Descascados maiores
  for(let i=0;i<12;i++){
   const side=i%2===0?-7.88:7.88;
   const patch=box(.025,.12+Math.random()*.35,.2+Math.random()*.45,
@@ -303,7 +315,7 @@ function createFurniture(){
  box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
 }
 
-/* GAVETEIRO INTERATIVO */
+/* GAVETEIRO */
 
 function createDrawerCabinet(){
  const x=-4.65,z=-.9;
@@ -433,16 +445,13 @@ function createInteractiveCabinet(){
 /* EQUIPAMENTOS */
 
 function createMedicalEquipment(){
- // Suporte de soro
  cylinder(.028,.028,1.9,-5.6,1.1,1.7,0x727b79,8);
  box(.7,.05,.05,-5.6,2.05,1.7,0x727b79);
  box(.48,.08,.48,-5.6,.1,1.7,0x414a48);
 
- // Lixeira hospitalar
  cylinder(.24,.2,.65,6,.33,.5,0x4b5a52,12);
  cylinder(.25,.25,.06,6,.68,.5,0x303b36,12);
 
- // Carrinho de instrumentos
  box(.9,.12,.55,5,.8,1.5,0x777f7a);
  box(.08,.7,.08,4.65,.4,1.3,0x454e4b);
  box(.08,.7,.08,5.35,.4,1.3,0x454e4b);
@@ -452,10 +461,9 @@ function createMedicalEquipment(){
  }
 }
 
-/* DETALHES REALISTAS V1.3 */
+/* DETALHES REALISTAS */
 
 function createRealisticDetails(){
- // Juntas do piso
  for(let x=-7.5;x<=7.5;x+=1.5){
   box(.012,.006,11.6,x,.106,0,0x343a37);
  }
@@ -463,13 +471,10 @@ function createRealisticDetails(){
   box(15.7,.006,.012,0,.107,z,0x343a37);
  }
 
- // Manchas de umidade no chão
  for(let i=0;i<24;i++){
   const stain=new THREE.Mesh(
    new THREE.CircleGeometry(.12+Math.random()*.32,8),
-   new THREE.MeshBasicMaterial({
-    color:0x252e2a,transparent:true,opacity:.3
-   })
+   new THREE.MeshBasicMaterial({color:0x252e2a,transparent:true,opacity:.3})
   );
   stain.rotation.x=-Math.PI/2;
   stain.position.set(-7+Math.random()*14,.109,-5+Math.random()*10);
@@ -477,7 +482,6 @@ function createRealisticDetails(){
   scene.add(stain);
  }
 
- // Rachaduras e tinta descascada nas paredes
  for(const side of [-1,1]){
   for(let i=0;i<14;i++){
    const crack=box(.018,.3+Math.random()*.6,.012,
@@ -492,7 +496,6 @@ function createRealisticDetails(){
   }
  }
 
- // Rodapés danificados
  for(const side of [-1,1]){
   for(let i=0;i<10;i++){
    box(.07,.12,.72,side*7.84,.17,-5.2+i*1.05,
@@ -500,7 +503,7 @@ function createRealisticDetails(){
   }
  }
 
- // Maca: reforços, grades e parafusos
+ // Maca
  for(const x of [-3.92,-2.08]){
   for(const z of [-1.42,-.58]){
    cylinder(.035,.035,.08,x,.76,z,0x303a38,8);
@@ -512,40 +515,39 @@ function createRealisticDetails(){
  box(.035,.22,.035,-4.04,1.05,-1,0x626c68);
  box(.035,.22,.035,-1.96,1.05,-1,0x626c68);
 
- // Costuras do colchão
  for(const x of [-3.82,-2.18]){
   box(.012,.008,.82,x,1.105,-1,0x777d75);
  }
  box(.18,.035,.012,-3,.91,-1.535,0x8c8d80);
  box(.07,.018,.014,-3,.91,-1.525,0x3b4543);
 
- // Mesa de atendimento: gavetas e puxadores
+ // Mesa
  box(1.92,.025,.035,3,1.235,-1.43,0x454d49);
  for(const x of [2.35,3.65]){
   box(.42,.22,.018,x,.91,-1.435,0x555e58);
   box(.12,.025,.035,x,.93,-1.455,0x303937);
  }
 
- // Armário: prateleiras e dobradiças
+ // Armário
  for(const y of [.55,1.1,1.65,2.2]){
   box(.88,.035,.56,-6,y,-2.7,0x747b72);
   box(.035,.12,.025,-6.46,y,-2.22,0x8a8b7d);
   box(.035,.12,.025,-5.54,y,-2.22,0x8a8b7d);
  }
 
- // Pia: torneira e ralo
+ // Pia
  cylinder(.035,.035,.22,5,1.31,-2.72,0x68716d,8);
  cylinder(.025,.025,.16,5,1.42,-2.81,0x68716d,8);
  box(.22,.025,.035,5,1.49,-2.78,0x626c68);
  cylinder(.045,.045,.012,5,1.17,-2.52,0x202829,10);
 
- // Bandeja com bordas
+ // Bandeja
  box(.84,.025,.025,1.2,.075,2.13,0x89918a);
  box(.84,.025,.025,1.2,.075,2.67,0x89918a);
  box(.025,.025,.55,.79,.075,2.4,0x89918a);
  box(.025,.025,.55,1.61,.075,2.4,0x89918a);
 
- // Fragmentos de madeira, metal e reboco
+ // Detritos
  for(let i=0;i<28;i++){
   const size=.025+Math.random()*.09;
   const p=box(size,.012,size*.55,
@@ -554,20 +556,13 @@ function createRealisticDetails(){
   p.rotation.y=Math.random()*Math.PI;
  }
 
- // Tubulação aparente no alto
+ // Tubulação
  cylinder(.035,.035,7.5,7.72,2.72,-.2,0x414a47,8).rotation.z=Math.PI/2;
  for(let i=0;i<5;i++){
   box(.08,.08,.08,7.67,2.72,-3.2+i*1.45,0x252d2b);
  }
 
- // Luz de emergência
- box(.38,.22,.16,-3,2.8,-5.72,0x303735);
- box(.27,.12,.025,-3,2.8,-5.625,0x8d1715);
- const emergencyGlow=new THREE.PointLight(0xb51c16,.55,5);
- emergencyGlow.position.set(-3,2.65,-5.25);
- scene.add(emergencyGlow);
-
- // Fio pendurado próximo ao teto
+ // Fio pendurado
  const curve=new THREE.CatmullRomCurve3([
   new THREE.Vector3(-5.8,3.22,-5.78),
   new THREE.Vector3(-4.8,3.12,-5.78),
@@ -699,7 +694,7 @@ function updateDrawers(dt){
  }
 }
 
-/* DETECÇÃO DE INTERAÇÃO */
+/* DETECÇÃO */
 
 function updateRaycast(){
  if(heldItem){
@@ -736,26 +731,12 @@ function updateRaycast(){
   return;
  }
 
- if(cabinetTarget&&!cabinetOpen){
+ if(cabinetTarget){
   const hits=ray.intersectObject(cabinetTarget);
   if(hits.length&&hits[0].distance<3.5){
    currentTarget={type:"cabinet"};
-   $("message").textContent="E / ABRIR ARMÁRIO";
-   $("use").textContent="ABRIR";
-   return;
-  }
- }
-
- if(cabinetOpen){
-  const direction=new THREE.Vector3();
-  camera.getWorldDirection(direction);
-  const to=new THREE.Vector3(-6,1.25,-2.7).sub(camera.position);
-  const distance=to.length();
-  to.normalize();
-  if(distance<3.5&&direction.dot(to)>.88){
-   currentTarget={type:"cabinet"};
-   $("message").textContent="E / FECHAR ARMÁRIO";
-   $("use").textContent="FECHAR";
+   $("message").textContent="E / "+(cabinetOpen?"FECHAR":"ABRIR")+" ARMÁRIO";
+   $("use").textContent=cabinetOpen?"FECHAR":"ABRIR";
    return;
   }
  }
@@ -930,6 +911,7 @@ bindMove("right","right");
 
 $("lookArea").addEventListener("pointerdown",e=>{
  lastTouch={x:e.clientX,y:e.clientY};
+ $("lookArea").setPointerCapture?.(e.pointerId);
 });
 
 $("lookArea").addEventListener("pointermove",e=>{

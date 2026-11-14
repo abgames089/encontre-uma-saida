@@ -41,7 +41,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 1.3 • ILUMINAÇÃO APRIMORADA</div>
+  <div id="status">VERSÃO 1.3 • ILUMINAÇÃO EQUILIBRADA</div>
  </div>
 </div>
 
@@ -81,32 +81,25 @@ let currentTarget=null,drawers=[],drawerTargets=[];
 let hand=null;
 
 const keys={};
-const movement={
- forward:false,back:false,left:false,right:false
-};
+const movement={forward:false,back:false,left:false,right:false};
 
 $("play").onclick=async()=>{
  if(gameStarted)return;
-
  $("play").disabled=true;
  $("status").textContent="CARREGANDO...";
 
  try{
   await loadThree();
-
   if(!scene)initGame();
 
   $("menu").classList.add("hidden");
   $("hud").classList.remove("hidden");
   $("controls").classList.remove("hidden");
-
   gameStarted=true;
 
-  if(!isMobile()){
-   renderer.domElement.requestPointerLock?.();
-  }
+  if(!isMobile())renderer.domElement.requestPointerLock?.();
  }catch(e){
-  $("status").textContent="ERRO AO CARREGAR: "+e.message;
+  $("status").textContent="ERRO: "+e.message;
  }finally{
   $("play").disabled=false;
  }
@@ -129,11 +122,9 @@ async function loadThree(){
     s.onerror=reject;
     document.head.appendChild(s);
    });
-
    if(window.THREE)return window.THREE;
   }catch(e){}
  }
-
  throw new Error("Verifique sua conexão com a internet.");
 }
 
@@ -142,16 +133,11 @@ function isMobile(){
 }
 
 function mat(color,roughness=1,metalness=0){
- return new THREE.MeshStandardMaterial({
-  color,roughness,metalness
- });
+ return new THREE.MeshStandardMaterial({color,roughness,metalness});
 }
 
 function box(w,h,d,x,y,z,color,rotation=0){
- const m=new THREE.Mesh(
-  new THREE.BoxGeometry(w,h,d),
-  mat(color)
- );
+ const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
  m.position.set(x,y,z);
  m.rotation.y=rotation;
  scene.add(m);
@@ -169,10 +155,7 @@ function cylinder(rt,rb,h,x,y,z,color,segments=10){
 }
 
 function sphere(x,y,z,sx,sy,sz,color){
- const m=new THREE.Mesh(
-  new THREE.SphereGeometry(1,10,8),
-  mat(color)
- );
+ const m=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),mat(color));
  m.position.set(x,y,z);
  m.scale.set(sx,sy,sz);
  scene.add(m);
@@ -183,14 +166,10 @@ function sphere(x,y,z,sx,sy,sz,color){
 
 function initGame(){
  scene=new THREE.Scene();
+ scene.background=new THREE.Color(0x292e2c);
+ scene.fog=new THREE.FogExp2(0x292e2c,.012);
 
- scene.background=new THREE.Color(0x343936);
- scene.fog=new THREE.FogExp2(0x343936,.006);
-
- camera=new THREE.PerspectiveCamera(
-  75,innerWidth/innerHeight,.1,80
- );
-
+ camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
  camera.position.set(0,1.65,4.2);
  camera.rotation.order="YXZ";
 
@@ -198,7 +177,6 @@ function initGame(){
   antialias:false,
   powerPreference:"low-power"
  });
-
  renderer.setSize(innerWidth,innerHeight);
  renderer.setPixelRatio(Math.min(devicePixelRatio,1.25));
  renderer.shadowMap.enabled=false;
@@ -206,52 +184,41 @@ function initGame(){
  renderer.toneMapping=THREE.NoToneMapping;
 
  document.body.appendChild(renderer.domElement);
-
  clock=new THREE.Clock();
 
- // ILUMINAÇÃO AMBIENTE FORTE
- const ambientLight=new THREE.AmbientLight(
-  0xffffff,2.0
- );
+ // ILUMINAÇÃO AMBIENTE EQUILIBRADA
+ const ambientLight=new THREE.AmbientLight(0xffffff,.85);
  scene.add(ambientLight);
 
- // ILUMINAÇÃO DO CÉU E DO CHÃO
  const ambientLight2=new THREE.HemisphereLight(
-  0xffffff,0xb0b0a5,1.5
+  0xdce5e2,0x555b55,.65
  );
  scene.add(ambientLight2);
 
- // LUZ CENTRAL DO TETO
+ // LUZ PRINCIPAL DO TETO
  const ceilingLight=new THREE.PointLight(
-  0xffffff,4,40
+  0xf0f2ed,1.5,25
  );
  ceilingLight.position.set(0,3.2,0);
  scene.add(ceilingLight);
 
- // LUZ ESQUERDA
+ // LUZ LATERAL ESQUERDA
  const leftLight=new THREE.PointLight(
-  0xffffff,2.5,30
+  0xe5eae6,.65,17
  );
  leftLight.position.set(-5,2.5,0);
  scene.add(leftLight);
 
- // LUZ DIREITA
+ // LUZ LATERAL DIREITA
  const rightLight=new THREE.PointLight(
-  0xffffff,2.5,30
+  0xe5eae6,.65,17
  );
  rightLight.position.set(5,2.5,0);
  scene.add(rightLight);
 
- // LUZ FRONTAL
- const frontLight=new THREE.PointLight(
-  0xffffff,2,30
- );
- frontLight.position.set(0,2.5,4);
- scene.add(frontLight);
-
- // LUZ DO FUNDO
+ // LUZ SUAVE NO FUNDO
  const backLight=new THREE.PointLight(
-  0xffffff,2,30
+  0xdce3df,.45,15
  );
  backLight.position.set(0,2.5,-4);
  scene.add(backLight);
@@ -293,10 +260,9 @@ function createRoom(){
  box(.12,2.85,.18,-1.1,1.425,-5.83,0x444a47);
  box(.12,2.85,.18,1.1,1.425,-5.83,0x444a47);
  box(2.3,.12,.18,0,2.85,-5.83,0x444a47);
-
  sphere(.75,1.25,-5.78,.045,.045,.045,0xb5ad91);
 
- // Cortina
+ // Cortina hospitalar
  box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
  box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
  box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
@@ -311,13 +277,12 @@ function createRoom(){
     roughness:1
    })
   );
-
   c.position.set(-4.8+i*.7,1.45,.5);
   scene.add(c);
  }
 }
 
-/* PAREDES */
+/* PAREDES ENVELHECIDAS */
 
 function createWallDamage(){
  const stains=[
@@ -336,13 +301,11 @@ function createWallDamage(){
 
  for(let i=0;i<24;i++){
   const side=i%2===0?-7.87:7.87;
-
   const p=box(
    .04,.08+Math.random()*.28,.1+Math.random()*.5,
    side,.4+Math.random()*2.5,-4.8+Math.random()*9.5,
    i%3===0?0x555b55:0x777a72
   );
-
   p.rotation.z=(Math.random()-.5)*.25;
  }
 }
@@ -422,7 +385,6 @@ function createDrawerCabinet(){
 
  for(let i=0;i<3;i++){
   const g=new THREE.Group();
-
   g.userData.isDrawer=true;
   g.userData.index=i;
   g.userData.open=false;
@@ -467,7 +429,6 @@ function createDrawerCabinet(){
   g.add(handle);
 
   const y=.76-i*.29;
-
   g.position.set(x,y,z+.34);
   scene.add(g);
   drawers.push(g);
@@ -511,12 +472,9 @@ function createDrawerCabinet(){
   const target=new THREE.Mesh(
    new THREE.BoxGeometry(.78,.25,.16),
    new THREE.MeshBasicMaterial({
-    transparent:true,
-    opacity:0,
-    depthWrite:false
+    transparent:true,opacity:0,depthWrite:false
    })
   );
-
   target.position.set(x,y,z+.69);
   target.userData.drawerIndex=i;
   scene.add(target);
@@ -538,15 +496,9 @@ function createInteractiveCabinet(){
 
  for(let i=0;i<3;i++){
   const y=.72+i*.55;
-
   box(.98,.045,.68,x,y,z,0x999e95);
   box(.98,.07,.045,x,y+.055,z+.34,0x666e67);
-
-  cylinder(
-   .065,.065,.23,-6.28,.87+i*.55,-2.73,
-   0x929b93,8
-  );
-
+  cylinder(.065,.065,.23,-6.28,.87+i*.55,-2.73,0x929b93,8);
   box(.2,.18,.22,-5.76,1+i*.55,-2.72,0x9b9b8e);
  }
 
@@ -578,12 +530,9 @@ function createInteractiveCabinet(){
  cabinetTarget=new THREE.Mesh(
   new THREE.BoxGeometry(1.08,2.25,.15),
   new THREE.MeshBasicMaterial({
-   transparent:true,
-   opacity:0,
-   depthWrite:false
+   transparent:true,opacity:0,depthWrite:false
   })
  );
-
  cabinetTarget.position.set(-6,1.25,-2.18);
  scene.add(cabinetTarget);
 }
@@ -632,24 +581,18 @@ function createFloorClutter(){
  fallenChair.rotation.y=.5;
  scene.add(fallenChair);
 
- // Bandeja caída
+ // Bandeja
  const tray=box(.85,.035,.55,2.4,.14,2.8,0x858b83);
  tray.rotation.y=.4;
 
- // Frascos no chão
+ // Frascos
  for(let i=0;i<4;i++){
   const bottle=new THREE.Mesh(
    new THREE.CylinderGeometry(.065,.08,.27,8),
    mat(i%2?0x9da69a:0x747e77)
   );
-
   bottle.rotation.z=Math.PI/2+(Math.random()-.5)*.3;
-  bottle.position.set(
-   -1+Math.random()*2,
-   .18,
-   2+Math.random()*2
-  );
-
+  bottle.position.set(-1+Math.random()*2,.18,2+Math.random()*2);
   scene.add(bottle);
  }
 
@@ -657,37 +600,30 @@ function createFloorClutter(){
  for(let i=0;i<5;i++){
   const paper=box(
    .28,.012,.36,
-   -2+Math.random()*2,
-   .12,
-   2+Math.random()*2,
+   -2+Math.random()*2,.12,2+Math.random()*2,
    0xb8b5a5
   );
   paper.rotation.y=Math.random()*Math.PI;
-  paper.rotation.x=(Math.random()-.5)*.08;
  }
 
- // Caixa médica aberta
+ // Caixa médica
  box(.55,.08,.4,4,.13,2.6,0x777f77);
  box(.55,.06,.06,4,.28,2.4,0x858c83);
  box(.06,.22,.4,3.73,.2,2.6,0x858c83);
  box(.06,.22,.4,4.27,.2,2.6,0x858c83);
 
- // Pedaços de madeira e metal
+ // Fragmentos
  for(let i=0;i<12;i++){
   const piece=box(
-   .35+Math.random()*.5,
-   .035,
-   .06+Math.random()*.08,
-   -5+Math.random()*10,
-   .14,
-   -4+Math.random()*8,
+   .35+Math.random()*.5,.035,.06+Math.random()*.08,
+   -5+Math.random()*10,.14,-4+Math.random()*8,
    i%2?0x625748:0x777d75
   );
   piece.rotation.y=Math.random()*Math.PI;
  }
 }
 
-/* DETALHES */
+/* DETALHES REALISTAS */
 
 function createRealisticDetails(){
  for(let x=-7.5;x<=7.5;x+=1.5){
@@ -702,16 +638,11 @@ function createRealisticDetails(){
   const stain=new THREE.Mesh(
    new THREE.CircleGeometry(.12+Math.random()*.32,8),
    new THREE.MeshBasicMaterial({
-    color:0x414a44,
-    transparent:true,
-    opacity:.22
+    color:0x414a44,transparent:true,opacity:.22
    })
   );
-
   stain.rotation.x=-Math.PI/2;
-  stain.position.set(
-   -7+Math.random()*14,.109,-5+Math.random()*10
-  );
+  stain.position.set(-7+Math.random()*14,.109,-5+Math.random()*10);
   stain.scale.set(1.4,.7,1);
   scene.add(stain);
  }
@@ -733,7 +664,7 @@ function createRealisticDetails(){
   box(.012,.008,.82,x,1.105,-1,0x858b82);
  }
 
- // Detalhes da mesa
+ // Mesa
  box(1.92,.025,.035,3,1.235,-1.43,0x555d57);
 
  for(const x of [2.35,3.65]){
@@ -741,7 +672,7 @@ function createRealisticDetails(){
   box(.12,.025,.035,x,.93,-1.455,0x404744);
  }
 
- // Detalhes da pia
+ // Pia
  cylinder(.035,.035,.22,5,1.31,-2.72,0x78827c,8);
  cylinder(.025,.025,.16,5,1.42,-2.81,0x78827c,8);
  box(.22,.025,.035,5,1.49,-2.78,0x626c68);
@@ -753,7 +684,7 @@ function createRealisticDetails(){
   box(.08,.08,.08,7.67,2.72,-3.2+i*1.45,0x353d39);
  }
 
- // Fio pendurado
+ // Fio
  const curve=new THREE.CatmullRomCurve3([
   new THREE.Vector3(-5.8,3.22,-5.78),
   new THREE.Vector3(-4.8,3.12,-5.78),
@@ -834,23 +765,20 @@ function createHand(){
  const skin=mat(0x98745f);
 
  const palm=new THREE.Mesh(
-  new THREE.BoxGeometry(.12,.16,.09),
-  skin
+  new THREE.BoxGeometry(.12,.16,.09),skin
  );
  hand.add(palm);
 
  for(let i=0;i<4;i++){
   const finger=new THREE.Mesh(
-   new THREE.CapsuleGeometry(.018,.075,3,5),
-   skin
+   new THREE.CapsuleGeometry(.018,.075,3,5),skin
   );
   finger.position.set(-.045+i*.03,-.105,-.005);
   hand.add(finger);
  }
 
  const thumb=new THREE.Mesh(
-  new THREE.CapsuleGeometry(.02,.07,3,5),
-  skin
+  new THREE.CapsuleGeometry(.02,.07,3,5),skin
  );
  thumb.position.set(.085,-.015,.005);
  thumb.rotation.z=-.7;
@@ -858,7 +786,6 @@ function createHand(){
 
  hand.position.set(.34,-.32,-.62);
  hand.rotation.set(-.15,.1,-.15);
-
  camera.add(hand);
  scene.add(camera);
 }
@@ -869,13 +796,10 @@ function createFlashlight(){
  const light=new THREE.SpotLight(
   0xfff4df,0,20,Math.PI/7,.38,1
  );
-
  light.position.set(0,0,0);
  light.target.position.set(0,0,-1);
-
  camera.add(light);
  camera.add(light.target);
-
  camera.userData.flashlight=light;
 }
 
@@ -902,7 +826,7 @@ function toggleDrawer(index){
  if(!drawer)return;
 
  drawer.userData.open=!drawer.userData.open;
- drawer.userData.targetZ=drawer.userData.open?0.48:0;
+ drawer.userData.targetZ=drawer.userData.open?.48:0;
 
  $("message").textContent=drawer.userData.open?
   "Gaveta "+(index+1)+" aberta.":
@@ -912,14 +836,13 @@ function toggleDrawer(index){
 function updateDrawers(dt){
  for(const d of drawers){
   const target=d.userData.targetZ||0;
-
   d.position.z=THREE.MathUtils.lerp(
    d.position.z,(-.9+.34)+target,Math.min(1,dt*7)
   );
  }
 }
 
-/* DETECÇÃO DE OBJETOS */
+/* DETECÇÃO */
 
 function updateRaycast(){
  if(heldItem){
@@ -938,15 +861,11 @@ function updateRaycast(){
 
  if(itemHits.length){
   let obj=itemHits[0].object;
-
-  while(obj.parent&&!obj.userData.pickable){
-   obj=obj.parent;
-  }
+  while(obj.parent&&!obj.userData.pickable)obj=obj.parent;
 
   if(obj.userData.pickable){
    selectedItem=obj;
    currentTarget={type:"item"};
-
    $("message").textContent="E / PEGAR: "+obj.userData.name;
    $("use").textContent="PEGAR";
    return;
@@ -957,7 +876,6 @@ function updateRaycast(){
 
  if(drawerHits.length&&drawerHits[0].distance<3.2){
   const index=drawerHits[0].object.userData.drawerIndex;
-
   currentTarget={type:"drawer",index};
 
   $("message").textContent="E / "+
@@ -973,10 +891,8 @@ function updateRaycast(){
 
   if(hits.length&&hits[0].distance<3.5){
    currentTarget={type:"cabinet"};
-
    $("message").textContent="E / "+
     (cabinetOpen?"FECHAR":"ABRIR")+" ARMÁRIO";
-
    $("use").textContent=cabinetOpen?"FECHAR":"ABRIR";
    return;
   }
@@ -1024,12 +940,9 @@ function pickItem(){
 
  heldItem.position.set(.28,-.25,-.52);
  heldItem.rotation.set(0,0,0);
-
  camera.add(heldItem);
 
- $("inventory").textContent=
-  "MÃO: "+heldItem.userData.name.toUpperCase();
-
+ $("inventory").textContent="MÃO: "+heldItem.userData.name.toUpperCase();
  $("message").textContent="Objeto pego.";
 
  selectedItem=null;
@@ -1058,7 +971,6 @@ function dropItem(){
 
  item.position.copy(position);
  item.rotation.set(0,Math.random()*.5,0);
-
  scene.add(item);
 
  heldItem=null;
@@ -1078,7 +990,6 @@ function toggleLight(){
  }
 
  flashlightOn=!flashlightOn;
-
  camera.userData.flashlight.intensity=flashlightOn?3.2:0;
 
  $("battery").textContent=
@@ -1118,7 +1029,6 @@ function updateMovement(dt){
 
 function animate(){
  requestAnimationFrame(animate);
-
  if(!renderer||!scene)return;
 
  const dt=Math.min(clock.getDelta(),.05);
@@ -1145,7 +1055,6 @@ function animate(){
 
 function resize(){
  if(!camera||!renderer)return;
-
  camera.aspect=innerWidth/innerHeight;
  camera.updateProjectionMatrix();
  renderer.setSize(innerWidth,innerHeight);
@@ -1155,9 +1064,7 @@ function resize(){
 
 document.addEventListener("keydown",e=>{
  keys[e.code]=true;
-
  if(!gameStarted)return;
-
  if(e.code==="KeyE")interact();
  if(e.code==="KeyQ")dropItem();
  if(e.code==="KeyF")toggleLight();
@@ -1168,11 +1075,7 @@ document.addEventListener("keyup",e=>{
 });
 
 document.addEventListener("mousemove",e=>{
- if(
-  !renderer||
-  document.pointerLockElement!==renderer.domElement||
-  !gameStarted
- )return;
+ if(!renderer||document.pointerLockElement!==renderer.domElement||!gameStarted)return;
 
  camera.rotation.y-=e.movementX*.0025;
  camera.rotation.x-=e.movementY*.0025;
@@ -1236,7 +1139,6 @@ $("drop").onclick=dropItem;
 $("light").onclick=toggleLight;
 
 document.addEventListener("contextmenu",e=>e.preventDefault());
-
 </script>
 </body>
 </html>

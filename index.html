@@ -123,6 +123,16 @@ button:active{background:#8c2020}
  pointer-events:auto;
  touch-action:none;
 }
+#inspectPanel{
+ position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+ z-index:30;width:min(340px,88vw);padding:16px;text-align:center;
+ background:#080b0dee;border:1px solid #a52b2b;border-radius:10px;
+ box-shadow:0 0 28px #000;pointer-events:auto
+}
+#inspectPanel h2{margin:0 0 8px;color:#ed3030;font-size:18px}
+#inspectPanel p{font-size:12px;color:#ddd;line-height:1.5}
+#inspectPanel button{min-width:88px;margin:4px}
+#inspectPanel .closeInspect{width:100%;margin-top:10px;background:#4b1515}
 .hidden{display:none!important}
 </style>
 </head>
@@ -135,7 +145,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 1.6 • INTERAÇÃO COM OBJETOS</div>
+  <div id="status">VERSÃO 1.7 • INSPEÇÃO DE OBJETOS</div>
  </div>
 </div>
 
@@ -159,12 +169,21 @@ button:active{background:#8c2020}
  <div id="actions">
   <button id="use">INTERAGIR</button>
   <button id="drop">SOLTAR</button>
+  <button id="inspect">EXAMINAR</button>
   <button id="light">LUZ</button>
  </div>
 </div>
 
-<script>
-"use strict";
+<div id="inspectPanel" class="hidden">
+  <h2>EXAMINANDO OBJETO</h2>
+  <p>Arraste a tela ou use os botões para girar o objeto. Pressione R ou VOLTAR para continuar.</p>
+  <button id="rotateLeft">↶ GIRAR</button>
+  <button id="rotateRight">GIRAR ↷</button>
+  <button id="closeInspect" class="closeInspect">VOLTAR</button>
+ </div>
+
+ <script>
+ "use strict";
 
 const $=id=>document.getElementById(id);
 
@@ -175,6 +194,8 @@ let animationStarted=false,lastTouch=null;
 let cabinetDoorPivot=null,cabinetTarget=null,cabinetOpen=false;
 let currentTarget=null,drawers=[],drawerTargets=[];
 let hand=null;
+let inspecting=false;
+let inspectPointer=null;
 
 const keys={};
 const movement={
@@ -1075,7 +1096,7 @@ function createFlashlight(){
  camera.userData.flashlight=light;
 }
 
-/* INTERAÇÕES */
+/* INTERAÇÕES — V1.7 */
 
 function toggleCabinet(){
  cabinetOpen=!cabinetOpen;
@@ -1122,6 +1143,7 @@ function updateDrawers(dt){
 /* DETECÇÃO DE OBJETOS */
 
 function updateRaycast(){
+ if(inspecting)return;
  if(heldItem){
   selectedItem=null;
   currentTarget=null;
@@ -1189,6 +1211,7 @@ function updateRaycast(){
 }
 
 function interact(){
+ if(inspecting){stopInspect();return;}
  if(heldItem){
   dropItem();
   return;
@@ -1246,6 +1269,7 @@ function pickItem(){
 }
 
 function dropItem(){
+ if(inspecting)stopInspect();
  if(!heldItem){
   $("message").textContent="Sua mão está vazia.";
   return;
@@ -1286,8 +1310,56 @@ function dropItem(){
  $("message").textContent="Objeto solto.";
 }
 
+function startInspect(){
+ if(!heldItem){
+  $("message").textContent="Pegue um objeto primeiro para examiná-lo.";
+  return;
+ }
+ if(inspecting)return;
+ inspecting=true;
+ inspectPointer=null;
+ heldItem.userData.savedHold={
+  position:heldItem.position.clone(),
+  rotation:heldItem.rotation.clone(),
+  scale:heldItem.scale.clone()
+ };
+ heldItem.position.set(0,0,-1.18);
+ heldItem.rotation.set(0,0,0);
+ heldItem.scale.setScalar(1.65);
+ if(hand)hand.visible=false;
+ $("inspectPanel").classList.remove("hidden");
+ $("message").textContent="Examinando: "+heldItem.userData.name;
+ $("inspect").textContent="VOLTAR";
+}
+
+function stopInspect(){
+ if(!inspecting)return;
+ inspecting=false;
+ inspectPointer=null;
+ if(heldItem){
+  const saved=heldItem.userData.savedHold;
+  if(saved){
+   heldItem.position.copy(saved.position);
+   heldItem.rotation.copy(saved.rotation);
+   heldItem.scale.copy(saved.scale);
+   delete heldItem.userData.savedHold;
+  }
+ }
+ if(hand)hand.visible=true;
+ $("inspectPanel").classList.add("hidden");
+ $("inspect").textContent="EXAMINAR";
+ $("message").textContent=heldItem?"Objeto na mão: "+heldItem.userData.name:"Explore a enfermaria.";
+}
+
+function rotateInspected(dx,dy){
+ if(!inspecting||!heldItem)return;
+ heldItem.rotation.y+=dx*.012;
+ heldItem.rotation.x+=dy*.012;
+ heldItem.rotation.x=THREE.MathUtils.clamp(heldItem.rotation.x,-1.35,1.35);
+}
+
 function updateHeldItem(dt){
- if(!heldItem)return;
+ if(!heldItem||inspecting)return;
  const target=heldItem.userData.holdTarget;
  const rot=heldItem.userData.holdRotation;
  if(!target||!rot)return;
@@ -1347,6 +1419,7 @@ function toggleLight(){
 /* MOVIMENTO */
 
 function updateMovement(dt){
+ if(inspecting)return;
  const forward=new THREE.Vector3();
 
  camera.getWorldDirection(forward);
@@ -1430,6 +1503,8 @@ document.addEventListener("keydown",e=>{
  if(e.code==="KeyE")interact();
  if(e.code==="KeyQ")dropItem();
  if(e.code==="KeyF")toggleLight();
+ if(e.code==="KeyR")inspecting?stopInspect():startInspect();
+ if(e.code==="Escape"&&inspecting)stopInspect();
 });
 
 document.addEventListener("keyup",e=>{
@@ -1443,6 +1518,7 @@ document.addEventListener("mousemove",e=>{
   !gameStarted
  )return;
 
+ if(inspecting){rotateInspected(e.movementX,e.movementY);return;}
  camera.rotation.y-=e.movementX*.0025;
  camera.rotation.x-=e.movementY*.0025;
 
@@ -1484,6 +1560,7 @@ $("lookArea").addEventListener("pointermove",e=>{
  const dx=e.clientX-lastTouch.x;
  const dy=e.clientY-lastTouch.y;
 
+ if(inspecting){rotateInspected(dx,dy);lastTouch={x:e.clientX,y:e.clientY};return;}
  camera.rotation.y-=dx*.004;
  camera.rotation.x-=dy*.004;
 
@@ -1503,6 +1580,24 @@ $("lookArea").addEventListener("pointermove",e=>{
 $("use").onclick=interact;
 $("drop").onclick=dropItem;
 $("light").onclick=toggleLight;
+$("inspect").onclick=()=>inspecting?stopInspect():startInspect();
+$("closeInspect").onclick=stopInspect;
+$("rotateLeft").onclick=()=>rotateInspected(-22,0);
+$("rotateRight").onclick=()=>rotateInspected(22,0);
+
+window.addEventListener("blur",()=>{
+ Object.keys(keys).forEach(k=>keys[k]=false);
+ Object.keys(movement).forEach(k=>movement[k]=false);
+ lastTouch=null;
+});
+
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden){
+  Object.keys(keys).forEach(k=>keys[k]=false);
+  Object.keys(movement).forEach(k=>movement[k]=false);
+  lastTouch=null;
+ }
+});
 
 document.addEventListener("contextmenu",e=>e.preventDefault());
 

@@ -1202,7 +1202,7 @@ function updateRaycast(){
  }
 
  if(cabinetTarget){
-  const hits=ray.intersectObject(cabinetTarget);
+  const hits=raycaster.intersectObject(cabinetTarget);
 
   if(hits.length&&hits[0].distance<3.5){
    currentTarget={type:"cabinet"};

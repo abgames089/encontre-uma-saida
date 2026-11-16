@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V1.8</title>
 
 <style>
 *{box-sizing:border-box}
@@ -145,7 +145,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 1.7 • INSPEÇÃO DE OBJETOS</div>
+  <div id="status">VERSÃO 1.8 • DESEMPENHO E CONTROLES</div>
  </div>
 </div>
 
@@ -188,6 +188,8 @@ button:active{background:#8c2020}
 const $=id=>document.getElementById(id);
 
 let scene,camera,renderer,clock;
+let raycaster,centerNdc,moveForward,moveRight,moveVector,worldUp,heldScale;
+let lastRenderTime=0;
 let items=[],selectedItem=null,heldItem=null;
 let flashlightOn=false,battery=100,gameStarted=false;
 let animationStarted=false,lastTouch=null;
@@ -380,6 +382,15 @@ function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
 function initGame(){
  scene=new THREE.Scene();
 
+ // OBJETOS REUTILIZÁVEIS: evita criar vetores e raycasters a cada quadro
+ raycaster=new THREE.Raycaster();
+ centerNdc=new THREE.Vector2(0,0);
+ moveForward=new THREE.Vector3();
+ moveRight=new THREE.Vector3();
+ moveVector=new THREE.Vector3();
+ worldUp=new THREE.Vector3(0,1,0);
+ heldScale=new THREE.Vector3(1,1,1);
+
  // NEBLINA MAIS FORTE
  scene.background=new THREE.Color(0x252a27);
  scene.fog=new THREE.FogExp2(0x252a27,.011);
@@ -399,8 +410,8 @@ function initGame(){
   powerPreference:"low-power"
  });
 
+ renderer.setPixelRatio(isMobile()?Math.min(devicePixelRatio,1.2):Math.min(devicePixelRatio,.9));
  renderer.setSize(innerWidth,innerHeight);
- renderer.setPixelRatio(Math.min(devicePixelRatio,1.2));
  renderer.shadowMap.enabled=false;
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -1153,10 +1164,9 @@ function updateRaycast(){
   return;
  }
 
- const ray=new THREE.Raycaster();
- ray.setFromCamera(new THREE.Vector2(0,0),camera);
+ raycaster.setFromCamera(centerNdc,camera);
 
- const itemHits=ray.intersectObjects(items,true);
+ const itemHits=raycaster.intersectObjects(items,true);
  selectedItem=null;
 
  if(itemHits.length&&itemHits[0].distance<3.2){
@@ -1176,7 +1186,7 @@ function updateRaycast(){
   }
  }
 
- const drawerHits=ray.intersectObjects(drawerTargets,false);
+ const drawerHits=raycaster.intersectObjects(drawerTargets,false);
 
  if(drawerHits.length&&drawerHits[0].distance<3.2){
   const index=drawerHits[0].object.userData.drawerIndex;
@@ -1368,7 +1378,7 @@ function updateHeldItem(dt){
  heldItem.rotation.x=THREE.MathUtils.lerp(heldItem.rotation.x,rot.x,smooth);
  heldItem.rotation.y=THREE.MathUtils.lerp(heldItem.rotation.y,rot.y,smooth);
  heldItem.rotation.z=THREE.MathUtils.lerp(heldItem.rotation.z,rot.z,smooth);
- heldItem.scale.lerp(new THREE.Vector3(1,1,1),smooth);
+ heldItem.scale.lerp(heldScale,smooth);
 }
 
 function updateDroppedItems(dt){
@@ -1420,27 +1430,21 @@ function toggleLight(){
 
 function updateMovement(dt){
  if(inspecting)return;
- const forward=new THREE.Vector3();
 
- camera.getWorldDirection(forward);
- forward.y=0;
- forward.normalize();
+ camera.getWorldDirection(moveForward);
+ moveForward.y=0;
+ moveForward.normalize();
+ moveRight.crossVectors(moveForward,worldUp).normalize().negate();
+ moveVector.set(0,0,0);
 
- const right=new THREE.Vector3().crossVectors(
-  forward,
-  new THREE.Vector3(0,1,0)
- ).normalize().negate();
+ if(keys.KeyW||movement.forward)moveVector.add(moveForward);
+ if(keys.KeyS||movement.back)moveVector.sub(moveForward);
+ if(keys.KeyA||movement.left)moveVector.sub(moveRight);
+ if(keys.KeyD||movement.right)moveVector.add(moveRight);
 
- const move=new THREE.Vector3();
-
- if(keys.KeyW||movement.forward)move.add(forward);
- if(keys.KeyS||movement.back)move.sub(forward);
- if(keys.KeyA||movement.left)move.sub(right);
- if(keys.KeyD||movement.right)move.add(right);
-
- if(move.lengthSq()>0){
-  move.normalize().multiplyScalar(3*dt);
-  camera.position.add(move);
+ if(moveVector.lengthSq()>0){
+  moveVector.normalize().multiplyScalar(3*dt);
+  camera.position.add(moveVector);
  }
 
  camera.position.x=THREE.MathUtils.clamp(
@@ -1456,10 +1460,15 @@ function updateMovement(dt){
 
 /* LOOP */
 
-function animate(){
+function animate(timestamp=0){
  requestAnimationFrame(animate);
 
- if(!renderer||!scene)return;
+ if(!renderer||!scene||document.hidden)return;
+
+ // No PC, limita a renderização a 30 FPS para aliviar computadores antigos.
+ // No celular, mantém a taxa normal, pois já está rodando bem.
+ if(!isMobile()&&timestamp-lastRenderTime<1000/30)return;
+ lastRenderTime=timestamp;
 
  const dt=Math.min(clock.getDelta(),.05);
 
@@ -1490,6 +1499,7 @@ function resize(){
 
  camera.aspect=innerWidth/innerHeight;
  camera.updateProjectionMatrix();
+ renderer.setPixelRatio(isMobile()?Math.min(devicePixelRatio,1.2):Math.min(devicePixelRatio,.9));
  renderer.setSize(innerWidth,innerHeight);
 }
 

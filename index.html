@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V2.6</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V2.7</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 2.6 • ATMOSFERA DINÂMICA</div>
+  <div id="status">VERSÃO 2.7 • SISTEMA HOSPITALAR</div>
  </div>
 </div>
 
@@ -117,6 +117,17 @@ let pickupAnimation=0,pickupAnimating=false;
 let audioContext=null;
 let ambienceOsc=null,ambienceGain=null;
 let roomLights=[],roomLightTime=0,flickerTimer=5,flickerDuration=0;
+
+/* V2.7 — elementos animados da tela do computador */
+let computerCanvas=null;
+let computerContext=null;
+let computerTexture=null;
+let computerScreen=null;
+let computerScreenTimer=0;
+let computerGlitchTimer=2;
+let computerGlitchDuration=0;
+let computerScreenTime=0;
+
 const keys={};
 const movement={forward:false,back:false,left:false,right:false};
 
@@ -282,6 +293,185 @@ function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
  mesh.position.set(x,y,z);scene.add(mesh);return mesh;
 }
 
+/* V2.7 — cria a imagem do sistema hospitalar diretamente no jogo */
+function createComputerScreen(){
+ computerCanvas=document.createElement("canvas");
+ computerCanvas.width=512;
+ computerCanvas.height=320;
+ computerContext=computerCanvas.getContext("2d");
+
+ computerTexture=new THREE.CanvasTexture(computerCanvas);
+ computerTexture.colorSpace=THREE.SRGBColorSpace;
+ computerTexture.minFilter=THREE.LinearFilter;
+ computerTexture.magFilter=THREE.LinearFilter;
+
+ const material=new THREE.MeshBasicMaterial({
+  map:computerTexture,
+  toneMapped:false
+ });
+
+ computerScreen=new THREE.Mesh(
+  new THREE.PlaneGeometry(.69,.40),
+  material
+ );
+
+ /* Fica ligeiramente à frente da superfície original do monitor */
+ computerScreen.position.set(3,1.59,-.858);
+ scene.add(computerScreen);
+
+ computerScreenTimer=0;
+ computerGlitchTimer=2;
+ computerGlitchDuration=0;
+ computerScreenTime=0;
+
+ drawComputerScreen();
+}
+
+function drawComputerScreen(){
+ if(!computerContext||!computerTexture)return;
+
+ const ctx=computerContext;
+ const w=512,h=320;
+ const glitch=computerGlitchDuration>0;
+
+ ctx.clearRect(0,0,w,h);
+
+ /* Fundo da interface */
+ const gradient=ctx.createLinearGradient(0,0,w,h);
+ gradient.addColorStop(0,"#071c1c");
+ gradient.addColorStop(.55,"#0b2928");
+ gradient.addColorStop(1,"#061414");
+ ctx.fillStyle=gradient;
+ ctx.fillRect(0,0,w,h);
+
+ /* Linhas de interface */
+ ctx.strokeStyle="rgba(94,213,195,.16)";
+ ctx.lineWidth=1;
+ for(let x=0;x<w;x+=32){
+  ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
+ }
+ for(let y=0;y<h;y+=32){
+  ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke();
+ }
+
+ /* Cabeçalho */
+ ctx.fillStyle="#75e5d2";
+ ctx.font="bold 19px Arial";
+ ctx.fillText("AB GAMES",18,29);
+
+ ctx.fillStyle="#91bdb5";
+ ctx.font="12px Arial";
+ ctx.fillText("SISTEMA HOSPITALAR",116,28);
+
+ ctx.fillStyle="#ff5555";
+ ctx.fillRect(405,12,91,24);
+ ctx.fillStyle="#ffffff";
+ ctx.font="bold 12px Arial";
+ ctx.fillText("ALERTA",426,29);
+
+ ctx.strokeStyle="#5b9d91";
+ ctx.globalAlpha=.65;
+ ctx.beginPath();ctx.moveTo(16,43);ctx.lineTo(496,43);ctx.stroke();
+ ctx.globalAlpha=1;
+
+ /* Dados do paciente */
+ ctx.fillStyle="#8ebbb1";
+ ctx.font="12px Arial";
+ ctx.fillText("REGISTRO DE PACIENTE",20,68);
+
+ ctx.fillStyle="#e0f4ed";
+ ctx.font="bold 23px Arial";
+ ctx.fillText("PACIENTE DESCONHECIDO",20,99);
+
+ ctx.fillStyle="#a7c9c0";
+ ctx.font="14px Arial";
+ ctx.fillText("SETOR: ENFERMARIA",20,127);
+ ctx.fillText("STATUS: EM OBSERVAÇÃO",20,150);
+
+ /* Indicador de atividade */
+ ctx.fillStyle="#0d423b";
+ ctx.fillRect(20,165,472,29);
+ ctx.fillStyle="#75e5d2";
+ ctx.font="bold 12px Arial";
+ ctx.fillText("MONITORAMENTO ATIVO",31,184);
+
+ ctx.fillStyle="#ff5555";
+ ctx.beginPath();
+ ctx.arc(470,179,5,0,Math.PI*2);
+ ctx.fill();
+
+ /* Mensagem principal */
+ ctx.fillStyle="rgba(255,65,65,.13)";
+ ctx.fillRect(16,207,480,72);
+
+ ctx.fillStyle="#ff6565";
+ ctx.font="bold 23px Arial";
+ ctx.fillText("VOCÊ NÃO DEVERIA",27,237);
+ ctx.fillText("ESTAR AQUI.",27,263);
+
+ /* Rodapé */
+ ctx.fillStyle="#9bbab2";
+ ctx.font="11px Arial";
+ ctx.fillText("ÚLTIMO REGISTRO: 03:17",20,303);
+
+ ctx.fillStyle="#ff7777";
+ ctx.fillText("ACESSO NÃO AUTORIZADO",337,303);
+
+ /* Linhas de varredura */
+ ctx.fillStyle="rgba(0,0,0,.16)";
+ for(let y=0;y<h;y+=4){
+  ctx.fillRect(0,y,w,1);
+ }
+
+ /* Pequenas interferências horizontais */
+ if(glitch){
+  const bars=2+Math.floor(Math.random()*5);
+  for(let i=0;i<bars;i++){
+   const y=Math.random()*h;
+   const barH=2+Math.random()*8;
+   ctx.fillStyle=Math.random()>.5
+    ?"rgba(111,255,226,.42)"
+    :"rgba(255,65,65,.35)";
+   ctx.fillRect(Math.random()*80,y,180+Math.random()*250,barH);
+  }
+
+  if(Math.random()>.65){
+   ctx.fillStyle="rgba(220,255,248,.2)";
+   ctx.fillRect(0,0,w,h);
+  }
+ }
+
+ /* Oscilação sutil de brilho */
+ const pulse=.96+Math.sin(computerScreenTime*5)*.025;
+ ctx.fillStyle=`rgba(0,0,0,${1-pulse})`;
+ ctx.fillRect(0,0,w,h);
+
+ computerTexture.needsUpdate=true;
+}
+
+function updateComputerScreen(dt){
+ if(!computerScreen)return;
+
+ computerScreenTime+=dt;
+ computerScreenTimer-=dt;
+ computerGlitchTimer-=dt;
+
+ if(computerGlitchTimer<=0&&computerGlitchDuration<=0){
+  computerGlitchDuration=.12+Math.random()*.28;
+  computerGlitchTimer=2.5+Math.random()*4;
+ }
+
+ if(computerGlitchDuration>0){
+  computerGlitchDuration-=dt;
+ }
+
+ /* Atualiza a textura em intervalos para economizar processamento */
+ if(computerScreenTimer<=0){
+  computerScreenTimer=.12;
+  drawComputerScreen();
+ }
+}
+
 function initGame(){
  scene=new THREE.Scene();raycaster=new THREE.Raycaster();raycaster.far=2.6;
  centerNdc=new THREE.Vector2(0,0);
@@ -319,7 +509,9 @@ function initGame(){
  ];
  roomLightTime=0;flickerTimer=5;flickerDuration=0;
 
- createRoom();createWallDamage();createFurniture();createMedicalEquipment();
+ createRoom();createWallDamage();createFurniture();
+ createComputerScreen();
+ createMedicalEquipment();
  createFloorClutter();createRealisticDetails();createItems();createExtraItems();
  createHand();createFlashlight();
  renderBackpack();updateContextualButtons();
@@ -341,7 +533,6 @@ function updateRoomLights(dt){
 
  if(flickerDuration>0){
   flickerDuration-=dt;
-
   const pulse=Math.random();
 
   if(pulse<.45)flicker=.08;
@@ -421,16 +612,8 @@ function createDrawerCabinet(){
 
  for(let i=0;i<3;i++){
   const g=new THREE.Group();
-
   const closedZ=z+.34;
-
-  g.userData={
-   isDrawer:true,
-   index:i,
-   open:false,
-   targetZ:0,
-   closedZ:closedZ
-  };
+  g.userData={isDrawer:true,index:i,open:false,targetZ:0,closedZ:closedZ};
 
   const bottom=new THREE.Mesh(new THREE.BoxGeometry(.68,.045,.48),mat(0x858b80));g.add(bottom);
   const leftSide=new THREE.Mesh(new THREE.BoxGeometry(.045,.21,.48),mat(0x777e76));leftSide.position.set(-.34,.105,0);g.add(leftSide);
@@ -830,17 +1013,8 @@ function updateRaycast(){
 function updateDrawers(dt){
  for(let i=0;i<drawers.length;i++){
   const drawer=drawers[i];
-
-  const targetZ=drawer.userData.closedZ+
-                (drawer.userData.targetZ||0);
-
-  drawer.position.z=THREE.MathUtils.damp(
-   drawer.position.z,
-   targetZ,
-   8,
-   dt
-  );
-
+  const targetZ=drawer.userData.closedZ+(drawer.userData.targetZ||0);
+  drawer.position.z=THREE.MathUtils.damp(drawer.position.z,targetZ,8,dt);
   if(drawerTargets[i]){
    drawerTargets[i].position.z=drawer.position.z+.34;
   }
@@ -897,6 +1071,7 @@ function animate(){
  updateMovement(dt);updateRaycast();updateDrawers(dt);updateCabinet(dt);
  updateHeldItem(dt);updateDroppedItems(dt);updateBatteryDrain(dt);
  updateRoomLights(dt);
+ updateComputerScreen(dt);
  renderer.render(scene,camera);
 }
 function togglePointerLock(){

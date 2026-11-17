@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V2.5.1</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V2.6</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 2.5.1 • ATMOSFERA DINÂMICA</div>
+  <div id="status">VERSÃO 2.6 • ATMOSFERA DINÂMICA</div>
  </div>
 </div>
 
@@ -327,20 +327,26 @@ function initGame(){
  if(!animationStarted){animationStarted=true;animate()}
 }
 
-/* Iluminação dinâmica: pequenas variações e piscadas ocasionais */
+/* V2.6 — falhas de iluminação mais frequentes e perceptíveis */
 function updateRoomLights(dt){
  roomLightTime+=dt;
  flickerTimer-=dt;
 
  if(flickerTimer<=0 && flickerDuration<=0){
-  flickerDuration=.12+Math.random()*.18;
-  flickerTimer=7+Math.random()*10;
+  flickerDuration=.2+Math.random()*.35;
+  flickerTimer=2.2+Math.random()*3.2;
  }
 
  let flicker=1;
+
  if(flickerDuration>0){
   flickerDuration-=dt;
-  flicker=Math.random()<.55?.22:.58;
+
+  const pulse=Math.random();
+
+  if(pulse<.45)flicker=.08;
+  else if(pulse<.75)flicker=.28;
+  else flicker=.55;
  }
 
  for(const entry of roomLights){
@@ -405,30 +411,52 @@ function createFurniture(){
  box(1.1,.65,.55,5,.48,-2.5,0x777e77);box(1.15,.8,.06,5.9,2.3,-5.75,0x525a56);
  box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
 }
+
+/* V2.6 — gavetas com posição inicial registrada individualmente */
 function createDrawerCabinet(){
  const x=-4.65,z=-.9;
  box(.82,.92,.68,x,.52,z,0x777e76);box(.76,.84,.62,x,.52,z,0x454c47);
  box(.07,.92,.68,x-.42,.52,z,0x858b80);box(.07,.92,.68,x+.42,.52,z,0x858b80);
  box(.88,.08,.72,x,.99,z,0x555d57);box(.88,.08,.72,x,.06,z,0x555d57);
+
  for(let i=0;i<3;i++){
   const g=new THREE.Group();
-  g.userData={isDrawer:true,index:i,open:false,targetZ:0};
+
+  const closedZ=z+.34;
+
+  g.userData={
+   isDrawer:true,
+   index:i,
+   open:false,
+   targetZ:0,
+   closedZ:closedZ
+  };
+
   const bottom=new THREE.Mesh(new THREE.BoxGeometry(.68,.045,.48),mat(0x858b80));g.add(bottom);
   const leftSide=new THREE.Mesh(new THREE.BoxGeometry(.045,.21,.48),mat(0x777e76));leftSide.position.set(-.34,.105,0);g.add(leftSide);
   const rightSide=leftSide.clone();rightSide.position.x=.34;g.add(rightSide);
   const back=new THREE.Mesh(new THREE.BoxGeometry(.68,.21,.045),mat(0x777e76));back.position.set(0,.105,-.22);g.add(back);
   const front=new THREE.Mesh(new THREE.BoxGeometry(.72,.23,.055),mat(0x999b90));front.position.set(0,.115,.255);g.add(front);
   const handle=new THREE.Mesh(new THREE.BoxGeometry(.17,.035,.055),mat(0x555d5b,.45,.7));handle.position.set(0,.13,.31);g.add(handle);
-  const y=.76-i*.29;g.position.set(x,y,z+.34);scene.add(g);drawers.push(g);
+
+  const y=.76-i*.29;
+  g.position.set(x,y,closedZ);
+  scene.add(g);
+  drawers.push(g);
+
   if(i===0){
    const paper=new THREE.Mesh(new THREE.BoxGeometry(.28,.012,.2),mat(0xc2bba5));paper.position.set(0,.035,-.06);g.add(paper);
    const pen=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.22,6),mat(0x292f37));pen.rotation.z=Math.PI/2;pen.position.set(.05,.05,.02);g.add(pen);
   }
   if(i===1){const obj=new THREE.Mesh(new THREE.BoxGeometry(.22,.12,.16),mat(0x9b9b86));obj.position.set(-.1,.08,-.04);g.add(obj)}
   if(i===2){const bandage=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.08,10),mat(0xd2cbb7));bandage.rotation.x=Math.PI/2;bandage.position.set(.08,.07,-.04);g.add(bandage)}
+
   const target=new THREE.Mesh(new THREE.BoxGeometry(.78,.25,.16),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
-  target.position.set(x,y,z+.69);target.userData.drawerIndex=i;target.userData.isDrawerTarget=true;
-  scene.add(target);drawerTargets.push(target);
+  target.position.set(x,y,closedZ+.34);
+  target.userData.drawerIndex=i;
+  target.userData.isDrawerTarget=true;
+  scene.add(target);
+  drawerTargets.push(target);
  }
 }
 
@@ -797,12 +825,28 @@ function updateRaycast(){
  }
  updateContextualButtons();
 }
+
+/* V2.6 — cada gaveta retorna à sua própria posição inicial */
 function updateDrawers(dt){
- for(const drawer of drawers){
-  const baseZ=-.9+.34,targetZ=baseZ+(drawer.userData.targetZ||0);
-  drawer.position.z=THREE.MathUtils.damp(drawer.position.z,targetZ,8,dt);
+ for(let i=0;i<drawers.length;i++){
+  const drawer=drawers[i];
+
+  const targetZ=drawer.userData.closedZ+
+                (drawer.userData.targetZ||0);
+
+  drawer.position.z=THREE.MathUtils.damp(
+   drawer.position.z,
+   targetZ,
+   8,
+   dt
+  );
+
+  if(drawerTargets[i]){
+   drawerTargets[i].position.z=drawer.position.z+.34;
+  }
  }
 }
+
 function updateHeldItem(dt){
  if(!heldItem)return;
  const target=heldItem.userData.holdTarget,rotation=heldItem.userData.holdRotation;

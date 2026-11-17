@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V2.1</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V2.2</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 2.1 • MOCHILA E INVENTÁRIO</div>
+  <div id="status">VERSÃO 2.2 • ARMÁRIO MELHORADO</div>
  </div>
 </div>
 
@@ -109,7 +109,7 @@ let scene,camera,renderer,clock,raycaster,centerNdc;
 let moveForward,moveRight,moveVector,worldUp;
 let items=[],selectedItem=null,heldItem=null;
 let flashlightOn=false,battery=100,gameStarted=false,animationStarted=false;
-let cabinetDoorPivot=null,cabinetTarget=null,cabinetOpen=false;
+let cabinetDoors=[],cabinetTarget=null,cabinetOpen=false;
 let currentTarget=null,drawers=[],drawerTargets=[];
 let hand=null,inspecting=false;
 let backpack=[null,null,null,null],backpackOpen=false;
@@ -332,22 +332,93 @@ function createDrawerCabinet(){
   scene.add(target);drawerTargets.push(target);
  }
 }
+
+/* V2.2 — ARMÁRIO COM DUAS PORTAS ANIMADAS */
 function createInteractiveCabinet(){
  const x=-6,z=-2.7;
- box(1.12,2.35,.82,x,1.25,z,0x777e78);box(.96,2.15,.045,x,1.25,z-.37,0x444b47);
- box(.06,2.15,.7,x-.49,1.25,z,0x858b83);box(.06,2.15,.7,x+.49,1.25,z,0x858b83);
- box(1.02,.08,.72,x,2.4,z,0x858b83);box(1.02,.08,.72,x,.1,z,0x858b83);
+
+ // Estrutura externa
+ box(1.18,2.4,.82,x,1.25,z,0x777e78);
+ box(1.06,2.25,.055,x,1.25,z-.37,0x343c38);
+ box(.07,2.35,.78,x-.56,1.25,z,0x858b83);
+ box(.07,2.35,.78,x+.56,1.25,z,0x858b83);
+ box(1.18,.09,.78,x,2.45,z,0x858b83);
+ box(1.18,.09,.78,x,.05,z,0x858b83);
+
+ // Prateleiras e objetos internos
  for(let i=0;i<3;i++){
-  const y=.72+i*.55;box(.98,.045,.68,x,y,z,0x999e95);box(.98,.07,.045,x,y+.055,z+.34,0x666e67);
-  cylinder(.065,.065,.23,-6.28,.87+i*.55,-2.73,0x929b93,8);box(.2,.18,.22,-5.76,1+i*.55,-2.72,0x9b9b8e);
+  const y=.72+i*.58;
+  box(1.02,.045,.68,x,y,z,0x999e95);
+  box(1.02,.07,.045,x,y+.055,z+.34,0x666e67);
  }
- cabinetDoorPivot=new THREE.Group();cabinetDoorPivot.position.set(-6.53,.1,-2.26);scene.add(cabinetDoorPivot);
- const door=new THREE.Mesh(new THREE.BoxGeometry(.98,2.3,.09),mat(0x858c85));door.position.set(.49,1.15,0);cabinetDoorPivot.add(door);
- const windowMesh=new THREE.Mesh(new THREE.BoxGeometry(.52,.75,.018),mat(0x536b6d));windowMesh.position.set(.49,1.62,.055);cabinetDoorPivot.add(windowMesh);
- const handle=new THREE.Mesh(new THREE.BoxGeometry(.045,.28,.07),mat(0x555d59));handle.position.set(.84,1.05,.08);cabinetDoorPivot.add(handle);
- cabinetTarget=new THREE.Mesh(new THREE.BoxGeometry(1.08,2.25,.15),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
- cabinetTarget.position.set(-6,1.25,-2.18);scene.add(cabinetTarget);
+
+ // Caixas e materiais médicos nas prateleiras
+ box(.34,.22,.28,-6.25,.86,-2.72,0x9b9b8e);
+ box(.22,.16,.2,-5.78,.86,-2.72,0x777f79);
+ box(.42,.24,.3,-6.18,1.43,-2.72,0xb4b4a7);
+ box(.24,.2,.22,-5.78,2.02,-2.72,0x777f79);
+ cylinder(.07,.07,.2,-6.3,2.02,-2.72,0xd0cabb,10);
+
+ // Duas portas independentes, ligadas à mesma interação
+ const leftPivot=new THREE.Group();
+ leftPivot.position.set(-6.57,.08,-2.25);
+ scene.add(leftPivot);
+
+ const leftDoor=new THREE.Mesh(new THREE.BoxGeometry(.53,2.34,.085),mat(0x858c85));
+ leftDoor.position.set(.265,1.17,0);
+ leftPivot.add(leftDoor);
+
+ const leftWindow=new THREE.Mesh(new THREE.BoxGeometry(.34,.72,.02),mat(0x536b6d));
+ leftWindow.position.set(.265,1.65,.052);
+ leftPivot.add(leftWindow);
+
+ const leftHandle=new THREE.Mesh(new THREE.BoxGeometry(.045,.27,.07),mat(0x555d59,.45,.7));
+ leftHandle.position.set(.46,1.08,.075);
+ leftPivot.add(leftHandle);
+
+ // Detalhes da porta esquerda
+ const leftFrame=new THREE.Mesh(new THREE.BoxGeometry(.43,.035,.018),mat(0x505954));
+ leftFrame.position.set(.265,1.22,.055);
+ leftPivot.add(leftFrame);
+
+ const rightPivot=new THREE.Group();
+ rightPivot.position.set(-5.43,.08,-2.25);
+ scene.add(rightPivot);
+
+ const rightDoor=new THREE.Mesh(new THREE.BoxGeometry(.53,2.34,.085),mat(0x858c85));
+ rightDoor.position.set(-.265,1.17,0);
+ rightPivot.add(rightDoor);
+
+ const rightWindow=new THREE.Mesh(new THREE.BoxGeometry(.34,.72,.02),mat(0x536b6d));
+ rightWindow.position.set(-.265,1.65,.052);
+ rightPivot.add(rightWindow);
+
+ const rightHandle=new THREE.Mesh(new THREE.BoxGeometry(.045,.27,.07),mat(0x555d59,.45,.7));
+ rightHandle.position.set(-.46,1.08,.075);
+ rightPivot.add(rightHandle);
+
+ const rightFrame=new THREE.Mesh(new THREE.BoxGeometry(.43,.035,.018),mat(0x505954));
+ rightFrame.position.set(-.265,1.22,.055);
+ rightPivot.add(rightFrame);
+
+ // Dobradiças visíveis
+ for(const hingeX of [-6.57,-5.43]){
+  for(const hingeY of [.35,1.2,2.15]){
+   cylinder(.035,.035,.12,hingeX,hingeY,-2.19,0x555e59,8);
+  }
+ }
+
+ cabinetDoors=[leftPivot,rightPivot];
+ cabinetDoors.forEach(door=>door.userData.targetRotation=0);
+
+ cabinetTarget=new THREE.Mesh(
+  new THREE.BoxGeometry(1.2,2.35,.2),
+  new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
+ );
+ cabinetTarget.position.set(-6,1.25,-2.15);
+ scene.add(cabinetTarget);
 }
+
 function createMedicalEquipment(){
  box(1.5,.12,.7,1.2,.8,-3.8,0x777f78);box(1.42,.1,.65,1.2,.92,-3.8,0xb4b4a7);
  for(const x of [.6,1.8])for(const z of [-4.05,-3.55])box(.055,.7,.055,x,.38,z,0x4e5652);
@@ -429,7 +500,7 @@ function updateContextualButtons(){
  const usableTarget=!!currentTarget&&!(currentTarget.userData.pickable&&heldItem);
  $("use").classList.toggle("visible",usableTarget);
  if(!usableTarget)$("use").textContent="";
- else if(currentTarget===cabinetTarget)$("use").textContent=cabinetOpen?"FECHAR":"ABRIR";
+ else if(currentTarget===cabinetTarget)$("use").textContent=cabinetOpen?"FECHAR ARMÁRIO":"ABRIR ARMÁRIO";
  else if(currentTarget.userData.isDrawerTarget){
   const drawer=drawers[currentTarget.userData.drawerIndex];
   $("use").textContent=drawer.userData.open?"FECHAR GAVETA":"ABRIR GAVETA";
@@ -502,10 +573,6 @@ function toggleBackpack(){
  if(inspecting)return;
  openBackpack();
 }
-
-/* V2.1: seleção dos quatro espaços.
-   Com a mochila aberta, o toque seleciona o espaço.
-   Com a mochila fechada, as teclas 1–4 acessam diretamente o espaço. */
 function selectBackpackSlot(index,quick=false){
  if(!backpackOpen&&!quick)return;
  const stored=backpack[index],oldItem=heldItem;
@@ -543,17 +610,35 @@ function selectBackpackSlot(index,quick=false){
  $("message").textContent=oldItem?"Objetos trocados com sucesso.":"Objeto equipado: "+heldItem.userData.name+".";
  updateContextualButtons();
 }
+
+/* Anima as duas portas suavemente até a posição desejada. */
+function updateCabinet(dt){
+ if(!cabinetDoors.length)return;
+ const openAngle=1.18;
+ cabinetDoors[0].userData.targetRotation=cabinetOpen?-openAngle:0;
+ cabinetDoors[1].userData.targetRotation=cabinetOpen?openAngle:0;
+ for(const door of cabinetDoors){
+  door.rotation.y=THREE.MathUtils.damp(
+   door.rotation.y,
+   door.userData.targetRotation,
+   7,
+   dt
+  );
+ }
+}
+
 function interact(){
  if(backpackOpen||inspecting)return;
  if(currentTarget){
   if(currentTarget===cabinetTarget){
-   cabinetOpen=!cabinetOpen;cabinetDoorPivot.rotation.y=cabinetOpen?-Math.PI/1.8:0;
-   $("message").textContent=cabinetOpen?"Armário aberto.":"Armário fechado.";updateContextualButtons();return;
+   cabinetOpen=!cabinetOpen;
+   $("message").textContent=cabinetOpen?"As duas portas do armário estão abrindo.":"As portas do armário estão fechando.";
+   updateContextualButtons();return;
   }
   if(currentTarget.userData&&currentTarget.userData.isDrawerTarget){
    const index=currentTarget.userData.drawerIndex,drawer=drawers[index];
    drawer.userData.open=!drawer.userData.open;
-   drawer.userData.targetZ=drawer.userData.open?.42:0;
+   drawer.userData.targetZ=drawer.userData.open ? .42 : 0;
    $("message").textContent=drawer.userData.open?"Gaveta aberta.":"Gaveta fechada.";
    updateContextualButtons();return;
   }
@@ -642,7 +727,7 @@ function updateMovement(dt){
 function animate(){
  requestAnimationFrame(animate);if(!renderer||!scene||!camera)return;
  const dt=Math.min(clock.getDelta(),.05);
- updateMovement(dt);updateRaycast();updateDrawers(dt);updateHeldItem(dt);
+ updateMovement(dt);updateRaycast();updateDrawers(dt);updateCabinet(dt);updateHeldItem(dt);
  updateDroppedItems(dt);updateBatteryDrain(dt);renderer.render(scene,camera);
 }
 function togglePointerLock(){
@@ -672,6 +757,7 @@ document.addEventListener("keydown",e=>{
   case "Digit2":selectBackpackSlot(1,true);break;
   case "Digit3":selectBackpackSlot(2,true);break;
   case "Digit4":selectBackpackSlot(3,true);break;
+  case "KeyG":storeHeldItem();break;
  }
 });
 document.addEventListener("keyup",e=>{keys[e.code]=false});

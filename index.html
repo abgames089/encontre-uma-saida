@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -223,736 +224,795 @@ function makeCanvasTexture(kind){
  texture.anisotropy=2;
  return texture;
 }
- function initGame(){
+function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
+ const tex=texture.clone();tex.needsUpdate=true;tex.repeat.set(repeatX,repeatY);
+ const material=new THREE.MeshStandardMaterial({map:tex,roughness:.96,metalness:0});
+ const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+ mesh.position.set(x,y,z);scene.add(mesh);return mesh;
+}
+
+function initGame(){
  scene=new THREE.Scene();
- scene.background=new THREE.Color(0x171b1b);
- scene.fog=new THREE.FogExp2(0x171b1b,.045);
-
- camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,100);
- camera.position.set(0,1.7,4);
- camera.rotation.order="YXZ";
-
- renderer=new THREE.WebGLRenderer({antialias:!isMobile(),powerPreference:"high-performance"});
- renderer.setSize(innerWidth,innerHeight);
- renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile()?1.5:2));
- renderer.shadowMap.enabled=!isMobile();
- renderer.shadowMap.type=THREE.PCFSoftShadowMap;
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1;
- document.body.appendChild(renderer.domElement);
- renderer.domElement.style.position="fixed";
- renderer.domElement.style.inset="0";
- renderer.domElement.style.zIndex="1";
-
- $("hud").style.zIndex="5";
- $("controls").style.zIndex="8";
-
- clock=new THREE.Clock();
  raycaster=new THREE.Raycaster();
  centerNdc=new THREE.Vector2(0,0);
  moveForward=new THREE.Vector3();
  moveRight=new THREE.Vector3();
  moveVector=new THREE.Vector3();
  worldUp=new THREE.Vector3(0,1,0);
+ heldScale=new THREE.Vector3(1,1,1);
+
+ scene.background=new THREE.Color(0x252a27);
+ scene.fog=new THREE.FogExp2(0x252a27,.011);
+ camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
+ camera.position.set(0,1.65,4.2);
+ camera.rotation.order="YXZ";
+
+ renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"low-power"});
+ renderer.setPixelRatio(isMobile()?Math.min(devicePixelRatio,1.2):Math.min(devicePixelRatio,.9));
+ renderer.setSize(innerWidth,innerHeight);
+ renderer.shadowMap.enabled=false;
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.08;
+ document.body.appendChild(renderer.domElement);
+ clock=new THREE.Clock();
+
+ scene.add(new THREE.AmbientLight(0xffffff,.48));
+ scene.add(new THREE.HemisphereLight(0xdce5e2,0x454b46,.38));
+ const ceilingLight=new THREE.PointLight(0xe5e9e3,1.25,21);
+ ceilingLight.position.set(0,3.2,0);scene.add(ceilingLight);
+ const leftLight=new THREE.PointLight(0xe5eae6,.32,15);
+ leftLight.position.set(-5,2.5,0);scene.add(leftLight);
+ const rightLight=new THREE.PointLight(0xe5eae6,.32,15);
+ rightLight.position.set(5,2.5,0);scene.add(rightLight);
+ const backLight=new THREE.PointLight(0xdce3df,.25,13);
+ backLight.position.set(0,2.5,-4);scene.add(backLight);
 
  createRoom();
+ createWallDamage();
  createFurniture();
+ createMedicalEquipment();
+ createFloorClutter();
+ createRealisticDetails();
  createItems();
  createHand();
- createLights();
- setupEvents();
- updateBackpackUI();
- animate();
+ createFlashlight();
+ renderBackpack();
+
+ window.addEventListener("resize",resize);
+ if(!animationStarted){animationStarted=true;animate()}
 }
 
 function createRoom(){
  const floorTexture=makeCanvasTexture("floor");
- floorTexture.repeat.set(5,4);
- const floor=new THREE.Mesh(
-  new THREE.PlaneGeometry(16,12),
-  new THREE.MeshStandardMaterial({map:floorTexture,roughness:1})
- );
- floor.rotation.x=-Math.PI/2;
- floor.position.y=0;
- floor.receiveShadow=true;
- scene.add(floor);
-
  const wallTexture=makeCanvasTexture("wall");
- wallTexture.repeat.set(4,2);
+ const ceilingTexture=makeCanvasTexture("ceiling");
+ texturedBox(16,.2,12,0,0,0,floorTexture,4,3);
+ texturedBox(16,.2,12,0,3.5,0,ceilingTexture,4,3);
+ texturedBox(.2,3.5,12,-8,1.75,0,wallTexture,3,1);
+ texturedBox(.2,3.5,12,8,1.75,0,wallTexture,3,1);
+ texturedBox(16,3.5,.2,0,1.75,6,wallTexture,4,1);
+ texturedBox(6.8,3.5,.2,-4.6,1.75,-6,wallTexture,2,1);
+ texturedBox(6.8,3.5,.2,4.6,1.75,-6,wallTexture,2,1);
+ texturedBox(2.4,.65,.2,0,3.175,-6,wallTexture,1,1);
 
- function wall(w,h,x,y,z,ry=0){
-  const m=new THREE.Mesh(
-   new THREE.PlaneGeometry(w,h),
-   new THREE.MeshStandardMaterial({map:wallTexture,roughness:1,side:THREE.DoubleSide})
-  );
-  m.position.set(x,y,z);
-  m.rotation.y=ry;
-  m.receiveShadow=true;
-  scene.add(m);
-  return m;
- }
-
- wall(16,4,0,2,-6);
- wall(16,4,0,2,6,Math.PI);
- wall(12,4,-8,2,0,-Math.PI/2);
- wall(12,4,8,2,0,Math.PI/2);
-
- const ceiling=new THREE.Mesh(
-  new THREE.PlaneGeometry(16,12),
-  mat(0x555b55)
- );
- ceiling.rotation.x=Math.PI/2;
- ceiling.position.y=4;
- scene.add(ceiling);
-
- // Rodapés
- box(16,.16,.12,0,.08,-5.92,0x444a45);
- box(16,.16,.12,0,.08,5.92,0x444a45);
- box(.12,.16,12,-7.92,.08,0,0x444a45);
- box(.12,.16,12,7.92,.08,0,0x444a45);
-
- // Luminárias antigas
- for(let x of [-4,0,4]){
-  box(1.2,.08,.35,x,3.94,0,0x353a36);
-  box(.9,.035,.2,x,3.88,0,0x9a9c83);
+ box(15.7,.16,.08,0,.19,5.86,0x626a63);
+ box(15.7,.16,.08,0,.19,-5.86,0x626a63);
+ box(.08,.16,11.7,-7.86,.19,0,0x626a63);
+ box(.08,.16,11.7,7.86,.19,0,0x626a63);
+ for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
+ box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
+ box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);
+ box(.12,2.85,.18,-1.1,1.425,-5.83,0x444a47);
+ box(.12,2.85,.18,1.1,1.425,-5.83,0x444a47);
+ box(2.3,.12,.18,0,2.85,-5.83,0x444a47);
+ sphere(.75,1.25,-5.78,.045,.045,.045,0xb5ad91);
+ box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
+ box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
+ box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
+ for(let i=0;i<5;i++){
+  const c=new THREE.Mesh(new THREE.BoxGeometry(.67,1.9,.035),
+   new THREE.MeshStandardMaterial({color:0x87918b,transparent:true,opacity:.72,roughness:1}));
+  c.position.set(-4.8+i*.7,1.45,.5);scene.add(c);
  }
 }
 
-function createLights(){
- const ambient=new THREE.AmbientLight(0x849087,.42);
- scene.add(ambient);
-
- const ceilingLight=new THREE.PointLight(0xc4cbb5,18,13,2);
- ceilingLight.position.set(0,3.6,-1);
- scene.add(ceilingLight);
-
- const emergencyLight=new THREE.PointLight(0x9c2520,3,7,2);
- emergencyLight.position.set(-7,2.5,-5.5);
- scene.add(emergencyLight);
-
- const flashlight=new THREE.SpotLight(0xfff2ce,0,18,Math.PI/7,.35,1.4);
- flashlight.position.set(0,0,0);
- flashlight.target.position.set(0,0,-1);
- camera.add(flashlight);
- camera.add(flashlight.target);
- camera.add(new THREE.PointLight(0xffe9bd,0,3));
- scene.add(camera);
-
- camera.userData.flashlight=flashlight;
- camera.userData.flashFill=camera.children[camera.children.length-1];
+function createWallDamage(){
+ const stains=[
+  [-7.87,1,-3,.025,.65,1.2],[-7.87,2.5,2,.025,.55,.8],
+  [7.87,1.2,-3,.025,.8,1.1],[7.87,2.6,2,.025,.5,.7],
+  [-4,1,-5.87,1.4,.45,.025],[4,2.5,-5.87,1.2,.5,.025],
+  [1,1,5.87,1.3,.35,.025]
+ ];
+ for(const s of stains)box(s[3],s[4],s[5],s[0],s[1],s[2],0x626760);
+ for(let i=0;i<24;i++){
+  const side=i%2===0?-7.87:7.87;
+  const p=box(.04,.08+Math.random()*.28,.1+Math.random()*.5,
+   side,.4+Math.random()*2.5,-4.8+Math.random()*9.5,
+   i%3===0?0x555b55:0x777a72);
+  p.rotation.z=(Math.random()-.5)*.25;
+ }
 }
 
 function createFurniture(){
- // Maca hospitalar
- box(2.2,.18,3.4,-3,.85,-1,0x777d78);
- box(2.35,.12,3.5,-3,.72,-1,0x303b38);
- for(const x of [-3.9,-2.1]){
-  for(const z of [-2.3,.3]){
-   cylinder(.055,.055,.75,x,.36,z,0x555c59);
-  }
+ box(2.3,.15,1.05,-3,.85,-1,0x69716d);
+ box(2.18,.16,.94,-3,1.02,-1,0xbab9ad);
+ box(.58,.13,.65,-3,1.17,-.65,0xc2bfb1);
+ box(2.25,.1,.12,-3,.72,-1.5,0x515a57);
+ box(2.25,.1,.12,-3,.72,-.5,0x515a57);
+ for(const x of [-3.95,-2.05])for(const z of [-1.4,-.6]){
+  box(.09,.7,.09,x,.38,z,0x505858);
+  cylinder(.07,.07,.07,x,.08,z,0x303635,8);
  }
- box(1.9,.18,.8,-3,1.05,-2.05,0xaaa99b);
+ createDrawerCabinet();
 
- // Mesa
- box(2,.12,1,3,.95,-3,0x494d47);
- for(const x of [2.2,3.8]){
-  for(const z of [-3.35,-2.65]){
-   box(.09,.95,.09,x,.45,z,0x343a36);
-  }
- }
+ box(2.1,.14,.85,3,1.15,-1,0x858981);
+ for(const x of [2.1,3.9])for(const z of [-1.32,-.68])box(.09,1.05,.09,x,.53,z,0x525a56);
+ box(.85,.58,.12,3,1.58,-.95,0x171e20);
+ box(.72,.43,.025,3,1.59,-.875,0x28474b);
+ box(.15,.2,.15,3,1.23,-.95,0x343a3a);
+ box(.48,.025,.18,3,1.25,-.65,0x252a29);
+ box(.65,.12,.65,4.5,.65,.3,0x424a48);
+ box(.65,.55,.12,4.5,.95,.58,0x424a48);
+ box(.12,.6,.12,4.5,.3,.3,0x555d5a);
+ box(.65,.08,.65,4.5,.08,.3,0x555d5a);
+ box(.65,.12,.65,2.1,.55,1.7,0x555d59);
+ box(.65,.55,.12,2.1,.85,2,0x555d59);
+ createInteractiveCabinet();
+ box(1.5,.9,.6,-6,.48,.2,0x777e76);
+ box(1.5,.08,.62,-6,.95,.2,0x555d57);
+ box(1.15,.12,.65,5,1.1,-2.5,0x999e97);
+ box(1.15,.75,.12,5,.65,-2.8,0x737b75);
+ box(.18,.45,.18,5,1.35,-2.5,0x858c85);
+ box(.06,.3,.06,5,1.35,-2.7,0x515957);
+ box(1.1,.65,.55,5,.48,-2.5,0x777e77);
+ box(1.15,.8,.06,5.9,2.3,-5.75,0x525a56);
+ box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
+}
 
- // Armário
- box(1.7,2.8,.65,6,1.4,-4.8,0x444b47);
- box(1.74,.08,.7,6,2.85,-4.8,0x303632);
- box(.07,2.65,.08,6,1.4,-4.43,0x252b28);
- for(let y of [.65,1.4,2.15]){
-  box(1.5,.045,.04,6,y,-4.4,0x858b80);
- }
+function createDrawerCabinet(){
+ const x=-4.65,z=-.9;
+ box(.82,.92,.68,x,.52,z,0x777e76);
+ box(.76,.84,.62,x,.52,z,0x454c47);
+ box(.07,.92,.68,x-.42,.52,z,0x858b80);
+ box(.07,.92,.68,x+.42,.52,z,0x858b80);
+ box(.88,.08,.72,x,.99,z,0x555d57);
+ box(.88,.08,.72,x,.06,z,0x555d57);
 
- // Porta do armário
- cabinetDoorPivot=new THREE.Group();
- cabinetDoorPivot.position.set(5.15,1.4,-4.42);
- scene.add(cabinetDoorPivot);
- const door=new THREE.Mesh(new THREE.BoxGeometry(1.7,2.65,.09),mat(0x59605a));
- door.position.set(.85,0,0);
- cabinetDoorPivot.add(door);
- const knob=sphere(1.52,0,.09,.07,.07,.07,0xb3a57d);
- cabinetDoorPivot.add(knob);
-
- // Gaveteiro
- box(1.5,1.8,.85,5, .9,2.5,0x515750);
- drawers=[];
- drawerTargets=[];
  for(let i=0;i<3;i++){
-  const y=.35+i*.55;
-  const drawer=new THREE.Group();
-  drawer.position.set(5,y,2.05);
-  scene.add(drawer);
-  const front=new THREE.Mesh(new THREE.BoxGeometry(1.42,.48,.09),mat(0x747a70));
-  front.position.z=.4;
-  drawer.add(front);
-  const handle=new THREE.Mesh(new THREE.BoxGeometry(.32,.045,.06),mat(0xb4aa91));
-  handle.position.set(0,0,.48);
-  drawer.add(handle);
-  drawers.push(drawer);
-  drawerTargets.push({type:"drawer",index:i,mesh:front});
- }
+  const g=new THREE.Group();
+  g.userData.isDrawer=true;g.userData.index=i;g.userData.open=false;g.userData.targetZ=0;
+  const bottom=new THREE.Mesh(new THREE.BoxGeometry(.68,.045,.48),mat(0x858b80));g.add(bottom);
+  const leftSide=new THREE.Mesh(new THREE.BoxGeometry(.045,.21,.48),mat(0x777e76));
+  leftSide.position.set(-.34,.105,0);g.add(leftSide);
+  const rightSide=leftSide.clone();rightSide.position.x=.34;g.add(rightSide);
+  const back=new THREE.Mesh(new THREE.BoxGeometry(.68,.21,.045),mat(0x777e76));
+  back.position.set(0,.105,-.22);g.add(back);
+  const front=new THREE.Mesh(new THREE.BoxGeometry(.72,.23,.055),mat(0x999b90));
+  front.position.set(0,.115,.255);g.add(front);
+  const handle=new THREE.Mesh(new THREE.BoxGeometry(.17,.035,.055),mat(0x555d5b,.45,.7));
+  handle.position.set(0,.13,.31);g.add(handle);
+  const y=.76-i*.29;
+  g.position.set(x,y,z+.34);scene.add(g);drawers.push(g);
 
- // Cadeiras
- for(const x of [-5,1]){
-  box(.9,.12,.9,x,.55,3,0x414741);
-  for(const dx of [-.35,.35]){
-   for(const dz of [-.35,.35]){
-    box(.08,.55,.08,x+dx,.27,3+dz,0x343a36);
-   }
+  if(i===0){
+   const paper=new THREE.Mesh(new THREE.BoxGeometry(.28,.012,.2),mat(0xc2bba5));
+   paper.position.set(0,.035,-.06);g.add(paper);
+   const pen=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.22,6),mat(0x292f37));
+   pen.rotation.z=Math.PI/2;pen.position.set(.05,.05,.02);g.add(pen);
   }
-  box(.9,.9,.12,x,1,3.4,0x414741);
+  if(i===1){
+   const obj=new THREE.Mesh(new THREE.BoxGeometry(.22,.12,.16),mat(0x9b9b86));
+   obj.position.set(-.1,.08,-.04);g.add(obj);
+  }
+  if(i===2){
+   const bandage=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.08,10),mat(0xd2cbb7));
+   bandage.rotation.x=Math.PI/2;bandage.position.set(.08,.07,-.04);g.add(bandage);
+  }
+  const target=new THREE.Mesh(new THREE.BoxGeometry(.78,.25,.16),
+   new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  target.position.set(x,y,z+.69);target.userData.drawerIndex=i;
+  scene.add(target);drawerTargets.push(target);
  }
-
- // Detalhes da enfermaria
- box(2.3,.06,.08,0,2.9,-5.85,0x343b36);
- box(.08,.65,.08,-1,2.55,-5.85,0x343b36);
- box(.08,.65,.08,1,2.55,-5.85,0x343b36);
-
- // Mancha antiga no piso
- const stain=new THREE.Mesh(
-  new THREE.CircleGeometry(.7,24),
-  new THREE.MeshBasicMaterial({color:0x292c29,transparent:true,opacity:.25})
- );
- stain.rotation.x=-Math.PI/2;
- stain.position.set(1,.012,-1);
- scene.add(stain);
 }
 
-function makeItem(name,color,x,y,z,type){
- const geometry=type==="card"
-  ?new THREE.BoxGeometry(.22,.025,.14)
-  :type==="flashlight"
-  ?new THREE.CylinderGeometry(.055,.07,.38,12)
-  :new THREE.BoxGeometry(.22,.18,.16);
-
- const mesh=new THREE.Mesh(geometry,mat(color,.55,.25));
- mesh.position.set(x,y,z);
- mesh.castShadow=true;
- mesh.userData.itemName=name;
- mesh.userData.itemType=type;
- mesh.userData.pickable=true;
- scene.add(mesh);
-
- const item={
-  name,type,mesh,stored:false,
-  originalPosition:mesh.position.clone(),
-  originalRotation:mesh.rotation.clone()
- };
- items.push(item);
- return item;
+function createInteractiveCabinet(){
+ const x=-6,z=-2.7;
+ box(1.12,2.35,.82,x,1.25,z,0x777e78);
+ box(.96,2.15,.045,x,1.25,z-.37,0x444b47);
+ box(.06,2.15,.7,x-.49,1.25,z,0x858b83);
+ box(.06,2.15,.7,x+.49,1.25,z,0x858b83);
+ box(1.02,.08,.72,x,2.4,z,0x858b83);
+ box(1.02,.08,.72,x,.1,z,0x858b83);
+ for(let i=0;i<3;i++){
+  const y=.72+i*.55;
+  box(.98,.045,.68,x,y,z,0x999e95);
+  box(.98,.07,.045,x,y+.055,z+.34,0x666e67);
+  cylinder(.065,.065,.23,-6.28,.87+i*.55,-2.73,0x929b93,8);
+  box(.2,.18,.22,-5.76,1+i*.55,-2.72,0x9b9b8e);
+ }
+ cabinetDoorPivot=new THREE.Group();
+ cabinetDoorPivot.position.set(-6.53,.1,-2.26);scene.add(cabinetDoorPivot);
+ const door=new THREE.Mesh(new THREE.BoxGeometry(.98,2.3,.09),mat(0x858c85));
+ door.position.set(.49,1.15,0);cabinetDoorPivot.add(door);
+ const windowMesh=new THREE.Mesh(new THREE.BoxGeometry(.52,.75,.018),mat(0x536b6d));
+ windowMesh.position.set(.49,1.62,.055);cabinetDoorPivot.add(windowMesh);
+ const handle=new THREE.Mesh(new THREE.BoxGeometry(.045,.28,.07),mat(0x555d59));
+ handle.position.set(.84,1.05,.08);cabinetDoorPivot.add(handle);
+ cabinetTarget=new THREE.Mesh(new THREE.BoxGeometry(1.08,2.25,.15),
+  new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+ cabinetTarget.position.set(-6,1.25,-2.18);scene.add(cabinetTarget);
 }
 
+function createMedicalEquipment(){
+ cylinder(.028,.028,1.9,-5.6,1.1,1.7,0x858d89,8);
+ box(.7,.05,.05,-5.6,2.05,1.7,0x858d89);
+ box(.48,.08,.48,-5.6,.1,1.7,0x555d59);
+ cylinder(.24,.2,.65,6,.33,.5,0x68776e,12);
+ cylinder(.25,.25,.06,6,.68,.5,0x444e49,12);
+ box(.9,.12,.55,5,.8,1.5,0x858c85);
+ box(.08,.7,.08,4.65,.4,1.3,0x555d59);
+ box(.08,.7,.08,5.35,.4,1.3,0x555d59);
+ box(.9,.08,.55,5,.42,1.5,0x69726c);
+ for(const x of [4.65,5.35])cylinder(.065,.065,.055,x,.08,1.3,0x303735,8);
+}
+
+function createFloorClutter(){
+ const fallenChair=new THREE.Group();
+ const seat=new THREE.Mesh(new THREE.BoxGeometry(.65,.12,.65),mat(0x555e58));
+ fallenChair.add(seat);
+ const back=new THREE.Mesh(new THREE.BoxGeometry(.65,.55,.12),mat(0x454e49));
+ back.position.set(0,.25,-.27);fallenChair.add(back);
+ fallenChair.position.set(1,.18,2.5);
+ fallenChair.rotation.z=1.05;fallenChair.rotation.y=.5;scene.add(fallenChair);
+ const tray=box(.85,.035,.55,2.4,.14,2.8,0x858b83);tray.rotation.y=.4;
+ for(let i=0;i<4;i++){
+  const bottle=new THREE.Mesh(new THREE.CylinderGeometry(.065,.08,.27,8),mat(i%2?0x9da69a:0x747e77));
+  bottle.rotation.z=Math.PI/2+(Math.random()-.5)*.3;
+  bottle.position.set(-1+Math.random()*2,.18,2+Math.random()*2);scene.add(bottle);
+ }
+ for(let i=0;i<5;i++){
+  const paper=box(.28,.012,.36,-2+Math.random()*2,.12,2+Math.random()*2,0xb8b5a5);
+  paper.rotation.y=Math.random()*Math.PI;
+ }
+ box(.55,.08,.4,4,.13,2.6,0x777f77);
+ box(.55,.06,.06,4,.28,2.4,0x858c83);
+ box(.06,.22,.4,3.73,.2,2.6,0x858c83);
+ box(.06,.22,.4,4.27,.2,2.6,0x858c83);
+ for(let i=0;i<12;i++){
+  const piece=box(.35+Math.random()*.5,.035,.06+Math.random()*.08,
+   -5+Math.random()*10,.14,-4+Math.random()*8,i%2?0x625748:0x777d75);
+  piece.rotation.y=Math.random()*Math.PI;
+ }
+}
+
+function createRealisticDetails(){
+ for(let x=-7.5;x<=7.5;x+=1.5)box(.012,.006,11.6,x,.106,0,0x505650);
+ for(let z=-5.4;z<=5.4;z+=1.35)box(15.7,.006,.012,0,.107,z,0x505650);
+ for(let i=0;i<24;i++){
+  const stain=new THREE.Mesh(new THREE.CircleGeometry(.12+Math.random()*.32,8),
+   new THREE.MeshBasicMaterial({color:0x414a44,transparent:true,opacity:.22}));
+  stain.rotation.x=-Math.PI/2;
+  stain.position.set(-7+Math.random()*14,.109,-5+Math.random()*10);
+  stain.scale.set(1.4,.7,1);scene.add(stain);
+ }
+ for(const side of [-1,1])for(let i=0;i<14;i++){
+  const crack=box(.018,.3+Math.random()*.6,.012,side*7.885,
+   .35+Math.random()*2.7,-5+Math.random()*10,0x505851);
+  crack.rotation.x=(Math.random()-.5)*.2;
+  crack.rotation.z=(Math.random()-.5)*.08;
+ }
+ for(const x of [-3.82,-2.18])box(.012,.008,.82,x,1.105,-1,0x858b82);
+ box(1.92,.025,.035,3,1.235,-1.43,0x555d57);
+ for(const x of [2.35,3.65]){
+  box(.42,.22,.018,x,.91,-1.435,0x69716a);
+  box(.12,.025,.035,x,.93,-1.455,0x404744);
+ }
+ cylinder(.035,.035,.22,5,1.31,-2.72,0x78827c,8);
+ cylinder(.025,.025,.16,5,1.42,-2.81,0x78827c,8);
+ box(.22,.025,.035,5,1.49,-2.78,0x626c68);
+ cylinder(.035,.035,7.5,7.72,2.72,-.2,0x515a55,8).rotation.z=Math.PI/2;
+ for(let i=0;i<5;i++)box(.08,.08,.08,7.67,2.72,-3.2+i*1.45,0x353d39);
+ const curve=new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-5.8,3.22,-5.78),new THREE.Vector3(-4.8,3.12,-5.78),
+  new THREE.Vector3(-4.25,2.98,-5.78),new THREE.Vector3(-3.6,3.12,-5.78)
+ ]);
+ const wire=new THREE.Mesh(new THREE.TubeGeometry(curve,16,.018,5,false),mat(0x303735,.9,.1));
+ scene.add(wire);
+}
+
+function makeItem(type,x,y,z){
+ const group=new THREE.Group();
+ group.userData.type=type;
+ group.userData.name=type==="flashlight"?"Lanterna":"Cartão de acesso";
+ group.userData.pickable=true;
+ group.userData.stored=false;
+ group.userData.restHeight=type==="flashlight"?.075:.013;
+ group.userData.physics=false;
+ group.userData.velocity=new THREE.Vector3(0,0,0);
+ if(type==="flashlight"){
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(.075,.075,.48,10),mat(0x30383c));
+  body.rotation.x=Math.PI/2;group.add(body);
+  const lens=new THREE.Mesh(new THREE.CylinderGeometry(.078,.078,.025,10),
+   new THREE.MeshBasicMaterial({color:0xd7e6ec}));
+  lens.rotation.x=Math.PI/2;lens.position.z=-.245;group.add(lens);
+  const grip=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.12,10),mat(0x4b5558));
+  grip.rotation.x=Math.PI/2;grip.position.z=.12;group.add(grip);
+ }else{
+  const card=new THREE.Mesh(new THREE.BoxGeometry(.24,.025,.16),mat(0xb5c8d0));
+  group.add(card);
+  const stripe=new THREE.Mesh(new THREE.BoxGeometry(.15,.006,.025),mat(0x273c4a));
+  stripe.position.y=.016;group.add(stripe);
+ }
+ group.position.set(x,y,z);scene.add(group);items.push(group);return group;
+}
 function createItems(){
- makeItem("Lanterna",0x8d9388,-2,1.15,-1.5,"flashlight");
- makeItem("Cartão de acesso",0x3c91a0,3,1.08,-2.6,"card");
- makeItem("Chave pequena",0xb2a16e,4.6,1.02,2.1,"key");
- makeItem("Fita de identificação",0x9b9b85,-4,1.05,1.8,"tag");
+ makeItem("flashlight",-6,.82,-2.72);
+ makeItem("card",3.5,1.238,-1.25);
 }
 
 function createHand(){
  hand=new THREE.Group();
- const palm=new THREE.Mesh(
-  new THREE.BoxGeometry(.13,.12,.2),
-  mat(0x8c705d)
- );
- palm.position.set(.32,-.28,-.55);
- hand.add(palm);
-
- const fingers=[];
+ const skin=mat(0x98745f);hand.userData.fingers=[];
+ const palm=new THREE.Mesh(new THREE.BoxGeometry(.12,.16,.09),skin);hand.add(palm);
  for(let i=0;i<4;i++){
-  const finger=new THREE.Mesh(
-   new THREE.BoxGeometry(.035,.045,.13),
-   mat(0x987964)
-  );
-  finger.position.set(.25+i*.045,-.32,-.66);
-  hand.add(finger);
-  fingers.push(finger);
+  const finger=new THREE.Mesh(new THREE.CapsuleGeometry(.018,.075,3,5),skin);
+  finger.position.set(-.045+i*.03,-.105,-.005);hand.add(finger);hand.userData.fingers.push(finger);
  }
- camera.add(hand);
- hand.visible=true;
+ const thumb=new THREE.Mesh(new THREE.CapsuleGeometry(.02,.07,3,5),skin);
+ thumb.position.set(.085,-.015,.005);thumb.rotation.z=-.7;hand.add(thumb);hand.userData.thumb=thumb;
+ hand.position.set(.34,-.32,-.62);hand.rotation.set(-.15,.1,-.15);
+ camera.add(hand);scene.add(camera);
 }
-
-function createHeldVisual(item){
- if(!item)return;
- item.mesh.position.set(.32,-.22,-.7);
- item.mesh.rotation.set(0,0,0);
- item.mesh.scale.setScalar(item.type==="flashlight"?.75:1);
- camera.add(item.mesh);
- item.mesh.userData.isHeld=true;
-}
-
-function removeHeldVisual(item){
- if(!item)return;
- camera.remove(item.mesh);
- scene.add(item.mesh);
- item.mesh.userData.isHeld=false;
- item.mesh.scale.setScalar(1);
-}
-
-function setMessage(text){
- $("message").textContent=text;
-}
-
-function updateHandUI(){
- $("inventory").textContent="MÃO: "+(heldItem?heldItem.name:"VAZIA");
- $("battery").textContent=flashlightOn
-  ?"LANTERNA: LIGADA • "+Math.ceil(battery)+"%"
-  :"LANTERNA: DESLIGADA • "+Math.ceil(battery)+"%";
-}
-
-function updateBackpackUI(){
- document.querySelectorAll(".backpackSlot").forEach((button,index)=>{
-  const item=backpack[index];
-  button.innerHTML=`ESPAÇO ${index+1}<br>${item?item.name:"VAZIO"}`;
+function setHandGrip(gripping){
+ if(!hand)return;
+ hand.userData.fingers.forEach((finger,i)=>{
+  finger.rotation.x=gripping?-.55:0;
+  finger.rotation.z=gripping?(i-1.5)*.035:0;
  });
- updateHandUI();
+ if(hand.userData.thumb)hand.userData.thumb.rotation.z=gripping?-.95:-.7;
+ hand.rotation.z=gripping?-.23:-.15;
+}
+function createFlashlight(){
+ const light=new THREE.SpotLight(0xfff4df,0,20,Math.PI/7,.38,1);
+ light.position.set(0,0,0);light.target.position.set(0,0,-1);
+ camera.add(light);camera.add(light.target);camera.userData.flashlight=light;
 }
 
+function toggleCabinet(){
+ cabinetOpen=!cabinetOpen;
+ $("message").textContent=cabinetOpen?"Armário aberto.":"Armário fechado.";
+}
+function updateCabinetDoor(dt){
+ if(cabinetDoorPivot)cabinetDoorPivot.rotation.y=THREE.MathUtils.lerp(
+  cabinetDoorPivot.rotation.y,cabinetOpen?-1.35:0,Math.min(1,dt*5));
+}
+function toggleDrawer(index){
+ const drawer=drawers[index];if(!drawer)return;
+ drawer.userData.open=!drawer.userData.open;
+ drawer.userData.targetZ=drawer.userData.open?.48:0;
+ $("message").textContent=drawer.userData.open?
+  "Gaveta "+(index+1)+" aberta.":"Gaveta "+(index+1)+" fechada.";
+}
+function updateDrawers(dt){
+ for(const d of drawers){
+  const target=d.userData.targetZ||0;
+  d.position.z=THREE.MathUtils.lerp(d.position.z,(-.9+.34)+target,Math.min(1,dt*7));
+ }
+}
+
+/* MOCHILA V1.9 */
+
+function updateInventoryText(){
+ $("inventory").textContent=heldItem?
+  "MÃO: "+heldItem.userData.name.toUpperCase():
+  "MÃO: VAZIA";
+}
+function renderBackpack(){
+ document.querySelectorAll(".backpackSlot").forEach((slot,index)=>{
+  const item=backpack[index];
+  slot.innerHTML=item?
+   "ESPAÇO "+(index+1)+"<br>"+item.userData.name.toUpperCase():
+   "ESPAÇO "+(index+1)+"<br>VAZIO";
+ });
+}
 function openBackpack(){
- if(backpackOpen||inspecting)return;
- backpackOpen=true;
- currentTarget=null;
- selectedItem=null;
+ if(inspecting)return;
+ backpackOpen=true;currentTarget=null;selectedItem=null;
+ renderBackpack();
  $("backpackPanel").classList.remove("hidden");
- setMessage("Selecione um espaço da mochila.");
+ $("message").textContent="Selecione um espaço da mochila.";
 }
-
 function closeBackpack(){
  backpackOpen=false;
  $("backpackPanel").classList.add("hidden");
- currentTarget=null;
- selectedItem=null;
- setMessage("Continue explorando.");
+ $("message").textContent="Explore a enfermaria.";
 }
-
+function toggleBackpack(){
+ if(backpackOpen)closeBackpack();else openBackpack();
+}
 function storeHeldItem(){
+ if(backpackOpen||inspecting)return;
  if(!heldItem){
-  setMessage("Você não está segurando nenhum objeto.");
-  return;
+  $("message").textContent="Você não está segurando nenhum objeto.";return;
  }
- const empty=backpack.findIndex(slot=>slot===null);
- if(empty===-1){
-  setMessage("A mochila está cheia.");
-  return;
- }
- if(heldItem.type==="flashlight"&&flashlightOn){
-  toggleLight(true);
+ const emptySlot=backpack.findIndex(slot=>slot===null);
+ if(emptySlot===-1){
+  $("message").textContent="A mochila está cheia!";return;
  }
  const item=heldItem;
- backpack[empty]=item;
- item.stored=true;
- removeHeldVisual(item);
+ if(item.userData.type==="flashlight"&&flashlightOn){
+  flashlightOn=false;camera.userData.flashlight.intensity=0;
+  $("battery").textContent="LANTERNA: DESLIGADA";
+ }
+ camera.remove(item);
+ item.userData.stored=true;
+ item.userData.physics=false;
+ item.userData.velocity.set(0,0,0);
+ backpack[emptySlot]=item;
  heldItem=null;
- updateBackpackUI();
- setMessage(item.name+" guardado na mochila.");
+ setHandGrip(false);
+ updateInventoryText();renderBackpack();
+ $("message").textContent=item.userData.name+" guardado no espaço "+(emptySlot+1)+".";
 }
-
 function selectBackpackSlot(index){
- if(index<0||index>=backpack.length)return;
-
- const storedItem=backpack[index];
-
- // Espaço vazio: guarda o objeto que está na mão.
- if(!storedItem){
-  if(!heldItem){
-   setMessage("Esse espaço está vazio.");
-   return;
+ if(!backpackOpen)return;
+ const stored=backpack[index];
+ if(!stored){
+  $("message").textContent="Esse espaço está vazio.";return;
+ }
+ const oldItem=heldItem;
+ if(oldItem){
+  if(oldItem.userData.type==="flashlight"&&flashlightOn){
+   flashlightOn=false;camera.userData.flashlight.intensity=0;
+   $("battery").textContent="LANTERNA: DESLIGADA";
   }
-  const item=heldItem;
-  if(item.type==="flashlight"&&flashlightOn)toggleLight(true);
-  backpack[index]=item;
-  item.stored=true;
-  removeHeldVisual(item);
-  heldItem=null;
-  updateBackpackUI();
-  closeBackpack();
-  setMessage(item.name+" guardado no espaço "+(index+1)+".");
-  return;
+  camera.remove(oldItem);
+  oldItem.userData.stored=true;
+  oldItem.userData.physics=false;
+  oldItem.userData.velocity.set(0,0,0);
  }
-
- // Espaço ocupado e mão vazia: retira o objeto.
- if(!heldItem){
-  backpack[index]=null;
-  storedItem.stored=false;
-  heldItem=storedItem;
-  createHeldVisual(storedItem);
-  updateBackpackUI();
-  closeBackpack();
-  setMessage(storedItem.name+" retirado da mochila.");
-  return;
- }
-
- // Espaço ocupado e mão ocupada: troca os objetos.
- const oldHeld=heldItem;
- if(oldHeld.type==="flashlight"&&flashlightOn)toggleLight(true);
- removeHeldVisual(oldHeld);
- oldHeld.stored=true;
-
- backpack[index]=oldHeld;
- heldItem=storedItem;
- storedItem.stored=false;
- createHeldVisual(storedItem);
-
- updateBackpackUI();
- closeBackpack();
- setMessage("Objetos trocados.");
+ backpack[index]=oldItem;
+ heldItem=stored;
+ heldItem.userData.stored=false;
+ heldItem.userData.physics=false;
+ heldItem.userData.velocity.set(0,0,0);
+ camera.add(heldItem);
+ heldItem.userData.holdTarget=heldItem.userData.type==="flashlight"?
+  new THREE.Vector3(.27,-.22,-.58):
+  new THREE.Vector3(.27,-.25,-.52);
+ heldItem.userData.holdRotation=heldItem.userData.type==="flashlight"?
+  new THREE.Euler(0,0,0):
+  new THREE.Euler(-.18,0,0);
+ heldItem.position.set(.12,-.12,-.38);
+ heldItem.rotation.set(.2,0,.18);
+ heldItem.scale.setScalar(.92);
+ setHandGrip(true);
+ updateInventoryText();renderBackpack();closeBackpack();
+ $("message").textContent="Objeto equipado: "+heldItem.userData.name+".";
 }
 
-function pickItem(item){
- if(!item||heldItem||backpackOpen)return;
- if(item.stored)return;
+/* DETECÇÃO E INTERAÇÃO */
 
- heldItem=item;
- item.mesh.userData.isHeld=true;
- createHeldVisual(item);
+function updateRaycast(){
+ if(inspecting)return;
+ if(backpackOpen){
+  selectedItem=null;currentTarget=null;
+  $("use").textContent="INTERAGIR";return;
+ }
+ if(heldItem){
+  selectedItem=null;currentTarget=null;
+  $("message").textContent="Q / SOLTAR OBJETO";
+  $("use").textContent="SOLTAR";return;
+ }
+ raycaster.setFromCamera(centerNdc,camera);
+ const availableItems=items.filter(item=>!item.userData.stored);
+ const itemHits=raycaster.intersectObjects(availableItems,true);
  selectedItem=null;
- currentTarget=null;
- updateHandUI();
- setMessage(item.name+" recolhido.");
+ if(itemHits.length&&itemHits[0].distance<3.2){
+  let obj=itemHits[0].object;
+  while(obj.parent&&!obj.userData.pickable)obj=obj.parent;
+  if(obj.userData.pickable){
+   selectedItem=obj;currentTarget={type:"item"};
+   $("message").textContent="E / PEGAR: "+obj.userData.name;
+   $("use").textContent="PEGAR";return;
+  }
+ }
+ const drawerHits=raycaster.intersectObjects(drawerTargets,false);
+ if(drawerHits.length&&drawerHits[0].distance<3.2){
+  const index=drawerHits[0].object.userData.drawerIndex;
+  currentTarget={type:"drawer",index};
+  $("message").textContent="E / "+(drawers[index].userData.open?"FECHAR":"ABRIR")+" GAVETA "+(index+1);
+  $("use").textContent=drawers[index].userData.open?"FECHAR":"ABRIR";return;
+ }
+ if(cabinetTarget){
+  const hits=raycaster.intersectObject(cabinetTarget);
+  if(hits.length&&hits[0].distance<3.5){
+   currentTarget={type:"cabinet"};
+   $("message").textContent="E / "+(cabinetOpen?"FECHAR":"ABRIR")+" ARMÁRIO";
+   $("use").textContent=cabinetOpen?"FECHAR":"ABRIR";return;
+  }
+ }
+ currentTarget=null;$("use").textContent="INTERAGIR";
+ $("message").textContent="Explore a enfermaria.";
+}
+function interact(){
+ if(backpackOpen)return;
+ if(inspecting){stopInspect();return}
+ if(heldItem){dropItem();return}
+ if(!currentTarget){pickItem();return}
+ if(currentTarget.type==="item"){pickItem();return}
+ if(currentTarget.type==="drawer"){toggleDrawer(currentTarget.index);return}
+ if(currentTarget.type==="cabinet"){toggleCabinet();return}
+}
+
+function pickItem(){
+ if(heldItem||!selectedItem)return;
+ heldItem=selectedItem;
+ heldItem.userData.stored=false;
+ scene.remove(heldItem);camera.add(heldItem);
+ heldItem.userData.physics=false;
+ heldItem.userData.velocity.set(0,0,0);
+ heldItem.userData.pickupProgress=0;
+ heldItem.userData.holdTarget=heldItem.userData.type==="flashlight"?
+  new THREE.Vector3(.27,-.22,-.58):new THREE.Vector3(.27,-.25,-.52);
+ heldItem.userData.holdRotation=heldItem.userData.type==="flashlight"?
+  new THREE.Euler(0,0,0):new THREE.Euler(-.18,0,0);
+ heldItem.position.set(.12,-.12,-.38);
+ heldItem.rotation.set(.2,0,.18);
+ heldItem.scale.setScalar(.92);
+ setHandGrip(true);updateInventoryText();
+ $("message").textContent="Você pegou: "+heldItem.userData.name+".";
+ selectedItem=null;currentTarget=null;
 }
 
 function dropItem(){
- if(!heldItem||backpackOpen)return;
+ if(backpackOpen)return;
  if(inspecting)stopInspect();
-
+ if(!heldItem){$("message").textContent="Sua mão está vazia.";return}
  const item=heldItem;
- camera.remove(item.mesh);
- scene.add(item.mesh);
- item.mesh.userData.isHeld=false;
- item.mesh.position.copy(camera.position);
+ if(item.userData.type==="flashlight"&&flashlightOn){
+  flashlightOn=false;camera.userData.flashlight.intensity=0;
+  $("battery").textContent="LANTERNA: DESLIGADA";
+ }
  const direction=new THREE.Vector3();
  camera.getWorldDirection(direction);
- item.mesh.position.add(direction.multiplyScalar(1.1));
- item.mesh.position.y=Math.max(.15,item.mesh.position.y-.45);
- item.mesh.rotation.set(0,0,0);
- item.mesh.scale.setScalar(1);
- heldItem=null;
- updateHandUI();
- setMessage(item.name+" solto.");
-}
-
-function toggleLight(forceOff=false){
- if(!heldItem||heldItem.type!=="flashlight"){
-  setMessage("Você precisa estar segurando a lanterna.");
-  return;
- }
- if(backpackOpen)return;
- if(forceOff||flashlightOn){
-  flashlightOn=false;
-  camera.userData.flashlight.intensity=0;
-  camera.userData.flashFill.intensity=0;
-  setMessage("Lanterna desligada.");
- }else if(battery>0){
-  flashlightOn=true;
-  camera.userData.flashlight.intensity=35;
-  camera.userData.flashFill.intensity=1.4;
-  setMessage("Lanterna ligada.");
- }else{
-  setMessage("A bateria acabou.");
- }
- updateHandUI();
+ const position=camera.position.clone().add(direction.multiplyScalar(.85));
+ const floorY=.1+item.userData.restHeight;
+ position.x=THREE.MathUtils.clamp(position.x,-7.55,7.55);
+ position.z=THREE.MathUtils.clamp(position.z,-5.55,5.55);
+ position.y=Math.max(floorY,camera.position.y-.55+direction.y*.25);
+ camera.remove(item);scene.add(item);
+ item.position.copy(position);
+ item.rotation.set(0,camera.rotation.y,item.userData.type==="flashlight"?0:(Math.random()-.5)*.35);
+ item.scale.setScalar(1);
+ item.userData.physics=true;
+ item.userData.velocity.set(direction.x*1.05,.65+Math.max(0,direction.y*.3),direction.z*1.05);
+ item.userData.floorY=floorY;item.userData.pickupProgress=1;
+ heldItem=null;setHandGrip(false);updateInventoryText();
+ $("message").textContent="Objeto solto.";
 }
 
 function startInspect(){
- if(!heldItem||backpackOpen)return;
- inspecting=true;
+ if(backpackOpen)return;
+ if(!heldItem){$("message").textContent="Pegue um objeto primeiro para examiná-lo.";return}
+ if(inspecting)return;
+ inspecting=true;inspectPointer=null;
+ heldItem.userData.savedHold={
+  position:heldItem.position.clone(),
+  rotation:heldItem.rotation.clone(),
+  scale:heldItem.scale.clone()
+ };
+ heldItem.position.set(0,0,-1.18);
+ heldItem.rotation.set(0,0,0);heldItem.scale.setScalar(1.65);
+ if(hand)hand.visible=false;
  $("inspectPanel").classList.remove("hidden");
- setMessage("Examinando: "+heldItem.name);
+ $("message").textContent="Examinando: "+heldItem.userData.name;
+ $("inspect").textContent="VOLTAR";
 }
 function stopInspect(){
- inspecting=false;
+ if(!inspecting)return;
+ inspecting=false;inspectPointer=null;
+ if(heldItem){
+  const saved=heldItem.userData.savedHold;
+  if(saved){
+   heldItem.position.copy(saved.position);
+   heldItem.rotation.copy(saved.rotation);
+   heldItem.scale.copy(saved.scale);
+   delete heldItem.userData.savedHold;
+  }
+ }
+ if(hand)hand.visible=true;
  $("inspectPanel").classList.add("hidden");
+ $("inspect").textContent="EXAMINAR";
+ $("message").textContent=heldItem?"Objeto na mão: "+heldItem.userData.name:"Explore a enfermaria.";
 }
- function updateRaycast(){
- if(!camera||backpackOpen||inspecting){
-  currentTarget=null;
-  selectedItem=null;
-  return;
- }
-
- raycaster.setFromCamera(centerNdc,camera);
- const hits=raycaster.intersectObjects(scene.children,true);
-
- currentTarget=null;
- selectedItem=null;
-
- for(const hit of hits){
-  const object=hit.object;
-
-  const item=items.find(i=>i.mesh===object);
-  if(item&&!item.stored&&!heldItem){
-   selectedItem=item;
-   currentTarget={type:"item",item};
-   break;
+function rotateInspected(dx,dy){
+ if(!inspecting||!heldItem)return;
+ heldItem.rotation.y+=dx*.012;heldItem.rotation.x+=dy*.012;
+ heldItem.rotation.x=THREE.MathUtils.clamp(heldItem.rotation.x,-1.35,1.35);
+}
+function updateHeldItem(dt){
+ if(!heldItem||inspecting)return;
+ const target=heldItem.userData.holdTarget,rot=heldItem.userData.holdRotation;
+ if(!target||!rot)return;
+ const smooth=Math.min(1,dt*11);
+ heldItem.position.lerp(target,smooth);
+ heldItem.rotation.x=THREE.MathUtils.lerp(heldItem.rotation.x,rot.x,smooth);
+ heldItem.rotation.y=THREE.MathUtils.lerp(heldItem.rotation.y,rot.y,smooth);
+ heldItem.rotation.z=THREE.MathUtils.lerp(heldItem.rotation.z,rot.z,smooth);
+ heldItem.scale.lerp(heldScale,smooth);
+}
+function updateDroppedItems(dt){
+ for(const item of items){
+  if(!item.userData.physics)continue;
+  const velocity=item.userData.velocity;
+  velocity.y-=9.8*dt;item.position.addScaledVector(velocity,dt);
+  const floorY=item.userData.floorY||(.1+item.userData.restHeight);
+  if(item.position.y<=floorY){
+   item.position.y=floorY;
+   if(Math.abs(velocity.y)>.35)velocity.y*=-.18;else velocity.y=0;
+   velocity.x*=Math.pow(.08,dt);velocity.z*=Math.pow(.08,dt);
+   if(Math.abs(velocity.x)<.025)velocity.x=0;
+   if(Math.abs(velocity.z)<.025)velocity.z=0;
   }
-
-  if(cabinetDoorPivot&&cabinetDoorPivot.children.includes(object)){
-   currentTarget={type:"cabinet"};
-   break;
-  }
-
-  const drawerIndex=drawerTargets.findIndex(d=>d.mesh===object);
-  if(drawerIndex!==-1){
-   currentTarget={type:"drawer",index:drawerIndex};
-   break;
-  }
- }
-
- if(currentTarget?.type==="item"){
-  setMessage("PEGAR: "+currentTarget.item.name);
- }else if(currentTarget?.type==="cabinet"){
-  setMessage("E — INTERAGIR COM ARMÁRIO");
- }else if(currentTarget?.type==="drawer"){
-  setMessage("E — ABRIR/GUARDAR NA GAVETA");
- }else if(heldItem){
-  setMessage("Q — SOLTAR OBJETO");
- }else{
-  setMessage("Explore a enfermaria.");
+  item.position.x=THREE.MathUtils.clamp(item.position.x,-7.55,7.55);
+  item.position.z=THREE.MathUtils.clamp(item.position.z,-5.55,5.55);
+  if(velocity.lengthSq()<.002)item.userData.physics=false;
  }
 }
-
-function interact(){
- if(backpackOpen||inspecting)return;
-
- if(!currentTarget){
-  if(heldItem){
-   setMessage("Você está segurando: "+heldItem.name);
-  }else{
-   setMessage("Não há nada para pegar aqui.");
-  }
-  return;
+function toggleLight(){
+ if(backpackOpen)return;
+ if(!heldItem||heldItem.userData.type!=="flashlight"){
+  $("message").textContent="Encontre e pegue a lanterna primeiro.";return;
  }
-
- if(currentTarget.type==="item"){
-  pickItem(currentTarget.item);
-  return;
- }
-
- if(currentTarget.type==="cabinet"){
-  cabinetOpen=!cabinetOpen;
-  cabinetDoorPivot.rotation.y=cabinetOpen?-1.25:0;
-  setMessage(cabinetOpen?"Armário aberto.":"Armário fechado.");
-  return;
- }
-
- if(currentTarget.type==="drawer"){
-  const drawer=drawers[currentTarget.index];
-  const isOpen=drawer.userData.open||false;
-  drawer.userData.open=!isOpen;
-  drawer.position.z=isOpen?2.05:1.55;
-  setMessage(isOpen?"Gaveta fechada.":"Gaveta aberta.");
- }
+ if(battery<=0){$("message").textContent="A bateria acabou.";return}
+ flashlightOn=!flashlightOn;
+ camera.userData.flashlight.intensity=flashlightOn?3.2:0;
+ $("battery").textContent="LANTERNA: "+(flashlightOn?"LIGADA":"DESLIGADA");
 }
 
-function rotateHeld(direction){
- if(!heldItem||!inspecting)return;
- heldItem.mesh.rotation.y+=direction*.18;
- heldItem.mesh.rotation.x+=direction*.06;
-}
+/* MOVIMENTO */
 
-function updateMovement(delta){
- if(!camera||backpackOpen||inspecting)return;
-
- const speed=isMobile()?2.6:3.1;
- const forward=(keys.KeyW||movement.forward?1:0)-
-               (keys.KeyS||movement.back?1:0);
- const sideways=(keys.KeyD||movement.right?1:0)-
-                (keys.KeyA||movement.left?1:0);
-
+function updateMovement(dt){
+ if(inspecting||backpackOpen)return;
  camera.getWorldDirection(moveForward);
- moveForward.y=0;
- moveForward.normalize();
-
- moveRight.crossVectors(moveForward,worldUp).normalize();
-
+ moveForward.y=0;moveForward.normalize();
+ moveRight.crossVectors(moveForward,worldUp).normalize().negate();
  moveVector.set(0,0,0);
- moveVector.addScaledVector(moveForward,forward);
- moveVector.addScaledVector(moveRight,sideways);
-
+ if(keys.KeyW||movement.forward)moveVector.add(moveForward);
+ if(keys.KeyS||movement.back)moveVector.sub(moveForward);
+ if(keys.KeyA||movement.left)moveVector.sub(moveRight);
+ if(keys.KeyD||movement.right)moveVector.add(moveRight);
  if(moveVector.lengthSq()>0){
-  moveVector.normalize();
-  camera.position.addScaledVector(moveVector,speed*delta);
+  moveVector.normalize().multiplyScalar(3*dt);
+  camera.position.add(moveVector);
  }
-
- // Limites da enfermaria
- camera.position.x=Math.max(-7.4,Math.min(7.4,camera.position.x));
- camera.position.z=Math.max(-5.4,Math.min(5.4,camera.position.z));
- camera.position.y=1.7;
+ camera.position.x=THREE.MathUtils.clamp(camera.position.x,-7.3,7.3);
+ camera.position.z=THREE.MathUtils.clamp(camera.position.z,-5.3,5.3);
+ camera.position.y=1.65;
 }
 
-function updateBattery(delta){
- if(flashlightOn&&battery>0){
-  battery=Math.max(0,battery-delta*.12);
-  if(battery<=0){
-   flashlightOn=false;
-   camera.userData.flashlight.intensity=0;
-   camera.userData.flashFill.intensity=0;
-   setMessage("A bateria da lanterna acabou.");
-  }
-  updateHandUI();
- }
-}
-
-function animate(){
- if(animationStarted)return;
- animationStarted=true;
-
- function frame(){
-  requestAnimationFrame(frame);
-  if(!renderer||!scene||!camera)return;
-
-  const delta=Math.min(clock.getDelta(),.05);
-
-  updateMovement(delta);
-  updateRaycast();
-  updateBattery(delta);
-
-  if(heldItem&&heldItem.mesh.parent===camera){
-   heldItem.mesh.position.lerp(
-    new THREE.Vector3(.32,-.23,-.7),
-    Math.min(1,delta*12)
-   );
-  }
-
-  renderer.render(scene,camera);
- }
- frame();
-}
-
-function setupEvents(){
- // Teclado
- window.addEventListener("keydown",e=>{
-  keys[e.code]=true;
-
-  if(e.code==="KeyE")interact();
-  if(e.code==="KeyQ")dropItem();
-  if(e.code==="KeyF")toggleLight();
-  if(e.code==="KeyR"){
-   if(inspecting)stopInspect();
-   else startInspect();
-  }
-  if(e.code==="KeyI"){
-   if(backpackOpen)closeBackpack();
-   else openBackpack();
-  }
-  if(e.code==="Escape"){
-   if(backpackOpen){
-    closeBackpack();
-   }else if(inspecting){
-    stopInspect();
+function animate(timestamp=0){
+ requestAnimationFrame(animate);
+ if(!renderer||!scene||document.hidden)return;
+ if(!isMobile()&&timestamp-lastRenderTime<1000/30)return;
+ lastRenderTime=timestamp;
+ const dt=Math.min(clock.getDelta(),.05);
+ if(gameStarted){
+  updateMovement(dt);updateRaycast();updateHeldItem(dt);
+  updateDroppedItems(dt);updateCabinetDoor(dt);updateDrawers(dt);
+  if(flashlightOn){
+   battery=Math.max(0,battery-dt*.08);
+   if(battery<=0){
+    flashlightOn=false;camera.userData.flashlight.intensity=0;
+    $("battery").textContent="LANTERNA: SEM BATERIA";
    }
   }
- });
-
- window.addEventListener("keyup",e=>{
-  keys[e.code]=false;
- });
-
- // Mouse para olhar ao redor no PC
- document.addEventListener("mousemove",e=>{
-  if(!gameStarted||isMobile()||!document.pointerLockElement)return;
-  if(backpackOpen||inspecting)return;
-
-  const sensitivity=.002;
-  camera.rotation.y-=e.movementX*sensitivity;
-  camera.rotation.x-=e.movementY*sensitivity;
-  camera.rotation.x=Math.max(-1.45,Math.min(1.45,camera.rotation.x));
- });
-
- // Botões de movimento
- function bindMove(id,direction){
-  const button=$(id);
-  button.addEventListener("pointerdown",e=>{
-   e.preventDefault();
-   movement[direction]=true;
-   button.setPointerCapture?.(e.pointerId);
-  });
-  const stop=()=>{
-   movement[direction]=false;
-  };
-  button.addEventListener("pointerup",stop);
-  button.addEventListener("pointercancel",stop);
-  button.addEventListener("lostpointercapture",stop);
  }
- bindMove("forward","forward");
- bindMove("back","back");
- bindMove("left","left");
- bindMove("right","right");
-
- // Botões de ação
- $("use").addEventListener("click",interact);
- $("drop").addEventListener("click",dropItem);
- $("light").addEventListener("click",()=>toggleLight());
- $("inspect").addEventListener("click",()=>{
-  if(inspecting)stopInspect();
-  else startInspect();
- });
- $("store").addEventListener("click",storeHeldItem);
- $("backpack").addEventListener("click",()=>{
-  if(backpackOpen)closeBackpack();
-  else openBackpack();
- });
-
- $("closeBackpack").addEventListener("click",closeBackpack);
- $("closeInspect").addEventListener("click",stopInspect);
- $("rotateLeft").addEventListener("click",()=>rotateHeld(-1));
- $("rotateRight").addEventListener("click",()=>rotateHeld(1));
-
- document.querySelectorAll(".backpackSlot").forEach(button=>{
-  button.addEventListener("click",()=>{
-   selectBackpackSlot(Number(button.dataset.slot));
-  });
- });
-
- // Olhar pelo celular
- const lookArea=$("lookArea");
-
- lookArea.addEventListener("pointerdown",e=>{
-  if(!isMobile()||backpackOpen||inspecting)return;
-  lastTouch={x:e.clientX,y:e.clientY};
-  lookArea.setPointerCapture?.(e.pointerId);
- });
-
- lookArea.addEventListener("pointermove",e=>{
-  if(!isMobile()||!lastTouch||backpackOpen||inspecting)return;
-
-  const dx=e.clientX-lastTouch.x;
-  const dy=e.clientY-lastTouch.y;
-  lastTouch={x:e.clientX,y:e.clientY};
-
-  camera.rotation.y-=dx*.005;
-  camera.rotation.x-=dy*.005;
-  camera.rotation.x=Math.max(-1.45,Math.min(1.45,camera.rotation.x));
- });
-
- const stopLook=()=>{lastTouch=null};
- lookArea.addEventListener("pointerup",stopLook);
- lookArea.addEventListener("pointercancel",stopLook);
-
- // Redimensionamento
- window.addEventListener("resize",()=>{
-  if(!camera||!renderer)return;
-  camera.aspect=innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth,innerHeight);
-  renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile()?1.5:2));
- });
-
- // Evita menu de contexto durante o jogo
- document.addEventListener("contextmenu",e=>{
-  if(gameStarted)e.preventDefault();
- });
-
- updateBackpackUI();
+ renderer.render(scene,camera);
+}
+function resize(){
+ if(!camera||!renderer)return;
+ camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+ renderer.setPixelRatio(isMobile()?Math.min(devicePixelRatio,1.2):Math.min(devicePixelRatio,.9));
+ renderer.setSize(innerWidth,innerHeight);
 }
 
+/* TECLADO */
+
+document.addEventListener("keydown",e=>{
+ keys[e.code]=true;
+ if(!gameStarted)return;
+
+ if(e.code==="KeyI"){toggleBackpack();return}
+ if(e.code==="Escape"&&backpackOpen){closeBackpack();return}
+ if(backpackOpen)return;
+
+ if(e.code==="KeyE")interact();
+ if(e.code==="KeyQ")dropItem();
+ if(e.code==="KeyF")toggleLight();
+ if(e.code==="KeyR")inspecting?stopInspect():startInspect();
+ if(e.code==="Escape"&&inspecting)stopInspect();
+});
+document.addEventListener("keyup",e=>{keys[e.code]=false});
+document.addEventListener("mousemove",e=>{
+ if(!renderer||document.pointerLockElement!==renderer.domElement||!gameStarted)return;
+ if(backpackOpen)return;
+ if(inspecting){rotateInspected(e.movementX,e.movementY);return}
+ camera.rotation.y-=e.movementX*.0025;
+ camera.rotation.x-=e.movementY*.0025;
+ camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-1.4,1.4);
+});
+
+/* CONTROLES MOBILE */
+
+function bindMove(id,direction){
+ const b=$(id);
+ b.addEventListener("pointerdown",e=>{e.preventDefault();movement[direction]=true});
+ ["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+  b.addEventListener(ev,()=>{movement[direction]=false});
+ });
+}
+bindMove("forward","forward");
+bindMove("back","back");
+bindMove("left","left");
+bindMove("right","right");
+
+$("lookArea").addEventListener("pointerdown",e=>{
+ if(backpackOpen)return;
+ lastTouch={x:e.clientX,y:e.clientY};
+ $("lookArea").setPointerCapture?.(e.pointerId);
+});
+$("lookArea").addEventListener("pointermove",e=>{
+ if(!lastTouch||!gameStarted||backpackOpen)return;
+ const dx=e.clientX-lastTouch.x,dy=e.clientY-lastTouch.y;
+ if(inspecting){
+  rotateInspected(dx,dy);
+  lastTouch={x:e.clientX,y:e.clientY};return;
+ }
+ camera.rotation.y-=dx*.004;
+ camera.rotation.x-=dy*.004;
+ camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-1.4,1.4);
+ lastTouch={x:e.clientX,y:e.clientY};
+});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>{
+ $("lookArea").addEventListener(ev,()=>{lastTouch=null});
+});
+
+$("use").onclick=interact;
+$("drop").onclick=dropItem;
+$("light").onclick=toggleLight;
+$("inspect").onclick=()=>inspecting?stopInspect():startInspect();
+$("closeInspect").onclick=stopInspect;
+$("rotateLeft").onclick=()=>rotateInspected(-22,0);
+$("rotateRight").onclick=()=>rotateInspected(22,0);
+
+/* BOTÕES DA MOCHILA */
+
+$("store").onclick=storeHeldItem;
+$("backpack").onclick=toggleBackpack;
+$("closeBackpack").onclick=closeBackpack;
+
+document.querySelectorAll(".backpackSlot").forEach(slot=>{
+ slot.addEventListener("click",()=>{
+  selectBackpackSlot(Number(slot.dataset.slot));
+ });
+});
+
+window.addEventListener("blur",()=>{
+ Object.keys(keys).forEach(k=>keys[k]=false);
+ Object.keys(movement).forEach(k=>movement[k]=false);
+ lastTouch=null;
+});
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden){
+  Object.keys(keys).forEach(k=>keys[k]=false);
+  Object.keys(movement).forEach(k=>movement[k]=false);
+  lastTouch=null;
+ }
+});
+document.addEventListener("contextmenu",e=>e.preventDefault());
 </script>
 </body>
 </html>

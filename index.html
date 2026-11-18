@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.4</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.5</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.4 • SISTEMA HOSPITALAR</div>
+  <div id="status">VERSÃO 3.5 • SISTEMA HOSPITALAR</div>
  </div>
 </div>
 
@@ -426,7 +426,7 @@ function createRoom(){
  box(15.7,.16,.08,0,.19,5.86,0x626a63);
  box(15.7,.16,.08,0,.19,-5.86,0x626a63);
  box(.08,.16,11.7,-7.86,.19,0,0x626a63);
- box(.08,.16,11.7,7.86,.19,0,0x626a63);
+ box(.08,.16,11.7,7.86,.19,0x626a63);
  for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
  box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
  box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);
@@ -578,6 +578,7 @@ function createDrawerPickup(drawer,index,name,type,position){
  return item;
 }
 
+/* GAVETAS COM ABERTURA INICIAL E LIMITE CORRETO */
 function createDrawerCabinet(){
  const x=-4.65,z=-.9;
  box(.82,.92,.68,x,.52,z,0x777e76);
@@ -588,13 +589,20 @@ function createDrawerCabinet(){
  box(.88,.08,.72,x,.06,z,0x555d57);
 
  for(let i=0;i<3;i++){
-  const g=new THREE.Group(),closedZ=z+.34;
+  const g=new THREE.Group();
+  const closedZ=z+.34;
+
+  // Abertura inicial diferente e discreta em cada gaveta.
+  const initialOffset=.12+Math.random()*.035;
+
   g.userData={
    isDrawer:true,
    index:i,
    open:false,
-   targetZ:0,
-   closedZ
+   initialOffset,
+   targetZ:initialOffset,
+   closedZ,
+   fullOpenOffset:.42
   };
 
   const bottom=new THREE.Mesh(
@@ -626,7 +634,8 @@ function createDrawerCabinet(){
   handle.position.set(0,.13,.31);g.add(handle);
 
   const y=.76-i*.29;
-  g.position.set(x,y,closedZ);
+
+  g.position.set(x,y,closedZ+initialOffset);
   scene.add(g);
   drawers.push(g);
 
@@ -651,7 +660,8 @@ function createDrawerCabinet(){
     depthWrite:false
    })
   );
-  target.position.set(x,y,closedZ+.34);
+
+  target.position.set(x,y,closedZ+initialOffset+.34);
   target.userData.drawerIndex=i;
   target.userData.isDrawerTarget=true;
   scene.add(target);
@@ -1118,10 +1128,18 @@ function interact(){
   }
   if(currentTarget.userData&&currentTarget.userData.isDrawerTarget){
    const index=currentTarget.userData.drawerIndex,drawer=drawers[index];
+
    drawer.userData.open=!drawer.userData.open;
-   drawer.userData.targetZ=drawer.userData.open?.42:0;
+
+   // Aberta completamente ou retornando à abertura inicial.
+   drawer.userData.targetZ=drawer.userData.open?
+    drawer.userData.fullOpenOffset:
+    drawer.userData.initialOffset;
+
    playSound("drawer");
-   $("message").textContent=drawer.userData.open?"Gaveta aberta.":"Gaveta fechada.";
+   $("message").textContent=drawer.userData.open?
+    "Gaveta aberta.":"Gaveta voltou à posição inicial.";
+
    updateContextualButtons();return;
   }
   if(currentTarget.userData&&currentTarget.userData.pickable){
@@ -1212,12 +1230,23 @@ function updateRaycast(){
  updateContextualButtons();
 }
 
+/* ANIMAÇÃO DAS GAVETAS */
 function updateDrawers(dt){
  for(let i=0;i<drawers.length;i++){
   const drawer=drawers[i];
-  const targetZ=drawer.userData.closedZ+(drawer.userData.targetZ||0);
-  drawer.position.z=THREE.MathUtils.damp(drawer.position.z,targetZ,8,dt);
-  if(drawerTargets[i])drawerTargets[i].position.z=drawer.position.z+.34;
+
+  const targetZ=
+   drawer.userData.closedZ+
+   drawer.userData.targetZ;
+
+  drawer.position.z=THREE.MathUtils.damp(
+   drawer.position.z,targetZ,8,dt
+  );
+
+  if(drawerTargets[i]){
+   drawerTargets[i].position.z=
+    drawer.position.z+.34;
+  }
  }
 }
 

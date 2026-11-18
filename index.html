@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.9</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V4.0</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.9 • MELHORIA GRÁFICA</div>
+  <div id="status">VERSÃO 4.0 • MOVIMENTAÇÃO E INTERAÇÕES</div>
  </div>
 </div>
 
@@ -225,7 +225,7 @@ function sphere(x,y,z,sx,sy,sz,color){
  m.position.set(x,y,z);m.scale.set(sx,sy,sz);scene.add(m);return m;
 }
 
-/* TEXTURAS V3.9 — MAIS DETALHES E RESOLUÇÃO */
+/* TEXTURAS V4.0 */
 function makeCanvasTexture(kind){
  const canvas=document.createElement("canvas");
  canvas.width=canvas.height=1024;
@@ -240,11 +240,9 @@ function makeCanvasTexture(kind){
     const shade=105+Math.floor(Math.random()*28);
     ctx.fillStyle=`rgb(${shade},${shade+2},${shade-4})`;
     ctx.fillRect(x+2,y+2,124,124);
-
     ctx.strokeStyle="rgba(25,30,27,.65)";
     ctx.lineWidth=3;
     ctx.strokeRect(x+2,y+2,124,124);
-
     ctx.strokeStyle="rgba(225,225,210,.12)";
     ctx.lineWidth=1;
     ctx.strokeRect(x+6,y+6,116,116);
@@ -327,7 +325,6 @@ function makeCanvasTexture(kind){
  return texture;
 }
 
-/* MAPA DE RELEVO SUTIL PARA AS SUPERFÍCIES */
 function makeNormalTexture(){
  const canvas=document.createElement("canvas");
  canvas.width=canvas.height=256;
@@ -490,7 +487,6 @@ function initGame(){
  ];
 
  roomLightTime=0;
-
  clock=new THREE.Clock();
 
  createRoom();createWallDamage();createFurniture();
@@ -502,8 +498,6 @@ function initGame(){
  if(!animationStarted){animationStarted=true;animate()}
 }
 
-/* SISTEMA DE ILUMINAÇÃO V3.8
-   15 SEGUNDOS DE APAGÃO + 5 SEGUNDOS PISCANDO */
 function updateRoomLights(dt){
  roomLightTime+=dt;
  const cycle=roomLightTime%20;
@@ -631,7 +625,6 @@ function createFurniture(){
  box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
 }
 
-/* OBJETOS COLETÁVEIS DENTRO DAS GAVETAS */
 function createDrawerPickup(drawer,index,name,type,position){
  const item=new THREE.Group();
  item.position.set(position.x,position.y,position.z);
@@ -1200,15 +1193,27 @@ function selectBackpackSlot(index,quick=false){
 
 function updateCabinet(dt){
  if(!cabinetDoors.length)return;
+
  const openAngle=1.18;
+
  cabinetDoors[0].userData.targetRotation=cabinetOpen?-openAngle:0;
  cabinetDoors[1].userData.targetRotation=cabinetOpen?openAngle:0;
+
  for(const door of cabinetDoors){
-  door.rotation.y=THREE.MathUtils.damp(door.rotation.y,door.userData.targetRotation,7,dt);
+  door.rotation.y=THREE.MathUtils.damp(
+   door.rotation.y,
+   door.userData.targetRotation,
+   7,
+   dt
+  );
  }
+
  if(cabinetInteriorLight){
   cabinetInteriorLight.intensity=THREE.MathUtils.damp(
-   cabinetInteriorLight.intensity,cabinetOpen?.65:0,5,dt
+   cabinetInteriorLight.intensity,
+   cabinetOpen?.65:0,
+   5,
+   dt
   );
  }
 }
@@ -1319,7 +1324,6 @@ function updateDrawers(dt){
   const targetZ=drawer.userData.closedZ+drawer.userData.targetZ;
   drawer.position.z=THREE.MathUtils.damp(drawer.position.z,targetZ,8,dt);
   if(drawerTargets[i])drawerTargets[i].position.z=drawer.position.z+.34;
- }
 }
 
 function updateHeldItem(dt){
@@ -1412,7 +1416,7 @@ function collidesWithObjects(x,z){
  return false;
 }
 
-/* MOVIMENTAÇÃO COM COLISÃO E DESLIZE NAS LATERAIS */
+/* V4.0 — MOVIMENTAÇÃO SUAVE COM COLISÃO E DESLIZE */
 function updateMovement(dt){
  if(!camera||inspecting||backpackOpen)return;
 
@@ -1442,30 +1446,32 @@ function updateMovement(dt){
   moveVector.normalize();
 
   const distance=speed*dt;
-  const oldX=camera.position.x;
-  const oldZ=camera.position.z;
+  const steps=Math.max(1,Math.ceil(distance/.045));
+  const stepDistance=distance/steps;
 
-  // Primeiro tenta movimentar no eixo X.
-  const newX=THREE.MathUtils.clamp(
-   oldX+moveVector.x*distance,
-   -7.35,
-   7.35
-  );
+  for(let i=0;i<steps;i++){
+   const oldX=camera.position.x;
+   const oldZ=camera.position.z;
 
-  if(!collidesWithObjects(newX,oldZ)){
-   camera.position.x=newX;
-  }
+   const newX=THREE.MathUtils.clamp(
+    oldX+moveVector.x*stepDistance,
+    -7.35,
+    7.35
+   );
 
-  // Depois tenta movimentar no eixo Z.
-  // Isso permite deslizar pela lateral dos objetos.
-  const newZ=THREE.MathUtils.clamp(
-   oldZ+moveVector.z*distance,
-   -5.35,
-   5.35
-  );
+   if(!collidesWithObjects(newX,oldZ)){
+    camera.position.x=newX;
+   }
 
-  if(!collidesWithObjects(camera.position.x,newZ)){
-   camera.position.z=newZ;
+   const newZ=THREE.MathUtils.clamp(
+    oldZ+moveVector.z*stepDistance,
+    -5.35,
+    5.35
+   );
+
+   if(!collidesWithObjects(camera.position.x,newZ)){
+    camera.position.z=newZ;
+   }
   }
  }
 

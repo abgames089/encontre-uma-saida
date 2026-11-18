@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -700,7 +701,6 @@ function addRustToDrawer(drawer){
    mat(i%2===0?0x713b26:0x98502d)
   );
   streak.position.set(-.27+i*.13,.025+Math.random()*.04,.286);
-  streak.rotation.z=(Math.random()-.5)*.12;
   drawer.add(streak);
  }
 
@@ -1375,40 +1375,17 @@ function updateBatteryDrain(dt){
 
 /* COLISÃO COM OS OBJETOS DA ENFERMARIA */
 const objectCollisions = [
- // Cama da esquerda
  {x:-3,z:-1,w:2.3,d:1.05},
-
- // Mesa e computador
  {x:3,z:-1,w:2.1,d:.85},
-
- // Cadeira
  {x:4.5,z:.3,w:.75,d:.75},
-
- // Banco
  {x:2.1,z:1.7,w:.75,d:.75},
-
- // Armário com gavetas
  {x:-4.65,z:-.9,w:.95,d:.8},
-
- // Armário grande
  {x:-6,z:-2.7,w:1.2,d:.85},
-
- // Mesa lateral
  {x:-6,z:.2,w:1.6,d:.75},
-
- // Equipamento médico
  {x:1.2,z:-3.8,w:1.6,d:.8},
-
- // Equipamento com suporte
  {x:5.9,z:1.8,w:.75,d:.75},
-
- // Mesa de equipamentos
  {x:5,z:-2.5,w:1.3,d:.8},
-
- // Mesa próxima à parede
  {x:-1.1,z:3.8,w:1.35,d:.75},
-
- // Equipamento cilíndrico
  {x:6.5,z:-.4,w:.65,d:.65}
 ];
 
@@ -1435,25 +1412,63 @@ function collidesWithObjects(x,z){
  return false;
 }
 
+/* MOVIMENTAÇÃO COM COLISÃO E DESLIZE NAS LATERAIS */
 function updateMovement(dt){
  if(!camera||inspecting||backpackOpen)return;
+
  const speed=isMobile()?2.5:3.1;
- const forward=Number(keys.KeyW||movement.forward)-Number(keys.KeyS||movement.back);
- const side=Number(keys.KeyD||movement.right)-Number(keys.KeyA||movement.left);
+
+ const forward=
+  Number(keys.KeyW||movement.forward)-
+  Number(keys.KeyS||movement.back);
+
+ const side=
+  Number(keys.KeyD||movement.right)-
+  Number(keys.KeyA||movement.left);
 
  moveForward.set(0,0,-1).applyQuaternion(camera.quaternion);
- moveForward.y=0;moveForward.normalize();
+ moveForward.y=0;
+ moveForward.normalize();
+
  moveRight.set(1,0,0).applyQuaternion(camera.quaternion);
- moveRight.y=0;moveRight.normalize();
+ moveRight.y=0;
+ moveRight.normalize();
+
  moveVector.set(0,0,0);
  moveVector.addScaledVector(moveForward,forward);
  moveVector.addScaledVector(moveRight,side);
 
  if(moveVector.lengthSq()>0){
-  moveVector.normalize();camera.position.addScaledVector(moveVector,speed*dt);
+  moveVector.normalize();
+
+  const distance=speed*dt;
+  const oldX=camera.position.x;
+  const oldZ=camera.position.z;
+
+  // Primeiro tenta movimentar no eixo X.
+  const newX=THREE.MathUtils.clamp(
+   oldX+moveVector.x*distance,
+   -7.35,
+   7.35
+  );
+
+  if(!collidesWithObjects(newX,oldZ)){
+   camera.position.x=newX;
+  }
+
+  // Depois tenta movimentar no eixo Z.
+  // Isso permite deslizar pela lateral dos objetos.
+  const newZ=THREE.MathUtils.clamp(
+   oldZ+moveVector.z*distance,
+   -5.35,
+   5.35
+  );
+
+  if(!collidesWithObjects(camera.position.x,newZ)){
+   camera.position.z=newZ;
+  }
  }
- camera.position.x=THREE.MathUtils.clamp(camera.position.x,-7.35,7.35);
- camera.position.z=THREE.MathUtils.clamp(camera.position.z,-5.35,5.35);
+
  camera.position.y=1.65;
 }
 

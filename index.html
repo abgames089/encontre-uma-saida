@@ -659,8 +659,8 @@ function createItems(){
   new THREE.MeshBasicMaterial({color:0xd8dfc8}));
  lens.position.z=-.345;flashlight.add(lens);
 
- // V3.3: lanterna na mesma prateleira superior.
- flashlight.position.set(-6.34,1.98,-2.68);
+ // LANTERNA NA PRATELEIRA DE BAIXO.
+ flashlight.position.set(-6.34,.84,-2.68);
  flashlight.userData={
   pickable:true,type:"flashlight",name:"Lanterna",
   stored:false,physics:false,velocity:new THREE.Vector3(),
@@ -687,7 +687,7 @@ function createItems(){
 }
 
 function createExtraItems(){
- // KIT MÉDICO — mesma prateleira da lanterna.
+ // KIT MÉDICO NA PRATELEIRA DE BAIXO.
  const kit=new THREE.Group();
  const kitBody=new THREE.Mesh(new THREE.BoxGeometry(.32,.19,.24),mat(0xd0d0c3));
  kit.add(kitBody);
@@ -698,7 +698,7 @@ function createExtraItems(){
  const crossH=new THREE.Mesh(new THREE.BoxGeometry(.13,.045,.012),mat(0x9b3030));
  crossH.position.set(0,.13,.13);kit.add(crossH);
 
- kit.position.set(-6,1.98,-2.68);
+ kit.position.set(-6,.85,-2.68);
  kit.userData={
   pickable:true,type:"kit",name:"Kit médico",
   stored:false,physics:false,velocity:new THREE.Vector3(),
@@ -707,14 +707,14 @@ function createExtraItems(){
  };
  scene.add(kit);items.push(kit);
 
- // PILHA — mesma prateleira, ao lado dos outros objetos.
+ // PILHA NA PRATELEIRA DE BAIXO.
  const batteryItem=new THREE.Group();
  const cell=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.2,10),mat(0x343c3b,.45,.4));
  cell.rotation.z=Math.PI/2;batteryItem.add(cell);
  const tip=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.025,8),mat(0xb5ad83,.4,.7));
  tip.rotation.z=Math.PI/2;tip.position.x=.11;batteryItem.add(tip);
 
- batteryItem.position.set(-5.66,1.98,-2.68);
+ batteryItem.position.set(-5.66,.80,-2.68);
  batteryItem.userData={
   pickable:true,type:"battery",name:"Pilha",
   stored:false,physics:false,velocity:new THREE.Vector3(),
@@ -1036,6 +1036,9 @@ function resize(){
  camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
 }
 
+/* RAYCAST CORRIGIDO:
+   Primeiro procura os objetos coletáveis.
+   Só procura armário e gavetas se nenhum item estiver na mira. */
 function updateRaycast(){
  if(!camera)return;
  if(backpackOpen||inspecting){
@@ -1044,42 +1047,56 @@ function updateRaycast(){
 
  raycaster.setFromCamera(centerNdc,camera);
 
- const targets=[
-  ...items.filter(item=>!item.userData.inCabinet||cabinetOpen),
-  ...drawerTargets
- ];
-
- // O alvo do armário é incluído, mas os itens coletáveis
- // terão prioridade se o jogador estiver mirando neles.
- if(cabinetTarget)targets.push(cabinetTarget);
-
- const hits=raycaster.intersectObjects(targets,true);
  currentTarget=null;
 
- let pickableHit=null;
- let drawerHit=null;
- let cabinetHit=null;
+ // PRIMEIRA ETAPA: objetos que podem ser pegos.
+ const pickableItems=items.filter(item=>
+  !item.userData.stored&&
+  !item.userData.physics&&
+  (!item.userData.inCabinet||cabinetOpen)
+ );
 
- for(const hit of hits){
+ const itemHits=raycaster.intersectObjects(pickableItems,true);
+
+ for(const hit of itemHits){
   let obj=hit.object;
 
-  while(obj.parent&&
-   !obj.userData.pickable&&
-   !obj.userData.isDrawerTarget&&
-   obj!==cabinetTarget){
+  while(obj.parent&&!obj.userData.pickable){
    obj=obj.parent;
   }
 
   if(obj.userData.pickable){
-   pickableHit=obj;
+   currentTarget=obj;
    break;
   }
-
-  if(obj.userData.isDrawerTarget&&!drawerHit)drawerHit=obj;
-  if(obj===cabinetTarget&&!cabinetHit)cabinetHit=obj;
  }
 
- currentTarget=pickableHit||drawerHit||cabinetHit;
+ // SEGUNDA ETAPA: armário e gavetas.
+ if(!currentTarget){
+  const otherTargets=[...drawerTargets];
+
+  if(cabinetTarget)otherTargets.push(cabinetTarget);
+
+  const otherHits=raycaster.intersectObjects(otherTargets,true);
+
+  if(otherHits.length){
+   for(const hit of otherHits){
+    let obj=hit.object;
+
+    while(obj.parent&&
+      !obj.userData.isDrawerTarget&&
+      obj!==cabinetTarget){
+     obj=obj.parent;
+    }
+
+    if(obj.userData.isDrawerTarget||obj===cabinetTarget){
+     currentTarget=obj;
+     break;
+    }
+   }
+  }
+ }
+
  updateContextualButtons();
 }
 

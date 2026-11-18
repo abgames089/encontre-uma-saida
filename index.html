@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.8</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.9</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.8 • CICLO ELÉTRICO</div>
+  <div id="status">VERSÃO 3.9 • MELHORIA GRÁFICA</div>
  </div>
 </div>
 
@@ -225,58 +225,151 @@ function sphere(x,y,z,sx,sy,sz,color){
  m.position.set(x,y,z);m.scale.set(sx,sy,sz);scene.add(m);return m;
 }
 
+/* TEXTURAS V3.9 — MAIS DETALHES E RESOLUÇÃO */
 function makeCanvasTexture(kind){
- const canvas=document.createElement("canvas");canvas.width=canvas.height=512;
+ const canvas=document.createElement("canvas");
+ canvas.width=canvas.height=1024;
  const ctx=canvas.getContext("2d");
+
  if(kind==="floor"){
-  ctx.fillStyle="#777a73";ctx.fillRect(0,0,512,512);
-  for(let y=0;y<512;y+=128)for(let x=0;x<512;x+=128){
-   const shade=105+Math.floor(Math.random()*28);
-   ctx.fillStyle=`rgb(${shade},${shade+2},${shade-4})`;
-   ctx.fillRect(x+2,y+2,124,124);
-   ctx.strokeStyle="rgba(25,30,27,.55)";ctx.lineWidth=3;
-   ctx.strokeRect(x+2,y+2,124,124);
+  ctx.fillStyle="#777a73";
+  ctx.fillRect(0,0,1024,1024);
+
+  for(let y=0;y<1024;y+=128){
+   for(let x=0;x<1024;x+=128){
+    const shade=105+Math.floor(Math.random()*28);
+    ctx.fillStyle=`rgb(${shade},${shade+2},${shade-4})`;
+    ctx.fillRect(x+2,y+2,124,124);
+
+    ctx.strokeStyle="rgba(25,30,27,.65)";
+    ctx.lineWidth=3;
+    ctx.strokeRect(x+2,y+2,124,124);
+
+    ctx.strokeStyle="rgba(225,225,210,.12)";
+    ctx.lineWidth=1;
+    ctx.strokeRect(x+6,y+6,116,116);
+   }
   }
-  for(let i=0;i<1800;i++){
+
+  for(let i=0;i<4200;i++){
    const v=Math.floor(Math.random()*65);
-   ctx.fillStyle=`rgba(${v},${v+5},${v},${Math.random()*.18})`;
-   ctx.fillRect(Math.random()*512,Math.random()*512,1+Math.random()*5,1+Math.random()*4);
+   ctx.fillStyle=`rgba(${v},${v+5},${v},${Math.random()*.2})`;
+   ctx.fillRect(Math.random()*1024,Math.random()*1024,1+Math.random()*7,1+Math.random()*5);
   }
+
+  for(let i=0;i<90;i++){
+   const x=Math.random()*1024,y=Math.random()*1024;
+   const g=ctx.createRadialGradient(x,y,2,x,y,12+Math.random()*35);
+   g.addColorStop(0,"rgba(25,32,27,.22)");
+   g.addColorStop(1,"rgba(25,32,27,0)");
+   ctx.fillStyle=g;
+   ctx.fillRect(x-45,y-45,90,90);
+  }
+
  }else if(kind==="wall"){
-  ctx.fillStyle="#969990";ctx.fillRect(0,0,512,512);
-  for(let i=0;i<2600;i++){
-   ctx.fillStyle=Math.random()>.5?"rgba(45,53,47,.07)":"rgba(235,235,220,.08)";
-   ctx.fillRect(Math.random()*512,Math.random()*512,2+Math.random()*18,2+Math.random()*12);
+  ctx.fillStyle="#969990";
+  ctx.fillRect(0,0,1024,1024);
+
+  for(let i=0;i<5200;i++){
+   ctx.fillStyle=Math.random()>.5?
+    "rgba(45,53,47,.09)":"rgba(235,235,220,.10)";
+   ctx.fillRect(
+    Math.random()*1024,
+    Math.random()*1024,
+    2+Math.random()*25,
+    2+Math.random()*18
+   );
   }
-  for(let i=0;i<24;i++){
-   const x=Math.random()*512,y=Math.random()*512;
-   const g=ctx.createRadialGradient(x,y,2,x,y,20+Math.random()*55);
-   g.addColorStop(0,"rgba(45,53,46,.22)");
+
+  for(let i=0;i<48;i++){
+   const x=Math.random()*1024,y=Math.random()*1024;
+   const g=ctx.createRadialGradient(x,y,2,x,y,25+Math.random()*80);
+   g.addColorStop(0,"rgba(45,53,46,.26)");
    g.addColorStop(1,"rgba(45,53,46,0)");
-   ctx.fillStyle=g;ctx.fillRect(x-70,y-70,140,140);
+   ctx.fillStyle=g;
+   ctx.fillRect(x-90,y-90,180,180);
   }
+
+  for(let i=0;i<24;i++){
+   const x=Math.random()*1024,y=Math.random()*1024;
+   ctx.strokeStyle="rgba(45,50,45,.25)";
+   ctx.lineWidth=1+Math.random()*2;
+   ctx.beginPath();
+   ctx.moveTo(x,y);
+   ctx.lineTo(x+(Math.random()-.5)*35,y+15+Math.random()*45);
+   ctx.lineTo(x+(Math.random()-.5)*45,y+35+Math.random()*75);
+   ctx.stroke();
+  }
+
  }else{
-  ctx.fillStyle="#626861";ctx.fillRect(0,0,512,512);
-  for(let y=0;y<512;y+=128)for(let x=0;x<512;x+=128){
-   ctx.strokeStyle="rgba(25,30,27,.45)";ctx.lineWidth=4;
-   ctx.strokeRect(x+2,y+2,124,124);
+  ctx.fillStyle="#626861";
+  ctx.fillRect(0,0,1024,1024);
+
+  for(let y=0;y<1024;y+=128){
+   for(let x=0;x<1024;x+=128){
+    ctx.strokeStyle="rgba(25,30,27,.55)";
+    ctx.lineWidth=4;
+    ctx.strokeRect(x+2,y+2,124,124);
+   }
   }
-  for(let i=0;i<1200;i++){
-   ctx.fillStyle="rgba(220,225,215,.05)";
-   ctx.fillRect(Math.random()*512,Math.random()*512,2,2);
+
+  for(let i=0;i<2800;i++){
+   ctx.fillStyle="rgba(220,225,215,.07)";
+   ctx.fillRect(Math.random()*1024,Math.random()*1024,2+Math.random()*3,2+Math.random()*3);
   }
  }
+
  const texture=new THREE.CanvasTexture(canvas);
  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
- texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;
+ texture.colorSpace=THREE.SRGBColorSpace;
+ texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
+ texture.needsUpdate=true;
+ return texture;
+}
+
+/* MAPA DE RELEVO SUTIL PARA AS SUPERFÍCIES */
+function makeNormalTexture(){
+ const canvas=document.createElement("canvas");
+ canvas.width=canvas.height=256;
+ const ctx=canvas.getContext("2d");
+ const image=ctx.createImageData(256,256);
+
+ for(let i=0;i<image.data.length;i+=4){
+  const value=120+Math.floor(Math.random()*16);
+  image.data[i]=value;
+  image.data[i+1]=value;
+  image.data[i+2]=255;
+  image.data[i+3]=255;
+ }
+
+ ctx.putImageData(image,0,0);
+ const texture=new THREE.CanvasTexture(canvas);
+ texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
+ texture.repeat.set(2,2);
+ texture.needsUpdate=true;
  return texture;
 }
 
 function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
- const tex=texture.clone();tex.needsUpdate=true;tex.repeat.set(repeatX,repeatY);
- const material=new THREE.MeshStandardMaterial({map:tex,roughness:.96,metalness:0});
+ const tex=texture.clone();
+ tex.needsUpdate=true;
+ tex.repeat.set(repeatX,repeatY);
+
+ const normal=makeNormalTexture();
+ normal.repeat.set(repeatX,repeatY);
+
+ const material=new THREE.MeshStandardMaterial({
+  map:tex,
+  normalMap:normal,
+  normalScale:new THREE.Vector2(.12,.12),
+  roughness:.96,
+  metalness:0
+ });
+
  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
- mesh.position.set(x,y,z);scene.add(mesh);return mesh;
+ mesh.position.set(x,y,z);
+ scene.add(mesh);
+ return mesh;
 }
 
 function createComputerScreen(){
@@ -357,7 +450,7 @@ function initGame(){
  centerNdc=new THREE.Vector2(0,0);
  moveForward=new THREE.Vector3();moveRight=new THREE.Vector3();moveVector=new THREE.Vector3();
  scene.background=new THREE.Color(0x171b19);
- scene.fog=new THREE.FogExp2(0x171b19,.014);
+ scene.fog=new THREE.FogExp2(0x171b19,.018);
  camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
  camera.position.set(0,1.65,4.2);camera.rotation.order="YXZ";
  renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"low-power"});
@@ -365,7 +458,7 @@ function initGame(){
  renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=.9;
+ renderer.toneMappingExposure=1.05;
  document.body.appendChild(renderer.domElement);
  renderer.domElement.addEventListener("click",togglePointerLock);
  clock=new THREE.Clock();
@@ -413,62 +506,40 @@ function initGame(){
    15 SEGUNDOS DE APAGÃO + 5 SEGUNDOS PISCANDO */
 function updateRoomLights(dt){
  roomLightTime+=dt;
-
- // Ciclo completo: 20 segundos.
- // Primeiros 15 segundos: apagão.
- // Últimos 5 segundos: luzes piscando.
  const cycle=roomLightTime%20;
  const blackout=cycle<15;
 
  if(blackout){
-  for(const entry of roomLights){
-   entry.light.intensity=0;
-  }
-
-  for(const entry of roomAmbientLights){
-   entry.light.intensity=0;
-  }
-
+  for(const entry of roomLights)entry.light.intensity=0;
+  for(const entry of roomAmbientLights)entry.light.intensity=0;
   return;
  }
 
- // Durante os últimos 5 segundos, as luzes piscam.
  const flickerTime=cycle-15;
 
  for(const entry of roomAmbientLights){
   const randomFlicker=Math.random();
-
   let intensity=0;
-
   if(randomFlicker>.48)intensity=entry.base;
   if(randomFlicker>.82)intensity=entry.base*.25;
-
   entry.light.intensity=intensity;
  }
 
  for(const entry of roomLights){
   entry.timer-=dt;
-
   if(entry.timer<=0){
    entry.timer=.06+Math.random()*.38;
-
    const chance=Math.random();
-
    if(chance<.30)entry.flicker=0;
    else if(chance<.52)entry.flicker=.08;
    else if(chance<.72)entry.flicker=.25;
    else if(chance<.88)entry.flicker=.55;
    else entry.flicker=1;
   }
-
   const wave=1+Math.sin(roomLightTime*12+entry.phase)*.12;
-
-  entry.light.intensity=
-   entry.base*entry.flicker*wave;
+  entry.light.intensity=entry.base*entry.flicker*wave;
  }
 
- // Pequena variação no fim da sequência para dar sensação
- // de instabilidade antes do próximo apagão.
  if(flickerTime>4.5){
   for(const entry of roomLights){
    if(Math.random()>.65)entry.light.intensity=0;

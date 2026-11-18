@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.9</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V4.0</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +52,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.9 • MELHORIA GRÁFICA</div>
+  <div id="status">VERSÃO 4.0 • COLISÕES E MELHORIAS GRÁFICAS</div>
  </div>
 </div>
 
@@ -122,6 +121,11 @@ let roomLights=[],roomLightTime=0;
 let roomAmbientLights=[];
 
 let computerCanvas=null,computerContext=null,computerTexture=null,computerScreen=null;
+
+/* NOVO SISTEMA DE COLISÃO V4.0 */
+let collisionBoxes=[];
+const PLAYER_RADIUS=.32;
+const PLAYER_HEIGHT=1.65;
 
 const keys={};
 const movement={forward:false,back:false,left:false,right:false};
@@ -225,7 +229,7 @@ function sphere(x,y,z,sx,sy,sz,color){
  m.position.set(x,y,z);m.scale.set(sx,sy,sz);scene.add(m);return m;
 }
 
-/* TEXTURAS V3.9 — MAIS DETALHES E RESOLUÇÃO */
+/* TEXTURAS V4.0 */
 function makeCanvasTexture(kind){
  const canvas=document.createElement("canvas");
  canvas.width=canvas.height=1024;
@@ -240,11 +244,9 @@ function makeCanvasTexture(kind){
     const shade=105+Math.floor(Math.random()*28);
     ctx.fillStyle=`rgb(${shade},${shade+2},${shade-4})`;
     ctx.fillRect(x+2,y+2,124,124);
-
     ctx.strokeStyle="rgba(25,30,27,.65)";
     ctx.lineWidth=3;
     ctx.strokeRect(x+2,y+2,124,124);
-
     ctx.strokeStyle="rgba(225,225,210,.12)";
     ctx.lineWidth=1;
     ctx.strokeRect(x+6,y+6,116,116);
@@ -327,7 +329,6 @@ function makeCanvasTexture(kind){
  return texture;
 }
 
-/* MAPA DE RELEVO SUTIL PARA AS SUPERFÍCIES */
 function makeNormalTexture(){
  const canvas=document.createElement("canvas");
  canvas.width=canvas.height=256;
@@ -490,20 +491,32 @@ function initGame(){
  ];
 
  roomLightTime=0;
-
  clock=new THREE.Clock();
 
- createRoom();createWallDamage();createFurniture();
- createComputerScreen();createComputerKeyboard();
- createMedicalEquipment();createFloorClutter();createRealisticDetails();
- createItems();createExtraItems();createHand();createFlashlight();
- renderBackpack();updateContextualButtons();
+ createRoom();
+ createWallDamage();
+ createFurniture();
+ createComputerScreen();
+ createComputerKeyboard();
+ createMedicalEquipment();
+ createFloorClutter();
+ createRealisticDetails();
+
+ /* As cadeiras e as colisões entram na PARTE 2. */
+ createChairs();
+ createItems();
+ createExtraItems();
+ createHand();
+ createFlashlight();
+ createCollisionSystem();
+
+ renderBackpack();
+ updateContextualButtons();
  window.addEventListener("resize",resize);
  if(!animationStarted){animationStarted=true;animate()}
 }
 
-/* SISTEMA DE ILUMINAÇÃO V3.8
-   15 SEGUNDOS DE APAGÃO + 5 SEGUNDOS PISCANDO */
+/* ILUMINAÇÃO: 15 SEGUNDOS DE APAGÃO + 5 SEGUNDOS PISCANDO */
 function updateRoomLights(dt){
  roomLightTime+=dt;
  const cycle=roomLightTime%20;
@@ -554,13 +567,17 @@ function createRoom(){
  texturedBox(.2,3.5,12,-8,1.75,0,wt,3,1);
  texturedBox(.2,3.5,12,8,1.75,0,wt,3,1);
  texturedBox(16,3.5,.2,0,1.75,6,wt,4,1);
+
+ /* Parede traseira preservando a abertura central. */
  texturedBox(6.8,3.5,.2,-4.6,1.75,-6,wt,2,1);
  texturedBox(6.8,3.5,.2,4.6,1.75,-6,wt,2,1);
  texturedBox(2.4,.65,.2,0,3.175,-6,wt,1,1);
+
  box(15.7,.16,.08,0,.19,5.86,0x626a63);
  box(15.7,.16,.08,0,.19,-5.86,0x626a63);
  box(.08,.16,11.7,-7.86,.19,0,0x626a63);
- box(.08,.16,11.7,7.86,.19,0x626a63);
+ box(.08,.16,11.7,7.86,.19,0,0x626a63);
+
  for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
  box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
  box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);
@@ -571,6 +588,7 @@ function createRoom(){
  box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
  box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
  box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
+
  for(let i=0;i<5;i++){
   const c=new THREE.Mesh(new THREE.BoxGeometry(.67,1.9,.035),
    new THREE.MeshStandardMaterial({color:0x87918b,transparent:true,opacity:.72,roughness:1}));
@@ -595,956 +613,1058 @@ function createWallDamage(){
  }
 }
 
-function createFurniture(){
- box(2.3,.15,1.05,-3,.85,-1,0x69716d);
- box(2.18,.16,.94,-3,1.02,-1,0xbab9ad);
- box(.58,.13,.65,-3.78,1.17,-1,0xc2bfb1);
- box(2.25,.1,.12,-3,.72,-1.5,0x515a57);
- box(2.25,.1,.12,-3,.72,-.5,0x515a57);
- for(const x of [-3.95,-2.05])for(const z of [-1.4,-.6]){
-  box(.09,.7,.09,x,.38,z,0x505858);
-  cylinder(.07,.07,.07,x,.08,z,0x303635,8);
- }
- createDrawerCabinet();
- box(2.1,.14,.85,3,1.15,-1,0x858981);
- for(const x of [2.1,3.9])for(const z of [-1.32,-.68])
-  box(.09,1.05,.09,x,.53,z,0x525a56);
- box(.85,.58,.12,3,1.58,-.95,0x171e20);
- box(.72,.43,.025,3,1.59,-.875,0x28474b);
- box(.15,.2,.15,3,1.23,-.95,0x343a3a);
- box(.48,.025,.18,3,1.25,-.65,0x252a29);
- box(.65,.12,.65,4.5,.65,.3,0x424a48);
- box(.65,.55,.12,4.5,.95,.58,0x424a48);
- box(.12,.6,.12,4.5,.3,.3,0x555d5a);
- box(.65,.08,.65,4.5,.08,.3,0x555d5a);
- box(.65,.12,.65,2.1,.55,1.7,0x555d59);
- box(.65,.55,.12,2.1,.85,2,0x555d59);
- createInteractiveCabinet();
- box(1.5,.9,.6,-6,.48,.2,0x777e76);
- box(1.5,.08,.62,-6,.95,.2,0x555d57);
- box(1.15,.12,.65,5,1.1,-2.5,0x999e97);
- box(1.15,.75,.12,5,.65,-2.8,0x737b75);
- box(.18,.45,.18,5,1.35,-2.5,0x858c85);
- box(.06,.3,.06,5,1.35,-2.7,0x515957);
- box(1.1,.65,.55,5,.48,-2.5,0x777e77);
- box(1.15,.8,.06,5.9,2.3,-5.75,0x525a56);
- box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
-}
+/* FIM DA PARTE 1/3
+   Continue diretamente com a PARTE 2/3.
+*/
+ // ======================================================
+// AB GAMES — ENCONTRE UMA SAÍDA! V4.0
+// PARTE 2/3 — MÓVEIS, CADEIRAS E COLISÕES
+// ======================================================
 
-/* OBJETOS COLETÁVEIS DENTRO DAS GAVETAS */
-function createDrawerPickup(drawer,index,name,type,position){
- const item=new THREE.Group();
- item.position.set(position.x,position.y,position.z);
+const collisionBoxes = [];
 
- if(type==="note"){
-  const paper=new THREE.Mesh(new THREE.BoxGeometry(.28,.012,.2),mat(0xc2bba5));
-  item.add(paper);
-  for(let i=0;i<3;i++){
-   const line=new THREE.Mesh(new THREE.BoxGeometry(.19,.004,.006),mat(0x56564e));
-   line.position.set(-.015,.009,-.045+i*.045);
-   item.add(line);
-  }
-  item.rotation.y=-.12;
- }
-
- if(type==="key"){
-  const ring=new THREE.Mesh(new THREE.TorusGeometry(.055,.012,6,12),mat(0x77776b,.45,.7));
-  ring.rotation.x=Math.PI/2;
-  ring.position.set(-.055,.015,0);
-  item.add(ring);
-  const shaft=new THREE.Mesh(new THREE.BoxGeometry(.19,.018,.025),mat(0x77776b,.45,.7));
-  shaft.position.set(.065,.015,0);
-  item.add(shaft);
-  const tooth=new THREE.Mesh(new THREE.BoxGeometry(.035,.035,.025),mat(0x77776b,.45,.7));
-  tooth.position.set(.12,.015,.015);
-  item.add(tooth);
- }
-
- if(type==="bandage"){
-  const roll=new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,.09,12),mat(0xd2cbb7));
-  roll.rotation.x=Math.PI/2;
-  item.add(roll);
-  const center=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.095,10),mat(0x716e61));
-  center.rotation.x=Math.PI/2;
-  item.add(center);
- }
-
- item.userData={
-  pickable:true,type,name,stored:false,physics:false,
-  velocity:new THREE.Vector3(),
-  holdTarget:new THREE.Vector3(.27,-.23,-.57),
-  holdRotation:new THREE.Euler(-.18,0,0),
-  inDrawer:true,drawerIndex:index
- };
-
- drawer.add(item);
- items.push(item);
- return item;
-}
-
-function addRustToDrawer(drawer){
- const rustColors=[0x6f3825,0x8c482b,0x593323,0x9a542e,0x70402c];
-
- for(let i=0;i<13;i++){
-  const patch=new THREE.Mesh(
-   new THREE.BoxGeometry(.035+Math.random()*.12,.018+Math.random()*.075,.008),
-   mat(rustColors[Math.floor(Math.random()*rustColors.length)],1,0)
-  );
-  patch.position.set(-.32+Math.random()*.64,.035+Math.random()*.16,.284);
-  patch.rotation.z=(Math.random()-.5)*.6;
-  drawer.add(patch);
- }
-
- for(let i=0;i<5;i++){
-  const streak=new THREE.Mesh(
-   new THREE.BoxGeometry(.012+Math.random()*.018,.055+Math.random()*.11,.009),
-   mat(i%2===0?0x713b26:0x98502d)
-  );
-  streak.position.set(-.27+i*.13,.025+Math.random()*.04,.286);
-  streak.rotation.z=(Math.random()-.5)*.12;
-  drawer.add(streak);
- }
-
- const rustyHandle=new THREE.Mesh(new THREE.BoxGeometry(.19,.04,.06),mat(0x633b2a,.95,.25));
- rustyHandle.position.set(0,.13,.315);
- drawer.add(rustyHandle);
-
- for(let i=0;i<4;i++){
-  const spot=new THREE.Mesh(new THREE.BoxGeometry(.025,.025,.009),mat(0x9b542e));
-  spot.position.set(-.12+i*.08,.13,.29);
-  drawer.add(spot);
- }
-}
-
-function createDrawerCabinet(){
- const x=-4.65,z=-.9;
- box(.82,.92,.68,x,.52,z,0x777e76);
- box(.76,.84,.62,x,.52,z,0x454c47);
- box(.07,.92,.68,x-.42,.52,z,0x858b80);
- box(.07,.92,.68,x+.42,.52,z,0x858b80);
- box(.88,.08,.72,x,.99,z,0x555d57);
- box(.88,.08,.72,x,.06,z,0x555d57);
-
- for(let i=0;i<3;i++){
-  const g=new THREE.Group();
-  const closedZ=z+.34;
-  const initialOffset=.12+Math.random()*.035;
-
-  g.userData={
-   isDrawer:true,index:i,open:false,stuck:i===0,
-   initialOffset,targetZ:initialOffset,
-   closedZ,fullOpenOffset:.42
-  };
-
-  const bottom=new THREE.Mesh(new THREE.BoxGeometry(.68,.045,.48),mat(0x858b80));
-  g.add(bottom);
-  const leftSide=new THREE.Mesh(new THREE.BoxGeometry(.045,.21,.48),mat(0x777e76));
-  leftSide.position.set(-.34,.105,0);g.add(leftSide);
-  const rightSide=leftSide.clone();
-  rightSide.position.x=.34;g.add(rightSide);
-  const back=new THREE.Mesh(new THREE.BoxGeometry(.68,.21,.045),mat(0x777e76));
-  back.position.set(0,.105,-.22);g.add(back);
-  const front=new THREE.Mesh(new THREE.BoxGeometry(.72,.23,.055),mat(i===0?0x594b40:0x999b90));
-  front.position.set(0,.115,.255);g.add(front);
-  const handle=new THREE.Mesh(new THREE.BoxGeometry(.17,.035,.055),mat(0x555d5b,.45,.7));
-  handle.position.set(0,.13,.31);g.add(handle);
-
-  if(i===0)addRustToDrawer(g);
-
-  const y=.76-i*.29;
-  g.position.set(x,y,closedZ+initialOffset);
-  scene.add(g);drawers.push(g);
-
-  if(i===1){
-   createDrawerPickup(g,i,"Anotação","note",{x:.16,y:.045,z:-.06});
-   createDrawerPickup(g,i,"Chave enferrujada","key",{x:-.13,y:.075,z:-.04});
-  }
-  if(i===2){
-   createDrawerPickup(g,i,"Atadura","bandage",{x:.08,y:.075,z:-.04});
-  }
-
-  const target=new THREE.Mesh(
-   new THREE.BoxGeometry(.78,.25,.16),
-   new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false})
-  );
-  target.position.set(x,y,closedZ+initialOffset+.34);
-  target.userData.drawerIndex=i;
-  target.userData.isDrawerTarget=true;
-  scene.add(target);drawerTargets.push(target);
- }
-}
-
-function createInteractiveCabinet(){
- const x=-6,z=-2.7;
- box(1.06,2.25,.055,x,1.25,z-.37,0x343c38);
- box(.07,2.35,.78,x-.56,1.25,z,0x858b83);
- box(.07,2.35,.78,x+.56,1.25,z,0x858b83);
- box(1.18,.09,.78,x,2.45,z,0x858b83);
- box(1.18,.09,.78,x,.05,z,0x858b83);
-
- for(let i=0;i<3;i++){
-  const y=.72+i*.58;
-  box(1.02,.045,.68,x,y,z,0x999e95);
-  box(1.02,.07,.045,x,y+.055,z+.34,0x666e67);
- }
-
- cabinetInteriorLight=new THREE.PointLight(0xdcebdc,0,2.4,2);
- cabinetInteriorLight.position.set(-6,1.55,-2.48);scene.add(cabinetInteriorLight);
-
- const leftPivot=new THREE.Group();
- leftPivot.position.set(-6.57,.08,-2.25);scene.add(leftPivot);
- const leftDoor=new THREE.Mesh(new THREE.BoxGeometry(.53,2.34,.085),mat(0x858c85));
- leftDoor.position.set(.265,1.17,0);leftPivot.add(leftDoor);
- const leftWindow=new THREE.Mesh(new THREE.BoxGeometry(.34,.72,.02),mat(0x536b6d));
- leftWindow.position.set(.265,1.65,.052);leftPivot.add(leftWindow);
- const leftHandle=new THREE.Mesh(new THREE.BoxGeometry(.045,.27,.07),mat(0x555d59,.45,.7));
- leftHandle.position.set(.46,1.08,.075);leftPivot.add(leftHandle);
-
- const rightPivot=new THREE.Group();
- rightPivot.position.set(-5.43,.08,-2.25);scene.add(rightPivot);
- const rightDoor=new THREE.Mesh(new THREE.BoxGeometry(.53,2.34,.085),mat(0x858c85));
- rightDoor.position.set(-.265,1.17,0);rightPivot.add(rightDoor);
- const rightWindow=new THREE.Mesh(new THREE.BoxGeometry(.34,.72,.02),mat(0x536b6d));
- rightWindow.position.set(-.265,1.65,.052);rightPivot.add(rightWindow);
- const rightHandle=new THREE.Mesh(new THREE.BoxGeometry(.045,.27,.07),mat(0x555d59,.45,.7));
- rightHandle.position.set(-.46,1.08,.075);rightPivot.add(rightHandle);
-
- for(const hingeX of [-6.57,-5.43])for(const hingeY of [.35,1.2,2.15])
-  cylinder(.035,.035,.12,hingeX,hingeY,-2.19,0x555e59,8);
-
- cabinetDoors=[leftPivot,rightPivot];
- cabinetDoors.forEach(door=>door.userData.targetRotation=0);
-
- cabinetTarget=new THREE.Mesh(new THREE.BoxGeometry(1.2,2.35,.2),
-  new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
- cabinetTarget.position.set(-6,1.25,-2.15);scene.add(cabinetTarget);
-}
-
-function createMedicalEquipment(){
- box(1.5,.12,.7,1.2,.8,-3.8,0x777f78);
- box(1.42,.1,.65,1.2,.92,-3.8,0xb4b4a7);
- for(const x of [.6,1.8])for(const z of [-4.05,-3.55])
-  box(.055,.7,.055,x,.38,z,0x4e5652);
- cylinder(.035,.035,1.9,5.9,1.1,1.8,0x929b94,8);
- cylinder(.35,.35,.06,5.9,.12,1.8,0x555d58,12);
- box(.55,.06,.06,5.9,2.02,1.8,0x929b94);
- for(const x of [5.65,6.15]){
-  cylinder(.025,.025,.28,x,1.88,1.8,0x929b94,8);
-  cylinder(.1,.1,.22,x,1.65,1.8,0x687f79,10);
- }
- cylinder(.28,.22,.55,6.5,.38,-.4,0x626c66,12);
- box(1.2,.08,.6,-1.1,.95,3.8,0x858d84);
- for(const x of [-1.6,-.6])for(const z of [3.55,4.05])
-  box(.055,.9,.055,x,.48,z,0x555d58);
- box(.6,.035,.3,-1.1,1.02,3.8,0x9c9c8d);
- box(.16,.08,.12,-1.3,1.08,3.8,0x383e3b);
- box(.18,.05,.12,-.95,1.08,3.8,0x383e3b);
-}
-
-function createFloorClutter(){
- for(let i=0;i<14;i++){
-  const x=-7+Math.random()*14,z=-5+Math.random()*10;
-  if(Math.abs(x)<1.5&&Math.abs(z)<1.5)continue;
-  const stain=new THREE.Mesh(new THREE.CircleGeometry(.12+Math.random()*.28,12),
-   new THREE.MeshStandardMaterial({
-    color:i%3===0?0x343c36:0x555d54,
-    transparent:true,opacity:.2+Math.random()*.15,roughness:1
-   }));
-  stain.rotation.x=-Math.PI/2;stain.position.set(x,.106,z);scene.add(stain);
- }
- for(let i=0;i<10;i++){
-  const x=-6.8+Math.random()*13.6,z=-5+Math.random()*10;
-  const scrap=box(.06+Math.random()*.15,.012,.08+Math.random()*.12,x,.12,z,0x9b9c8d);
-  scrap.rotation.y=Math.random()*Math.PI;
- }
-}
-
-function createRealisticDetails(){
- for(let i=0;i<18;i++){
-  const x=-7.5+Math.random()*15,y=.4+Math.random()*2.5,z=i%2===0?-5.86:5.86;
-  const mark=box(.08+Math.random()*.25,.025,.012,x,y,z,0x59615b);
-  mark.rotation.z=(Math.random()-.5)*.25;
- }
- box(.9,.45,.045,-7.82,2.7,-4,0x414b46);
- box(.72,.3,.025,-7.79,2.7,-4,0xb1b4a9);
- box(.08,.08,.03,-7.75,2.7,-4,0x6c8276);
- box(.08,.08,.03,-7.75,2.7,-3.9,0x6c8276);
- box(7.7,.045,.05,0,3.15,-5.78,0x454d48);
- box(.045,.05,5.6,-7.78,3.18,0,0x454d48);
- const paper=box(.48,.62,.025,7.84,2.35,3.2,0xb7b5a6);
- paper.rotation.z=.08;
- for(let i=0;i<5;i++){
-  const line=box(.3,.012,.012,7.81,2.53-i*.085,3.18,0x55574f);
-  line.rotation.z=.08;
- }
-}
-
-function createItems(){
- const flashlight=new THREE.Group();
- const body=new THREE.Mesh(new THREE.CylinderGeometry(.055,.07,.38,12),mat(0x333a3a,.45,.7));
- body.rotation.x=Math.PI/2;body.position.z=-.08;flashlight.add(body);
- const head=new THREE.Mesh(new THREE.CylinderGeometry(.09,.065,.1,12),mat(0x777f7b,.35,.8));
- head.rotation.x=Math.PI/2;head.position.z=-.29;flashlight.add(head);
- const lens=new THREE.Mesh(new THREE.CircleGeometry(.065,12),new THREE.MeshBasicMaterial({color:0xd8dfc8}));
- lens.position.z=-.345;flashlight.add(lens);
-
- flashlight.position.set(-6.34,.84,-2.68);
- flashlight.userData={
-  pickable:true,type:"flashlight",name:"Lanterna",
-  stored:false,physics:false,velocity:new THREE.Vector3(),
-  holdTarget:new THREE.Vector3(.27,-.22,-.58),
-  holdRotation:new THREE.Euler(0,0,0),inCabinet:true
- };
- scene.add(flashlight);items.push(flashlight);
-
- const card=new THREE.Group();
- const cardBody=new THREE.Mesh(new THREE.BoxGeometry(.32,.018,.21),mat(0x9b9b8d,.55,.1));
- card.add(cardBody);
- const stripe=new THREE.Mesh(new THREE.BoxGeometry(.25,.008,.035),mat(0x323a3b));
- stripe.position.y=.012;stripe.position.z=-.055;card.add(stripe);
- const chip=new THREE.Mesh(new THREE.BoxGeometry(.055,.009,.045),mat(0xb9a46e,.4,.5));
- chip.position.set(-.08,.014,.045);card.add(chip);
- card.position.set(2.7,.16,2.5);card.rotation.x=-Math.PI/2;
- card.userData={
-  pickable:true,type:"card",name:"Cartão de acesso",
-  stored:false,physics:false,velocity:new THREE.Vector3(),
-  holdTarget:new THREE.Vector3(.27,-.25,-.52),
-  holdRotation:new THREE.Euler(-.18,0,0)
- };
- scene.add(card);items.push(card);
-}
-
-function createExtraItems(){
- const kit=new THREE.Group();
- const kitBody=new THREE.Mesh(new THREE.BoxGeometry(.32,.19,.24),mat(0xd0d0c3));
- kit.add(kitBody);
- const kitTop=new THREE.Mesh(new THREE.BoxGeometry(.34,.035,.25),mat(0x858d84));
- kitTop.position.y=.105;kit.add(kitTop);
- const crossV=new THREE.Mesh(new THREE.BoxGeometry(.045,.12,.012),mat(0x9b3030));
- crossV.position.set(0,.13,.13);kit.add(crossV);
- const crossH=new THREE.Mesh(new THREE.BoxGeometry(.13,.045,.012),mat(0x9b3030));
- crossH.position.set(0,.13,.13);kit.add(crossH);
-
- kit.position.set(-6,.85,-2.68);
- kit.userData={
-  pickable:true,type:"kit",name:"Kit médico",
-  stored:false,physics:false,velocity:new THREE.Vector3(),
-  holdTarget:new THREE.Vector3(.27,-.25,-.52),
-  holdRotation:new THREE.Euler(0,0,0),inCabinet:true
- };
- scene.add(kit);items.push(kit);
-
- const batteryItem=new THREE.Group();
- const cell=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.2,10),mat(0x343c3b,.45,.4));
- cell.rotation.z=Math.PI/2;batteryItem.add(cell);
- const tip=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.025,8),mat(0xb5ad83,.4,.7));
- tip.rotation.z=Math.PI/2;tip.position.x=.11;batteryItem.add(tip);
-
- batteryItem.position.set(-5.66,.80,-2.68);
- batteryItem.userData={
-  pickable:true,type:"battery",name:"Pilha",
-  stored:false,physics:false,velocity:new THREE.Vector3(),
-  holdTarget:new THREE.Vector3(.27,-.25,-.52),
-  holdRotation:new THREE.Euler(0,0,Math.PI/2),inCabinet:true
- };
- scene.add(batteryItem);items.push(batteryItem);
-}
-
-function createHand(){
- hand=new THREE.Group();
- const palm=new THREE.Mesh(new THREE.BoxGeometry(.13,.12,.2),mat(0x9b7967));
- hand.add(palm);
- for(let i=0;i<4;i++){
-  const finger=new THREE.Mesh(new THREE.CylinderGeometry(.018,.022,.1,6),mat(0x9b7967));
-  finger.rotation.x=Math.PI/2;
-  finger.position.set(-.045+i*.03,-.045,-.105);
-  hand.add(finger);
- }
- hand.position.set(.36,-.34,-.55);
- camera.add(hand);scene.add(camera);
-}
-
-function createFlashlight(){
- const light=new THREE.SpotLight(0xfff3d1,0,15,Math.PI/7,.35,1.4);
- light.position.set(0,0,0);
- light.target.position.set(0,0,-1);
- camera.add(light);camera.add(light.target);
- camera.userData.flashlight=light;
-}
-
-function setHandGrip(grip){
- if(!hand)return;
- hand.scale.set(grip?1.05:1,grip?1.05:1,grip?1.05:1);
- hand.rotation.z=grip?-.12:0;
-}
-
-function updateInventoryText(){
- $("inventory").textContent=heldItem?
-  "MÃO: "+heldItem.userData.name.toUpperCase():"MÃO: VAZIA";
-}
-
-function updateBattery(){
- $("battery").textContent=flashlightOn?
-  "LANTERNA: "+Math.ceil(battery)+"%":"LANTERNA: DESLIGADA";
-}
-
-function setButtonVisible(id,visible){
- const button=$(id);
- if(button)button.classList.toggle("hidden",!visible);
-}
-
-function updateContextualButtons(){
- const holdingBattery=!!heldItem&&heldItem.userData.type==="battery";
- const usableTarget=!!currentTarget&&(currentTarget.userData.pickable?!heldItem:true);
- $("use").classList.toggle("visible",usableTarget||holdingBattery);
-
- if(holdingBattery)$("use").textContent="USAR PILHA";
- else if(!usableTarget)$("use").textContent="";
- else if(currentTarget===cabinetTarget)
-  $("use").textContent=cabinetOpen?"FECHAR ARMÁRIO":"ABRIR ARMÁRIO";
- else if(currentTarget.userData&&currentTarget.userData.isDrawerTarget){
-  const drawer=drawers[currentTarget.userData.drawerIndex];
-  if(drawer.userData.stuck)$("use").textContent="TENTAR ABRIR";
-  else $("use").textContent=drawer.userData.open?"FECHAR GAVETA":"ABRIR GAVETA";
- }else if(currentTarget.userData&&currentTarget.userData.pickable)
-  $("use").textContent="PEGAR";
-
- const holding=!!heldItem;
- const holdingFlashlight=holding&&heldItem.userData.type==="flashlight";
- setButtonVisible("drop",holding);
- setButtonVisible("inspect",holding);
- setButtonVisible("store",holding&&backpack.some(x=>x===null));
- setButtonVisible("light",holdingFlashlight);
-}
-
-function pickItem(){
- if(!selectedItem)return;
- const item=selectedItem;
- if(heldItem){
-  $("message").textContent="Sua mão já está ocupada. Guarde ou solte o objeto.";
-  return;
- }
- if(item.userData.stored)return;
-
- camera.add(item);
- heldItem=item;
- item.userData.inDrawer=false;
- item.userData.physics=false;
- item.userData.velocity.set(0,0,0);
- item.userData.holdTarget=new THREE.Vector3(.27,-.23,-.57);
- item.userData.holdRotation=item.userData.type==="flashlight"?
-  new THREE.Euler(0,0,0):new THREE.Euler(-.18,0,0);
- item.position.set(.08,-.32,-.75);
- item.rotation.set(.5,0,.25);item.scale.setScalar(.82);
- pickupAnimation=0;pickupAnimating=true;
- setHandGrip(true);updateInventoryText();
- playSound("pickup");
- $("message").textContent=item.userData.name+" recolhido.";
- selectedItem=null;currentTarget=null;updateContextualButtons();
-}
-
-function dropItem(){
- if(!heldItem){
-  $("message").textContent="Você não está segurando nada.";
-  return;
- }
- const item=heldItem;pickupAnimating=false;
- camera.remove(item);scene.add(item);
- item.position.copy(camera.position);
- const direction=new THREE.Vector3();
- camera.getWorldDirection(direction);
- item.position.add(direction.multiplyScalar(.85));
- item.position.y=Math.max(.18,item.position.y-.25);
- item.rotation.set(0,Math.random()*Math.PI,0);
- item.scale.setScalar(1);
- item.userData.physics=true;
- item.userData.velocity.set(0,0,0);
- item.userData.stored=false;
- item.userData.inCabinet=false;
- item.userData.inDrawer=false;
- heldItem=null;setHandGrip(false);
-
- if(item.userData.type==="flashlight"&&flashlightOn){
-  flashlightOn=false;
-  camera.userData.flashlight.intensity=0;
-  updateBattery();
- }
- updateInventoryText();updateContextualButtons();playSound("drop");
- $("message").textContent="Objeto solto.";
-}
-
-function toggleLight(){
- if(!heldItem||heldItem.userData.type!=="flashlight"){
-  $("message").textContent="Você precisa estar segurando a lanterna.";
-  return;
- }
- if(battery<=0){
-  $("message").textContent="A bateria acabou.";
-  return;
- }
- flashlightOn=!flashlightOn;
- camera.userData.flashlight.intensity=flashlightOn?3.2:0;
- updateBattery();playSound("light");
- $("message").textContent=flashlightOn?"Lanterna ligada.":"Lanterna desligada.";
-}
-
-function useBatteryItem(){
- if(!heldItem||heldItem.userData.type!=="battery")return false;
- if(battery>=100){
-  $("message").textContent="A bateria da lanterna já está cheia.";
-  return true;
- }
- battery=Math.min(100,battery+40);
- const used=heldItem;
- camera.remove(used);
- const index=items.indexOf(used);
- if(index!==-1)items.splice(index,1);
- heldItem=null;pickupAnimating=false;setHandGrip(false);
- updateInventoryText();updateBattery();updateContextualButtons();
- playSound("battery");
- $("message").textContent="Pilha utilizada! Bateria recuperada.";
- return true;
-}
-
-function storeHeldItem(){
- if(!heldItem){
-  $("message").textContent="Você não está segurando nada.";
-  return;
- }
- const index=backpack.findIndex(x=>x===null);
- if(index===-1){
-  $("message").textContent="A mochila está cheia.";
-  return;
- }
- const item=heldItem;pickupAnimating=false;
- if(item.userData.type==="flashlight"&&flashlightOn){
-  flashlightOn=false;camera.userData.flashlight.intensity=0;updateBattery();
- }
- camera.remove(item);
- item.userData.stored=true;item.userData.physics=false;
- item.userData.velocity.set(0,0,0);
- backpack[index]=item;heldItem=null;setHandGrip(false);
- updateInventoryText();renderBackpack();updateContextualButtons();playSound("store");
- $("message").textContent=item.userData.name+" guardado na mochila.";
-}
-
-function renderBackpack(){
- document.querySelectorAll(".backpackSlot").forEach((slot,index)=>{
-  const item=backpack[index];
-  slot.innerHTML=item?
-   "ESPAÇO "+(index+1)+"<br>RETIRAR: "+item.userData.name.toUpperCase():
-   "ESPAÇO "+(index+1)+"<br>VAZIO";
+function addCollision(x,z,width,depth){
+ collisionBoxes.push({
+  minX:x-width/2,
+  maxX:x+width/2,
+  minZ:z-depth/2,
+  maxZ:z+depth/2
  });
 }
 
-function openBackpack(){
- backpackOpen=true;$("backpackPanel").classList.remove("hidden");
- renderBackpack();currentTarget=null;updateContextualButtons();
- if(document.pointerLockElement)document.exitPointerLock();
-}
+// ======================================================
+// CADEIRAS — PÉS APOIADOS NO CHÃO
+// ======================================================
 
-function closeBackpack(){
- backpackOpen=false;$("backpackPanel").classList.add("hidden");
- updateContextualButtons();
-}
+function createChair(x,z,rotation=0){
+ const chair = new THREE.Group();
 
-function toggleBackpack(){
- if(backpackOpen){closeBackpack();return}
- if(inspecting)return;
- openBackpack();
-}
+ const wood = new THREE.MeshStandardMaterial({
+  color:0x34383a,
+  roughness:.85
+ });
 
-function selectBackpackSlot(index,quick=false){
- if(!backpackOpen&&!quick)return;
- const stored=backpack[index],oldItem=heldItem;
- if(!stored){
-  if(!oldItem){
-   $("message").textContent="Esse espaço está vazio.";
-   return;
-  }
-  pickupAnimating=false;
-  if(oldItem.userData.type==="flashlight"&&flashlightOn){
-   flashlightOn=false;camera.userData.flashlight.intensity=0;updateBattery();
-  }
-  camera.remove(oldItem);oldItem.userData.stored=true;
-  oldItem.userData.physics=false;oldItem.userData.velocity.set(0,0,0);
-  backpack[index]=oldItem;heldItem=null;setHandGrip(false);
-  updateInventoryText();renderBackpack();
-  if(backpackOpen)closeBackpack();
-  playSound("store");
-  $("message").textContent=oldItem.userData.name+" guardado no espaço "+(index+1)+".";
-  updateContextualButtons();return;
- }
- if(oldItem){
-  pickupAnimating=false;
-  if(oldItem.userData.type==="flashlight"&&flashlightOn){
-   flashlightOn=false;camera.userData.flashlight.intensity=0;updateBattery();
-  }
-  camera.remove(oldItem);oldItem.userData.stored=true;
-  oldItem.userData.physics=false;oldItem.userData.velocity.set(0,0,0);
- }
- backpack[index]=oldItem;
- heldItem=stored;heldItem.userData.stored=false;
- heldItem.userData.physics=false;heldItem.userData.velocity.set(0,0,0);
- camera.add(heldItem);
- heldItem.userData.holdTarget=new THREE.Vector3(.27,-.23,-.57);
- heldItem.userData.holdRotation=new THREE.Euler(0,0,0);
- heldItem.position.set(.12,-.12,-.38);
- heldItem.rotation.set(.2,0,.18);heldItem.scale.setScalar(.92);
- pickupAnimation=0;pickupAnimating=true;setHandGrip(true);
- updateInventoryText();renderBackpack();
- if(backpackOpen)closeBackpack();
- $("message").textContent=oldItem?
-  "Objetos trocados com sucesso.":"Objeto equipado: "+heldItem.userData.name+".";
- updateContextualButtons();
-}
+ const metal = new THREE.MeshStandardMaterial({
+  color:0x24282a,
+  metalness:.55,
+  roughness:.65
+ });
 
-function updateCabinet(dt){
- if(!cabinetDoors.length)return;
- const openAngle=1.18;
- cabinetDoors[0].userData.targetRotation=cabinetOpen?-openAngle:0;
- cabinetDoors[1].userData.targetRotation=cabinetOpen?openAngle:0;
- for(const door of cabinetDoors){
-  door.rotation.y=THREE.MathUtils.damp(door.rotation.y,door.userData.targetRotation,7,dt);
- }
- if(cabinetInteriorLight){
-  cabinetInteriorLight.intensity=THREE.MathUtils.damp(
-   cabinetInteriorLight.intensity,cabinetOpen?.65:0,5,dt
-  );
- }
-}
-
-function interact(){
- if(backpackOpen||inspecting)return;
- if(heldItem&&heldItem.userData.type==="battery"){
-  useBatteryItem();return;
- }
- if(currentTarget){
-  if(currentTarget===cabinetTarget){
-   cabinetOpen=!cabinetOpen;playSound("cabinet");
-   $("message").textContent=cabinetOpen?
-    "As duas portas do armário estão abrindo.":"As portas do armário estão fechando.";
-   updateContextualButtons();return;
-  }
-
-  if(currentTarget.userData&&currentTarget.userData.isDrawerTarget){
-   const index=currentTarget.userData.drawerIndex;
-   const drawer=drawers[index];
-   if(drawer.userData.stuck){
-    playSound("rust");
-    $("message").textContent="A gaveta está emperrada pela ferrugem.";
-    updateContextualButtons();return;
-   }
-   drawer.userData.open=!drawer.userData.open;
-   drawer.userData.targetZ=drawer.userData.open?
-    drawer.userData.fullOpenOffset:drawer.userData.initialOffset;
-   playSound("drawer");
-   $("message").textContent=drawer.userData.open?
-    "Gaveta aberta.":"Gaveta voltou à posição inicial.";
-   updateContextualButtons();return;
-  }
-
-  if(currentTarget.userData&&currentTarget.userData.pickable){
-   selectedItem=currentTarget;pickItem();return;
-  }
- }
- $("message").textContent="Não há nada para interagir aqui.";
-}
-
-function inspectItem(){
- if(!heldItem){
-  $("message").textContent="Segure um objeto para examiná-lo.";
-  return;
- }
- inspecting=!inspecting;
- $("inspectPanel").classList.toggle("hidden",!inspecting);
- if(inspecting){
-  currentTarget=null;playSound("inspect");
-  $("message").textContent="Examine o objeto.";
-  if(document.pointerLockElement)document.exitPointerLock();
- }else $("message").textContent="Você voltou a explorar.";
- updateContextualButtons();
-}
-
-function resize(){
- if(!camera||!renderer)return;
- camera.aspect=innerWidth/innerHeight;
- camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
-}
-
-function updateRaycast(){
- if(!camera)return;
- if(backpackOpen||inspecting){
-  currentTarget=null;updateContextualButtons();return;
- }
-
- raycaster.setFromCamera(centerNdc,camera);
- currentTarget=null;
-
- const pickableItems=items.filter(item=>
-  !item.userData.stored&&
-  !item.userData.physics&&
-  (!item.userData.inCabinet||cabinetOpen)&&
-  (!item.userData.inDrawer||
-   (drawers[item.userData.drawerIndex]&&drawers[item.userData.drawerIndex].userData.open))
+ // Assento
+ const seat = new THREE.Mesh(
+  new THREE.BoxGeometry(.52,.10,.52),
+  wood
  );
+ seat.position.y=.84;
+ chair.add(seat);
 
- const itemHits=raycaster.intersectObjects(pickableItems,true);
+ // Encosto
+ const back = new THREE.Mesh(
+  new THREE.BoxGeometry(.52,.68,.09),
+  wood
+ );
+ back.position.set(0,1.18,-.215);
+ chair.add(back);
 
- for(const hit of itemHits){
-  let obj=hit.object;
-  while(obj.parent&&!obj.userData.pickable)obj=obj.parent;
-  if(obj.userData.pickable){currentTarget=obj;break}
- }
+ // Quatro pernas
+ const legPositions=[
+  [-.20,.20],
+  [.20,.20],
+  [-.20,-.20],
+  [.20,-.20]
+ ];
 
- if(!currentTarget){
-  const otherTargets=[...drawerTargets];
-  if(cabinetTarget)otherTargets.push(cabinetTarget);
-  const otherHits=raycaster.intersectObjects(otherTargets,true);
-  if(otherHits.length){
-   for(const hit of otherHits){
-    let obj=hit.object;
-    while(obj.parent&&!obj.userData.isDrawerTarget&&obj!==cabinetTarget)obj=obj.parent;
-    if(obj.userData.isDrawerTarget||obj===cabinetTarget){
-     currentTarget=obj;break;
-    }
-   }
+ legPositions.forEach(([px,pz])=>{
+  const leg = new THREE.Mesh(
+   new THREE.BoxGeometry(.055,.74,.055),
+   metal
+  );
+
+  // Parte inferior exatamente no nível do chão
+  leg.position.set(px,.47,pz);
+  chair.add(leg);
+ });
+
+ // Apoio inferior
+ const support1 = new THREE.Mesh(
+  new THREE.BoxGeometry(.42,.035,.035),
+  metal
+ );
+ support1.position.set(0,.35,.20);
+ chair.add(support1);
+
+ const support2 = new THREE.Mesh(
+  new THREE.BoxGeometry(.42,.035,.035),
+  metal
+ );
+ support2.position.set(0,.35,-.20);
+ chair.add(support2);
+
+ chair.position.set(x,0,z);
+ chair.rotation.y=rotation;
+
+ scene.add(chair);
+
+ addCollision(x,z,.65,.65);
+
+ return chair;
+}
+
+// ======================================================
+// CAMA HOSPITALAR
+// ======================================================
+
+function createHospitalBed(x,z){
+ const group=new THREE.Group();
+
+ const metal=new THREE.MeshStandardMaterial({
+  color:0x555d60,
+  metalness:.65,
+  roughness:.6
+ });
+
+ const mattress=new THREE.MeshStandardMaterial({
+  color:0x777d7b,
+  roughness:.95
+ });
+
+ const frame=new THREE.Mesh(
+  new THREE.BoxGeometry(2.25,.16,1.05),
+  metal
+ );
+ frame.position.y=.58;
+ group.add(frame);
+
+ const mattressMesh=new THREE.Mesh(
+  new THREE.BoxGeometry(2.12,.18,.96),
+  mattress
+ );
+ mattressMesh.position.y=.75;
+ group.add(mattressMesh);
+
+ for(const px of [-.95,.95]){
+  for(const pz of [-.40,.40]){
+   const leg=new THREE.Mesh(
+    new THREE.CylinderGeometry(.045,.055,.48,8),
+    metal
+   );
+   leg.position.set(px,.32,pz);
+   group.add(leg);
   }
  }
- updateContextualButtons();
+
+ const head=new THREE.Mesh(
+  new THREE.BoxGeometry(.12,.65,1.05),
+  metal
+ );
+ head.position.set(-1.08,.88,0);
+ group.add(head);
+
+ group.position.set(x,0,z);
+ scene.add(group);
+
+ addCollision(x,z,2.45,1.25);
+ return group;
 }
 
-function updateDrawers(dt){
- for(let i=0;i<drawers.length;i++){
-  const drawer=drawers[i];
-  const targetZ=drawer.userData.closedZ+drawer.userData.targetZ;
-  drawer.position.z=THREE.MathUtils.damp(drawer.position.z,targetZ,8,dt);
-  if(drawerTargets[i])drawerTargets[i].position.z=drawer.position.z+.34;
- }
+// ======================================================
+// ARMÁRIOS
+// ======================================================
+
+function createMedicalCabinet(x,z){
+ const group=new THREE.Group();
+
+ const bodyMat=new THREE.MeshStandardMaterial({
+  color:0x777c79,
+  roughness:.8,
+  metalness:.2
+ });
+
+ const body=new THREE.Mesh(
+  new THREE.BoxGeometry(.95,1.85,.65),
+  bodyMat
+ );
+ body.position.y=1.02;
+ group.add(body);
+
+ const doorMat=new THREE.MeshStandardMaterial({
+  color:0x626966,
+  roughness:.7,
+  metalness:.25
+ });
+
+ const door=new THREE.Mesh(
+  new THREE.BoxGeometry(.90,1.78,.045),
+  doorMat
+ );
+ door.position.set(0,1.02,.35);
+ group.add(door);
+
+ const handle=new THREE.Mesh(
+  new THREE.BoxGeometry(.035,.25,.055),
+  new THREE.MeshStandardMaterial({
+   color:0x202526,
+   metalness:.7,
+   roughness:.4
+  })
+ );
+ handle.position.set(.34,1.05,.39);
+ group.add(handle);
+
+ group.position.set(x,0,z);
+ scene.add(group);
+
+ addCollision(x,z,1.15,.85);
+ return group;
 }
 
-function updateHeldItem(dt){
- if(!heldItem)return;
- const target=heldItem.userData.holdTarget;
- const rotation=heldItem.userData.holdRotation;
+// ======================================================
+// MESA COM COMPUTADOR
+// ======================================================
 
- if(pickupAnimating){
-  pickupAnimation=Math.min(1,pickupAnimation+dt*3.5);
-  const t=pickupAnimation,smooth=t*t*(3-2*t);
-  const start=new THREE.Vector3(.08,-.32,-.75);
-  heldItem.position.lerpVectors(start,target,smooth);
-  if(hand){
-   hand.position.y=-.34+Math.sin(t*Math.PI)*.09;
-   hand.rotation.x=Math.sin(t*Math.PI)*-.35;
+function createComputerDesk(x,z){
+ const group=new THREE.Group();
+
+ const deskMat=new THREE.MeshStandardMaterial({
+  color:0x454b4c,
+  roughness:.8
+ });
+
+ const top=new THREE.Mesh(
+  new THREE.BoxGeometry(2.05,.12,.82),
+  deskMat
+ );
+ top.position.y=.88;
+ group.add(top);
+
+ for(const px of [-.88,.88]){
+  for(const pz of [-.28,.28]){
+   const leg=new THREE.Mesh(
+    new THREE.BoxGeometry(.09,.86,.09),
+    deskMat
+   );
+   leg.position.set(px,.43,pz);
+   group.add(leg);
   }
-  if(pickupAnimation>=1){
-   pickupAnimating=false;
-   if(hand){hand.position.y=-.34;hand.rotation.x=0}
+ }
+
+ // Monitor
+ const monitor=new THREE.Mesh(
+  new THREE.BoxGeometry(.95,.62,.09),
+  new THREE.MeshStandardMaterial({
+   color:0x111719,
+   roughness:.5,
+   metalness:.3
+  })
+ );
+ monitor.position.set(0,1.28,-.20);
+ group.add(monitor);
+
+ // Tela apagada
+ const screen=new THREE.Mesh(
+  new THREE.PlaneGeometry(.84,.50),
+  new THREE.MeshBasicMaterial({
+   color:0x10191c
+  })
+ );
+ screen.position.set(0,1.29,-.148);
+ group.add(screen);
+
+ // Teclado
+ const keyboard=new THREE.Mesh(
+  new THREE.BoxGeometry(.65,.035,.22),
+  new THREE.MeshStandardMaterial({
+   color:0x171b1c
+  })
+ );
+ keyboard.position.set(0,.97,.20);
+ group.add(keyboard);
+
+ group.position.set(x,0,z);
+ scene.add(group);
+
+ addCollision(x,z,2.25,1.05);
+ return group;
+}
+
+// ======================================================
+// CARRINHO DE EQUIPAMENTOS
+// ======================================================
+
+function createEquipmentCart(x,z){
+ const group=new THREE.Group();
+
+ const metal=new THREE.MeshStandardMaterial({
+  color:0x777f80,
+  metalness:.7,
+  roughness:.55
+ });
+
+ const shelf1=new THREE.Mesh(
+  new THREE.BoxGeometry(.85,.07,.58),
+  metal
+ );
+ shelf1.position.y=.55;
+ group.add(shelf1);
+
+ const shelf2=new THREE.Mesh(
+  new THREE.BoxGeometry(.85,.07,.58),
+  metal
+ );
+ shelf2.position.y=1.05;
+ group.add(shelf2);
+
+ for(const px of [-.36,.36]){
+  for(const pz of [-.22,.22]){
+   const pole=new THREE.Mesh(
+    new THREE.CylinderGeometry(.025,.025,1.05,8),
+    metal
+   );
+   pole.position.set(px,.80,pz);
+   group.add(pole);
   }
- }else if(target){
-  heldItem.position.lerp(target,Math.min(1,dt*12));
  }
 
- if(rotation&&!inspecting){
-  heldItem.rotation.x=THREE.MathUtils.damp(heldItem.rotation.x,rotation.x,12,dt);
-  heldItem.rotation.y=THREE.MathUtils.damp(heldItem.rotation.y,rotation.y,12,dt);
-  heldItem.rotation.z=THREE.MathUtils.damp(heldItem.rotation.z,rotation.z,12,dt);
- }
-}
-
-function updateDroppedItems(dt){
- for(const item of items){
-  if(!item.userData.physics||item.userData.stored)continue;
-  item.userData.velocity.y-=9.8*dt;
-  item.position.addScaledVector(item.userData.velocity,dt);
-  if(item.position.y<.17){
-   item.position.y=.17;item.userData.velocity.y=0;
-   item.userData.physics=false;
+ // Rodinhas
+ for(const px of [-.34,.34]){
+  for(const pz of [-.20,.20]){
+   const wheel=new THREE.Mesh(
+    new THREE.CylinderGeometry(.065,.065,.045,10),
+    new THREE.MeshStandardMaterial({color:0x171a1b})
+   );
+   wheel.rotation.z=Math.PI/2;
+   wheel.position.set(px,.12,pz);
+   group.add(wheel);
   }
  }
+
+ group.position.set(x,0,z);
+ scene.add(group);
+
+ addCollision(x,z,1.05,.80);
+ return group;
 }
 
-function updateBatteryDrain(dt){
- if(!flashlightOn)return;
- battery=Math.max(0,battery-dt*.12);
- if(battery<=0){
-  flashlightOn=false;camera.userData.flashlight.intensity=0;
-  $("message").textContent="A bateria da lanterna acabou.";
+// ======================================================
+// MACA AUXILIAR
+// ======================================================
+
+function createSmallTable(x,z){
+ const group=new THREE.Group();
+
+ const top=new THREE.Mesh(
+  new THREE.BoxGeometry(1.25,.10,.72),
+  new THREE.MeshStandardMaterial({
+   color:0x555c5d,
+   metalness:.45,
+   roughness:.7
+  })
+ );
+ top.position.y=.82;
+ group.add(top);
+
+ for(const px of [-.52,.52]){
+  for(const pz of [-.27,.27]){
+   const leg=new THREE.Mesh(
+    new THREE.BoxGeometry(.07,.78,.07),
+    new THREE.MeshStandardMaterial({color:0x343a3b})
+   );
+   leg.position.set(px,.41,pz);
+   group.add(leg);
+  }
  }
- updateBattery();
+
+ group.position.set(x,0,z);
+ scene.add(group);
+
+ addCollision(x,z,1.45,.90);
+ return group;
 }
+
+// ======================================================
+// SUPORTE DE SORO
+// ======================================================
+
+function createIVStand(x,z){
+ const group=new THREE.Group();
+
+ const metal=new THREE.MeshStandardMaterial({
+  color:0x929b9b,
+  metalness:.8,
+  roughness:.35
+ });
+
+ const pole=new THREE.Mesh(
+  new THREE.CylinderGeometry(.025,.035,2.05,8),
+  metal
+ );
+ pole.position.y=1.12;
+ group.add(pole);
+
+ const hook=new THREE.Mesh(
+  new THREE.TorusGeometry(.12,.018,6,12,Math.PI),
+  metal
+ );
+ hook.position.set(0,2.12,0);
+ hook.rotation.z=Math.PI;
+ group.add(hook);
+
+ const base=new THREE.Mesh(
+  new THREE.CylinderGeometry(.25,.25,.07,12),
+  metal
+ );
+ base.position.y=.10;
+ group.add(base);
+
+ for(let i=0;i<3;i++){
+  const angle=i*Math.PI*2/3;
+  const wheel=new THREE.Mesh(
+   new THREE.SphereGeometry(.065,8,8),
+   new THREE.MeshStandardMaterial({color:0x171a1b})
+  );
+  wheel.position.set(
+   Math.cos(angle)*.20,
+   .055,
+   Math.sin(angle)*.20
+  );
+  group.add(wheel);
+ }
+
+ group.position.set(x,0,z);
+ scene.add(group);
+
+ addCollision(x,z,.55,.55);
+ return group;
+}
+
+// ======================================================
+// OBJETOS PEQUENOS E DETALHES
+// ======================================================
+
+function createMedicalDetails(){
+ const bottleMat=new THREE.MeshStandardMaterial({
+  color:0x9caeaa,
+  roughness:.3,
+  transparent:true,
+  opacity:.75
+ });
+
+ // Frascos sobre o carrinho
+ const bottle1=new THREE.Mesh(
+  new THREE.CylinderGeometry(.09,.10,.28,10),
+  bottleMat
+ );
+ bottle1.position.set(4.35,.75,.3);
+ scene.add(bottle1);
+
+ const bottle2=new THREE.Mesh(
+  new THREE.CylinderGeometry(.07,.08,.22,10),
+  bottleMat
+ );
+ bottle2.position.set(4.62,.75,.3);
+ scene.add(bottle2);
+
+ // Caixa no chão
+ const boxMat=new THREE.MeshStandardMaterial({
+  color:0x625c4e,
+  roughness:1
+ });
+
+ const boxObject=new THREE.Mesh(
+  new THREE.BoxGeometry(.42,.32,.38),
+  boxMat
+ );
+ boxObject.position.set(-5,.26,2.7);
+ boxObject.rotation.y=.18;
+ scene.add(boxObject);
+
+ // Banquinho
+ const stool=new THREE.Group();
+
+ const stoolSeat=new THREE.Mesh(
+  new THREE.CylinderGeometry(.28,.28,.10,16),
+  new THREE.MeshStandardMaterial({color:0x414849})
+ );
+ stoolSeat.position.y=.78;
+ stool.add(stoolSeat);
+
+ for(let i=0;i<3;i++){
+  const angle=i*Math.PI*2/3;
+  const leg=new THREE.Mesh(
+   new THREE.CylinderGeometry(.035,.045,.73,8),
+   new THREE.MeshStandardMaterial({color:0x303637})
+  );
+  leg.position.set(
+   Math.cos(angle)*.18,
+   .415,
+   Math.sin(angle)*.18
+  );
+  stool.add(leg);
+ }
+
+ stool.position.set(4.5,0,.3);
+ scene.add(stool);
+
+ addCollision(4.5,.3,.65,.65);
+}
+
+// ======================================================
+// ORGANIZAÇÃO DOS MÓVEIS DA ENFERMARIA
+// ======================================================
+
+function createFurniture(){
+ // Cama principal
+ createHospitalBed(-3,-1);
+
+ // Armários
+ createMedicalCabinet(-6,-2.7);
+ createMedicalCabinet(5,-2.5);
+
+ // Mesa do computador
+ createComputerDesk(3,-1);
+
+ // Carrinho de equipamentos
+ createEquipmentCart(4.5,.3);
+
+ // Mesa auxiliar
+ createSmallTable(-1.1,3.8);
+ createSmallTable(-6,.2);
+
+ // Suporte de soro
+ createIVStand(5.9,1.8);
+
+ // Maca auxiliar
+ createHospitalBed(1.2,-3.8);
+
+ // Cadeiras
+ createChair(1.65,-.1,Math.PI);
+ createChair(3.1,.45,0);
+ createChair(-1.8,3.1,Math.PI);
+
+ // Detalhes
+ createMedicalDetails();
+}
+
+// ======================================================
+// SISTEMA DE COLISÃO
+// ======================================================
+
+function createCollisionSystem(){
+ collisionBoxes.length=0;
+
+ // Limites laterais e parede frontal
+ // A abertura central da parede dos fundos fica livre.
+ addCollision(-7.85,0,.30,12);
+ addCollision(7.85,0,.30,12);
+ addCollision(0,5.85,16,.30);
+
+ // Parede dos fundos: somente os dois lados.
+ addCollision(-4.6,-5.85,6.8,.30);
+ addCollision(4.6,-5.85,6.8,.30);
+
+ // Móveis principais
+ addCollision(-3,-1,2.45,1.25);
+ addCollision(-6,-2.7,1.15,.85);
+ addCollision(5,-2.5,1.15,.85);
+ addCollision(3,-1,2.25,1.05);
+ addCollision(4.5,.3,1.05,.80);
+ addCollision(-1.1,3.8,1.45,.90);
+ addCollision(-6,.2,1.45,.90);
+ addCollision(5.9,1.8,.55,.55);
+ addCollision(1.2,-3.8,2.45,1.25);
+
+ // Cadeiras
+ addCollision(1.65,-.1,.65,.65);
+ addCollision(3.1,.45,.65,.65);
+ addCollision(-1.8,3.1,.65,.65);
+}
+
+// ======================================================
+// VERIFICAÇÃO DE COLISÃO
+// ======================================================
+
+function collidesAt(x,z){
+ const radius=.32;
+
+ for(const obstacle of collisionBoxes){
+  const closestX=THREE.MathUtils.clamp(
+   x,
+   obstacle.minX,
+   obstacle.maxX
+  );
+
+  const closestZ=THREE.MathUtils.clamp(
+   z,
+   obstacle.minZ,
+   obstacle.maxZ
+  );
+
+  const dx=x-closestX;
+  const dz=z-closestZ;
+
+  if(dx*dx+dz*dz<radius*radius){
+   return true;
+  }
+ }
+
+ return false;
+}
+
+// ======================================================
+// MOVIMENTO COM DESLIZAMENTO
+// ======================================================
+
+function moveWithCollision(dx,dz){
+ if(!camera)return;
+
+ const oldX=camera.position.x;
+ const oldZ=camera.position.z;
+
+ // Primeiro tenta movimentar no eixo X.
+ const nextX=oldX+dx;
+
+ if(
+  nextX>=-7.35 &&
+  nextX<=7.35 &&
+  !collidesAt(nextX,oldZ)
+ ){
+  camera.position.x=nextX;
+ }
+
+ // Depois tenta movimentar no eixo Z.
+ const nextZ=oldZ+dz;
+
+ if(
+  nextZ>=-5.35 &&
+  nextZ<=5.35 &&
+  !collidesAt(camera.position.x,nextZ)
+ ){
+  camera.position.z=nextZ;
+ }
+}
+
+// ======================================================
+// FIM DA PARTE 2/3
+// CONTINUE COM A PARTE 3
+// ======================================================
+ <script>
+// ==========================================
+// AB GAMES — ENCONTRE UMA SAÍDA!
+// V4.0 — PARTE 3/3
+// MOVIMENTO, COLISÕES, CONTROLES E FINALIZAÇÃO
+// ==========================================
+
+// ESTADO DO JOGADOR
+const keys = window.keys || {};
+window.keys = keys;
+
+const movement = window.movement || {
+ forward:false,
+ back:false,
+ left:false,
+ right:false
+};
+
+window.movement = movement;
+
+let inspecting = false;
+let backpackOpen = false;
+let flashlightOn = false;
+let batteryLevel = 100;
+let gameRunning = false;
+
+// VETORES DE MOVIMENTO
+const moveForward = new THREE.Vector3();
+const moveRight = new THREE.Vector3();
+const moveVector = new THREE.Vector3();
+
+// ==========================================
+// MOVIMENTO COM COLISÃO E DESLIZAMENTO
+// ==========================================
 
 function updateMovement(dt){
- if(!camera||inspecting||backpackOpen)return;
- const speed=isMobile()?2.5:3.1;
- const forward=Number(keys.KeyW||movement.forward)-Number(keys.KeyS||movement.back);
- const side=Number(keys.KeyD||movement.right)-Number(keys.KeyA||movement.left);
+ if(!camera || !gameRunning || inspecting || backpackOpen) return;
+
+ const speed = isMobile() ? 2.5 : 3.1;
+
+ const forward =
+  Number(keys.KeyW || movement.forward) -
+  Number(keys.KeyS || movement.back);
+
+ const side =
+  Number(keys.KeyD || movement.right) -
+  Number(keys.KeyA || movement.left);
 
  moveForward.set(0,0,-1).applyQuaternion(camera.quaternion);
- moveForward.y=0;moveForward.normalize();
+ moveForward.y = 0;
+ moveForward.normalize();
+
  moveRight.set(1,0,0).applyQuaternion(camera.quaternion);
- moveRight.y=0;moveRight.normalize();
+ moveRight.y = 0;
+ moveRight.normalize();
+
  moveVector.set(0,0,0);
  moveVector.addScaledVector(moveForward,forward);
  moveVector.addScaledVector(moveRight,side);
 
- if(moveVector.lengthSq()>0){
-  moveVector.normalize();camera.position.addScaledVector(moveVector,speed*dt);
+ if(moveVector.lengthSq() > 0){
+  moveVector.normalize();
+
+  const dx = moveVector.x * speed * dt;
+  const dz = moveVector.z * speed * dt;
+
+  if(typeof moveWithCollision === "function"){
+   moveWithCollision(dx,dz);
+  }else{
+   camera.position.x += dx;
+   camera.position.z += dz;
+  }
  }
- camera.position.x=THREE.MathUtils.clamp(camera.position.x,-7.35,7.35);
- camera.position.z=THREE.MathUtils.clamp(camera.position.z,-5.35,5.35);
- camera.position.y=1.65;
+
+ camera.position.y = 1.65;
 }
+
+// ==========================================
+// LANTERNA
+// ==========================================
+
+function toggleFlashlight(){
+ if(!gameRunning) return;
+
+ if(batteryLevel <= 0){
+  showMessage("A bateria acabou!");
+  return;
+ }
+
+ flashlightOn = !flashlightOn;
+
+ if(typeof flashlight !== "undefined" && flashlight){
+  flashlight.visible = flashlightOn;
+ }
+
+ updateFlashlightUI();
+}
+
+function updateFlashlightUI(){
+ const status = document.getElementById("flashlightStatus");
+
+ if(status){
+  status.textContent = flashlightOn ? "LIGADA" : "DESLIGADA";
+ }
+
+ const battery = document.getElementById("batteryLevel");
+
+ if(battery){
+  battery.textContent = Math.floor(batteryLevel) + "%";
+ }
+}
+
+function updateBattery(dt){
+ if(!flashlightOn || !gameRunning) return;
+
+ batteryLevel -= dt * 0.45;
+
+ if(batteryLevel <= 0){
+  batteryLevel = 0;
+  flashlightOn = false;
+
+  if(typeof flashlight !== "undefined" && flashlight){
+   flashlight.visible = false;
+  }
+
+  showMessage("A lanterna ficou sem bateria!");
+ }
+
+ updateFlashlightUI();
+}
+
+// ==========================================
+// MENSAGENS NA TELA
+// ==========================================
+
+function showMessage(message){
+ const element = document.getElementById("gameMessage");
+
+ if(!element) return;
+
+ element.textContent = message;
+ element.classList.add("visible");
+
+ clearTimeout(element._messageTimer);
+
+ element._messageTimer = setTimeout(()=>{
+  element.classList.remove("visible");
+ },2200);
+}
+
+// ==========================================
+// CONTROLES DE TECLADO
+// ==========================================
+
+window.addEventListener("keydown",event=>{
+ keys[event.code] = true;
+
+ if(event.code === "KeyF"){
+  toggleFlashlight();
+ }
+
+ if(event.code === "KeyE"){
+  if(typeof interact === "function") interact();
+ }
+
+ if(event.code === "Tab"){
+  event.preventDefault();
+
+  if(typeof toggleInventory === "function"){
+   toggleInventory();
+  }
+ }
+
+ if(event.code === "Escape"){
+  if(typeof closeInventory === "function"){
+   closeInventory();
+  }
+ }
+});
+
+window.addEventListener("keyup",event=>{
+ keys[event.code] = false;
+});
+
+// ==========================================
+// CONTROLES MOBILE
+// ==========================================
+
+function setupMobileControls(){
+ const controls = {
+  forward:"mobileForward",
+  back:"mobileBack",
+  left:"mobileLeft",
+  right:"mobileRight"
+ };
+
+ Object.entries(controls).forEach(([direction,id])=>{
+  const button = document.getElementById(id);
+  if(!button) return;
+
+  const start = event=>{
+   event.preventDefault();
+   movement[direction] = true;
+  };
+
+  const stop = event=>{
+   event.preventDefault();
+   movement[direction] = false;
+  };
+
+  button.addEventListener("pointerdown",start);
+  button.addEventListener("pointerup",stop);
+  button.addEventListener("pointerleave",stop);
+  button.addEventListener("pointercancel",stop);
+ });
+}
+
+// ==========================================
+// OLHAR COM MOUSE OU TOQUE
+// ==========================================
+
+let touchLookId = null;
+let lastTouchX = 0;
+let lastTouchY = 0;
+
+const mobileLook = document.getElementById("mobileLook");
+
+if(mobileLook){
+ mobileLook.addEventListener("pointerdown",event=>{
+  if(!gameRunning) return;
+
+  touchLookId = event.pointerId;
+  lastTouchX = event.clientX;
+  lastTouchY = event.clientY;
+
+  mobileLook.setPointerCapture(event.pointerId);
+ });
+
+ mobileLook.addEventListener("pointermove",event=>{
+  if(event.pointerId !== touchLookId || !camera) return;
+
+  const dx = event.clientX - lastTouchX;
+  const dy = event.clientY - lastTouchY;
+
+  lastTouchX = event.clientX;
+  lastTouchY = event.clientY;
+
+  const sensitivity = 0.003;
+
+  camera.rotation.order = "YXZ";
+  camera.rotation.y -= dx * sensitivity;
+  camera.rotation.x -= dy * sensitivity;
+
+  camera.rotation.x = THREE.MathUtils.clamp(
+   camera.rotation.x,
+   -Math.PI/2 + 0.05,
+   Math.PI/2 - 0.05
+  );
+ });
+
+ mobileLook.addEventListener("pointerup",()=>{
+  touchLookId = null;
+ });
+
+ mobileLook.addEventListener("pointercancel",()=>{
+  touchLookId = null;
+ });
+}
+
+// ==========================================
+// POINTER LOCK — PC
+// ==========================================
+
+if(renderer && renderer.domElement){
+ renderer.domElement.addEventListener("click",()=>{
+  if(!gameRunning || isMobile()) return;
+
+  if(document.pointerLockElement !== renderer.domElement){
+   renderer.domElement.requestPointerLock?.();
+  }
+ });
+}
+
+document.addEventListener("mousemove",event=>{
+ if(!gameRunning || isMobile()) return;
+ if(document.pointerLockElement !== renderer?.domElement) return;
+ if(!camera) return;
+
+ const sensitivity = 0.002;
+
+ camera.rotation.order = "YXZ";
+ camera.rotation.y -= event.movementX * sensitivity;
+ camera.rotation.x -= event.movementY * sensitivity;
+
+ camera.rotation.x = THREE.MathUtils.clamp(
+  camera.rotation.x,
+  -Math.PI/2 + 0.05,
+  Math.PI/2 - 0.05
+ );
+});
+
+// ==========================================
+// BOTÕES DA INTERFACE
+// ==========================================
+
+const flashlightButton = document.getElementById("flashlightButton");
+
+if(flashlightButton){
+ flashlightButton.addEventListener("click",toggleFlashlight);
+}
+
+const interactButton = document.getElementById("interactButton");
+
+if(interactButton){
+ interactButton.addEventListener("click",()=>{
+  if(typeof interact === "function") interact();
+ });
+}
+
+const inventoryButton = document.getElementById("inventoryButton");
+
+if(inventoryButton){
+ inventoryButton.addEventListener("click",()=>{
+  if(typeof toggleInventory === "function"){
+   toggleInventory();
+  }
+ });
+}
+
+// ==========================================
+// LOOP PRINCIPAL
+// ==========================================
+
+const gameClock = new THREE.Clock();
 
 function animate(){
  requestAnimationFrame(animate);
- if(!renderer||!scene||!camera)return;
- const dt=Math.min(clock.getDelta(),.05);
- updateMovement(dt);
- updateRaycast();
- updateDrawers(dt);
- updateCabinet(dt);
- updateHeldItem(dt);
- updateDroppedItems(dt);
- updateBatteryDrain(dt);
- updateRoomLights(dt);
- updateComputerScreen(dt);
+
+ if(!renderer || !scene || !camera) return;
+
+ const dt = Math.min(gameClock.getDelta(),0.05);
+
+ if(gameRunning){
+  updateMovement(dt);
+  updateBattery(dt);
+
+  if(typeof updateRoomLights === "function"){
+   updateRoomLights(dt);
+  }
+
+  if(typeof updateCabinet === "function"){
+   updateCabinet(dt);
+  }
+
+  if(typeof updateDrawers === "function"){
+   updateDrawers(dt);
+  }
+
+  if(typeof updateHeldObject === "function"){
+   updateHeldObject(dt);
+  }
+
+  if(typeof updateInventory === "function"){
+   updateInventory(dt);
+  }
+ }
+
  renderer.render(scene,camera);
 }
 
-function togglePointerLock(){
- if(isMobile()||!gameStarted||inspecting||backpackOpen)return;
- if(!document.pointerLockElement)renderer.domElement.requestPointerLock?.();
+// ==========================================
+// INICIALIZAÇÃO DA PARTIDA
+// ==========================================
+
+function startGameV40(){
+ if(!scene || !camera || !renderer) return;
+
+ if(typeof createFurniture === "function"){
+  createFurniture();
+ }
+
+ if(typeof createCollisionSystem === "function"){
+  createCollisionSystem();
+ }
+
+ gameRunning = true;
+ gameClock.start();
+
+ setupMobileControls();
+ setupMobileLook();
+
+ const menu = document.getElementById("mainMenu");
+ if(menu) menu.style.display = "none";
+
+ const hud = document.getElementById("gameHUD");
+ if(hud) hud.style.display = "block";
+
+ showMessage("Encontre uma saída...");
 }
 
-document.addEventListener("mousemove",e=>{
- if(!document.pointerLockElement||!camera)return;
- const sensitivity=.002;
- camera.rotation.y-=e.movementX*sensitivity;
- camera.rotation.x-=e.movementY*sensitivity;
- camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-Math.PI/2,Math.PI/2);
-});
-
-document.addEventListener("keydown",e=>{
- if(!gameStarted)return;
- if(e.code==="Escape"){
-  if(backpackOpen){closeBackpack();return}
-  if(inspecting){
-   inspecting=false;
-   $("inspectPanel").classList.add("hidden");
-   updateContextualButtons();return;
-  }
- }
- keys[e.code]=true;
- if(e.repeat)return;
- switch(e.code){
-  case "KeyE":interact();break;
-  case "KeyQ":dropItem();break;
-  case "KeyF":toggleLight();break;
-  case "KeyR":inspectItem();break;
-  case "KeyI":toggleBackpack();break;
-  case "Digit1":selectBackpackSlot(0,true);break;
-  case "Digit2":selectBackpackSlot(1,true);break;
-  case "Digit3":selectBackpackSlot(2,true);break;
-  case "Digit4":selectBackpackSlot(3,true);break;
-  case "KeyG":storeHeldItem();break;
- }
-});
-
-document.addEventListener("keyup",e=>{keys[e.code]=false});
-
-function bindMovementButton(id,key){
- const button=$(id);
- button.addEventListener("pointerdown",e=>{
-  e.preventDefault();movement[key]=true;
-  button.setPointerCapture?.(e.pointerId);
- });
- const stop=()=>{movement[key]=false};
- button.addEventListener("pointerup",stop);
- button.addEventListener("pointercancel",stop);
- button.addEventListener("lostpointercapture",stop);
+function setupMobileLook(){
+ setupMobileControls();
 }
-
-bindMovementButton("forward","forward");
-bindMovementButton("back","back");
-bindMovementButton("left","left");
-bindMovementButton("right","right");
-
-let lookPointer=null,lookX=0,lookY=0;
-
-$("lookArea").addEventListener("pointerdown",e=>{
- if(!gameStarted||!isMobile()||backpackOpen||inspecting)return;
- lookPointer=e.pointerId;lookX=e.clientX;lookY=e.clientY;
- $("lookArea").setPointerCapture?.(e.pointerId);
-});
-
-$("lookArea").addEventListener("pointermove",e=>{
- if(e.pointerId!==lookPointer||!camera)return;
- const dx=e.clientX-lookX,dy=e.clientY-lookY;
- lookX=e.clientX;lookY=e.clientY;
- camera.rotation.y-=dx*.004;
- camera.rotation.x-=dy*.004;
- camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-Math.PI/2,Math.PI/2);
-});
-
-function stopLook(e){if(e.pointerId===lookPointer)lookPointer=null}
-$("lookArea").addEventListener("pointerup",stopLook);
-$("lookArea").addEventListener("pointercancel",stopLook);
-
-let inspectPointer=null,inspectX=0,inspectY=0;
-
-$("inspectPanel").addEventListener("pointerdown",e=>{
- if(!inspecting||!heldItem)return;
- if(e.target.closest("button"))return;
- inspectPointer=e.pointerId;inspectX=e.clientX;inspectY=e.clientY;
- $("inspectPanel").setPointerCapture?.(e.pointerId);
-});
-
-$("inspectPanel").addEventListener("pointermove",e=>{
- if(e.pointerId!==inspectPointer||!heldItem||!inspecting)return;
- const dx=e.clientX-inspectX,dy=e.clientY-inspectY;
- inspectX=e.clientX;inspectY=e.clientY;
- heldItem.rotation.y+=dx*.012;
- heldItem.rotation.x+=dy*.012;
-});
-
-function stopInspectDrag(e){if(e.pointerId===inspectPointer)inspectPointer=null}
-$("inspectPanel").addEventListener("pointerup",stopInspectDrag);
-$("inspectPanel").addEventListener("pointercancel",stopInspectDrag);
-
-$("use").addEventListener("click",interact);
-$("drop").addEventListener("click",dropItem);
-$("light").addEventListener("click",toggleLight);
-$("inspect").addEventListener("click",inspectItem);
-$("store").addEventListener("click",storeHeldItem);
-$("backpack").addEventListener("click",toggleBackpack);
-
-$("closeInspect").addEventListener("click",()=>{
- inspecting=false;
- $("inspectPanel").classList.add("hidden");
- updateContextualButtons();
-});
-
-$("rotateLeft").addEventListener("click",()=>{
- if(heldItem)heldItem.rotation.y-=.35;
-});
-$("rotateRight").addEventListener("click",()=>{
- if(heldItem)heldItem.rotation.y+=.35;
-});
-$("closeBackpack").addEventListener("click",closeBackpack);
-
-document.querySelectorAll(".backpackSlot").forEach(slot=>{
- slot.addEventListener("click",()=>selectBackpackSlot(Number(slot.dataset.slot)));
-});
 
 window.addEventListener("blur",()=>{
- Object.keys(keys).forEach(k=>keys[k]=false);
- Object.keys(movement).forEach(k=>movement[k]=false);
+ Object.keys(keys).forEach(key=>keys[key]=false);
+
+ Object.keys(movement).forEach(key=>{
+  movement[key] = false;
+ });
 });
 
-updateInventoryText();
-updateBattery();
-updateContextualButtons();
+// ==========================================
+// INICIAR
+// ==========================================
+
+updateFlashlightUI();
+animate();
 
 </script>
 </body>

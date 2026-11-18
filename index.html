@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.7</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.8</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.7 • FALHA ELÉTRICA</div>
+  <div id="status">VERSÃO 3.8 • CICLO ELÉTRICO</div>
  </div>
 </div>
 
@@ -120,9 +120,6 @@ let audioContext=null,ambienceOsc=null,ambienceGain=null;
 
 let roomLights=[],roomLightTime=0;
 let roomAmbientLights=[];
-let blackoutTimer=18;
-let blackoutRemaining=0;
-let restoreTimer=0;
 
 let computerCanvas=null,computerContext=null,computerTexture=null,computerScreen=null;
 
@@ -400,9 +397,6 @@ function initGame(){
  ];
 
  roomLightTime=0;
- blackoutTimer=18+Math.random()*12;
- blackoutRemaining=0;
- restoreTimer=0;
 
  clock=new THREE.Clock();
 
@@ -415,24 +409,18 @@ function initGame(){
  if(!animationStarted){animationStarted=true;animate()}
 }
 
-/* NOVO SISTEMA DE ILUMINAÇÃO V3.7 */
+/* SISTEMA DE ILUMINAÇÃO V3.8
+   15 SEGUNDOS DE APAGÃO + 5 SEGUNDOS PISCANDO */
 function updateRoomLights(dt){
  roomLightTime+=dt;
 
- if(blackoutRemaining<=0 && restoreTimer<=0){
-  blackoutTimer-=dt;
+ // Ciclo completo: 20 segundos.
+ // Primeiros 15 segundos: apagão.
+ // Últimos 5 segundos: luzes piscando.
+ const cycle=roomLightTime%20;
+ const blackout=cycle<15;
 
-  if(blackoutTimer<=0){
-   blackoutRemaining=5;
-   blackoutTimer=22+Math.random()*18;
-   restoreTimer=0;
-   $("message").textContent="FALHA NO SISTEMA ELÉTRICO...";
-  }
- }
-
- if(blackoutRemaining>0){
-  blackoutRemaining-=dt;
-
+ if(blackout){
   for(const entry of roomLights){
    entry.light.intensity=0;
   }
@@ -441,45 +429,50 @@ function updateRoomLights(dt){
    entry.light.intensity=0;
   }
 
-  if(blackoutRemaining<=0){
-   restoreTimer=1.8;
-   $("message").textContent="A energia está retornando...";
-  }
-
   return;
  }
 
- let recovery=1;
-
- if(restoreTimer>0){
-  restoreTimer=Math.max(0,restoreTimer-dt);
-  recovery=1-restoreTimer/1.8;
-  recovery=recovery*recovery;
- }
+ // Durante os últimos 5 segundos, as luzes piscam.
+ const flickerTime=cycle-15;
 
  for(const entry of roomAmbientLights){
-  entry.light.intensity=entry.base*recovery;
+  const randomFlicker=Math.random();
+
+  let intensity=0;
+
+  if(randomFlicker>.48)intensity=entry.base;
+  if(randomFlicker>.82)intensity=entry.base*.25;
+
+  entry.light.intensity=intensity;
  }
 
  for(const entry of roomLights){
   entry.timer-=dt;
 
   if(entry.timer<=0){
-   entry.timer=.08+Math.random()*.45;
+   entry.timer=.06+Math.random()*.38;
+
    const chance=Math.random();
 
-   if(chance<.35)entry.flicker=.03;
-   else if(chance<.65)entry.flicker=.18;
-   else if(chance<.85)entry.flicker=.45;
+   if(chance<.30)entry.flicker=0;
+   else if(chance<.52)entry.flicker=.08;
+   else if(chance<.72)entry.flicker=.25;
+   else if(chance<.88)entry.flicker=.55;
    else entry.flicker=1;
   }
 
-  entry.flicker=THREE.MathUtils.damp(entry.flicker,1,5,dt);
-
-  const wave=1+Math.sin(roomLightTime*1.8+entry.phase)*.045;
+  const wave=1+Math.sin(roomLightTime*12+entry.phase)*.12;
 
   entry.light.intensity=
-   entry.base*entry.flicker*wave*recovery;
+   entry.base*entry.flicker*wave;
+ }
+
+ // Pequena variação no fim da sequência para dar sensação
+ // de instabilidade antes do próximo apagão.
+ if(flickerTime>4.5){
+  for(const entry of roomLights){
+   if(Math.random()>.65)entry.light.intensity=0;
+  }
  }
 }
 
@@ -496,7 +489,7 @@ function createRoom(){
  box(15.7,.16,.08,0,.19,5.86,0x626a63);
  box(15.7,.16,.08,0,.19,-5.86,0x626a63);
  box(.08,.16,11.7,-7.86,.19,0,0x626a63);
- box(.08,.16,11.7,7.86,.19,0,0x626a63);
+ box(.08,.16,11.7,7.86,.19,0x626a63);
  for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
  box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
  box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);

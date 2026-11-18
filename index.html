@@ -1,1671 +1,315 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V4.0</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AB GAMES — TESTE DE COLISÃO V4.0</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
-button{color:white;background:#241010;border:1px solid #a52b2b;border-radius:7px;padding:12px;font-weight:bold;touch-action:none}
-button:active{background:#8c2020}
-#menu{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;background:radial-gradient(circle,#292929,#050505 75%)}
-#menu h1{color:#ed3030;font-size:clamp(30px,8vw,48px);text-shadow:0 0 18px #a00000}
-#play{width:220px;margin-top:25px}
-#status{font-size:12px;color:#aaa;margin-top:20px}
-#hud{position:fixed;inset:0;z-index:5;pointer-events:none}
-#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px}
-#inventory,#battery{position:absolute;top:12px;padding:10px;background:#000a;border:1px solid #ffffff44;border-radius:5px;font-size:12px}
-#inventory{left:10px}#battery{right:10px}
-#message{position:absolute;bottom:18%;width:100%;text-align:center;text-shadow:0 2px 5px black;font-size:14px}
-#controls{position:fixed;inset:0;z-index:8;pointer-events:none}
-#movePad{position:absolute;bottom:20px;left:15px;display:grid;grid-template-columns:52px 52px 52px;grid-template-rows:52px 52px;gap:5px;pointer-events:auto}
-#movePad button,#actions button{padding:5px;background:#111c;border:1px solid #ffffff66}
-#forward{grid-column:2;grid-row:1}#left{grid-column:1;grid-row:2}#back{grid-column:2;grid-row:2}#right{grid-column:3;grid-row:2}
-#actions{position:absolute;right:15px;bottom:24px;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
-#actions button{min-width:78px;min-height:45px;font-size:11px}
-#use{display:none;min-width:105px!important;min-height:52px!important;font-size:13px!important;background:#681919!important;border:1px solid #ed3030!important;box-shadow:0 0 12px #8c202055}
-#use.visible{display:block}
-#actions button.hidden{display:none!important}
-#lookArea{position:absolute;right:0;top:0;width:60%;height:70%;pointer-events:auto;touch-action:none}
-#inspectPanel,#backpackPanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:40;width:min(360px,90vw);padding:16px;text-align:center;background:#080b0dee;border:1px solid #a52b2b;border-radius:10px;box-shadow:0 0 28px #000;pointer-events:auto}
-#inspectPanel h2,#backpackPanel h2{margin:0 0 8px;color:#ed3030;font-size:18px}
-#inspectPanel p,#backpackPanel p{font-size:12px;color:#ddd;line-height:1.5}
-#inspectPanel button{min-width:88px;margin:4px}
-#inspectPanel .closeInspect,#closeBackpack{width:100%;margin-top:10px;background:#4b1515}
-#backpackSlots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
-.backpackSlot{min-height:78px;background:#171b1a;border:1px solid #777;border-radius:7px;color:white;font-size:12px}
-.backpackSlot:active{background:#642020}
-.hidden{display:none!important}
-@media(max-width:600px){
- #message{bottom:20%;font-size:13px}
- #actions{right:12px;bottom:20px}
- #actions button{min-width:76px;min-height:43px}
-}
+#menu{position:fixed;inset:0;z-index:5;display:flex;align-items:center;justify-content:center;text-align:center;background:#101411}
+button{padding:15px 40px;background:#681919;color:white;border:1px solid #ed3030;border-radius:7px;font-weight:bold}
+#info{position:fixed;top:12px;left:12px;background:#000a;padding:10px;z-index:2;font-size:13px}
+#controls{position:fixed;bottom:20px;left:15px;display:grid;grid-template-columns:50px 50px 50px;grid-template-rows:50px 50px;gap:5px;z-index:3}
+#controls button{padding:5px}
+#forward{grid-column:2}#left{grid-column:1;grid-row:2}
+#back{grid-column:2;grid-row:2}#right{grid-column:3;grid-row:2}
 </style>
 </head>
 <body>
-
 <div id="menu">
  <div>
-  <small>AB GAMES APRESENTA</small>
-  <h1>ENCONTRE UMA SAÍDA!</h1>
-  <p>Você acordou em um lugar onde nunca deveria estar.</p>
+  <h1>AB GAMES</h1>
+  <h2>TESTE DE COLISÃO V4.0</h2>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 4.0 • COLISÕES E MELHORIAS GRÁFICAS</div>
  </div>
 </div>
-
-<div id="hud" class="hidden">
- <div id="crosshair">+</div>
- <div id="inventory">MÃO: VAZIA</div>
- <div id="battery">LANTERNA: DESLIGADA</div>
- <div id="message">Explore a enfermaria.</div>
+<div id="info">WASD: movimentar | Mouse: olhar</div>
+<div id="controls">
+ <button id="forward">▲</button>
+ <button id="left">◀</button>
+ <button id="back">▼</button>
+ <button id="right">▶</button>
 </div>
 
-<div id="controls" class="hidden">
- <div id="lookArea"></div>
- <div id="movePad">
-  <button id="forward">▲</button>
-  <button id="left">◀</button>
-  <button id="back">▼</button>
-  <button id="right">▶</button>
- </div>
- <div id="actions">
-  <button id="use">INTERAGIR</button>
-  <button id="drop" class="hidden">SOLTAR</button>
-  <button id="inspect" class="hidden">EXAMINAR</button>
-  <button id="light" class="hidden">LUZ</button>
-  <button id="store" class="hidden">GUARDAR</button>
-  <button id="backpack">MOCHILA</button>
- </div>
-</div>
-
-<div id="inspectPanel" class="hidden">
- <h2>EXAMINANDO OBJETO</h2>
- <p>Arraste para girar o objeto ou use os botões. Pressione R ou VOLTAR para continuar.</p>
- <button id="rotateLeft">↶ GIRAR</button>
- <button id="rotateRight">GIRAR ↷</button>
- <button id="closeInspect" class="closeInspect">VOLTAR</button>
-</div>
-
-<div id="backpackPanel" class="hidden">
- <h2>MOCHILA</h2>
- <p>Toque em um espaço ocupado para retirar o objeto. Se estiver segurando outro, os objetos serão trocados.</p>
- <div id="backpackSlots">
-  <button class="backpackSlot" data-slot="0">ESPAÇO 1<br>VAZIO</button>
-  <button class="backpackSlot" data-slot="1">ESPAÇO 2<br>VAZIO</button>
-  <button class="backpackSlot" data-slot="2">ESPAÇO 3<br>VAZIO</button>
-  <button class="backpackSlot" data-slot="3">ESPAÇO 4<br>VAZIO</button>
- </div>
- <button id="closeBackpack">SAIR DA MOCHILA</button>
-</div>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.149.0/three.min.js"></script>
 <script>
-"use strict";
-
-const $=id=>document.getElementById(id);
-
-let scene,camera,renderer,clock,raycaster,centerNdc;
-let moveForward,moveRight,moveVector;
-let items=[],selectedItem=null,heldItem=null;
-let flashlightOn=false,battery=100,gameStarted=false,animationStarted=false;
-let cabinetDoors=[],cabinetTarget=null,cabinetOpen=false,cabinetInteriorLight=null;
-let currentTarget=null,drawers=[],drawerTargets=[];
-let hand=null,inspecting=false;
-let backpack=[null,null,null,null],backpackOpen=false;
-let pickupAnimation=0,pickupAnimating=false;
-let audioContext=null,ambienceOsc=null,ambienceGain=null;
-
-let roomLights=[],roomLightTime=0;
-let roomAmbientLights=[];
-
-let computerCanvas=null,computerContext=null,computerTexture=null,computerScreen=null;
-
-/* NOVO SISTEMA DE COLISÃO V4.0 */
+let scene,camera,renderer,clock;
 let collisionBoxes=[];
-const PLAYER_RADIUS=.32;
-const PLAYER_HEIGHT=1.65;
-
 const keys={};
 const movement={forward:false,back:false,left:false,right:false};
+const PLAYER_RADIUS=.32;
 
-function playSound(type){
- try{
-  const AudioCtx=window.AudioContext||window.webkitAudioContext;
-  if(!AudioCtx)return;
-  if(!audioContext)audioContext=new AudioCtx();
-  if(audioContext.state==="suspended")audioContext.resume();
-  const ctx=audioContext,now=ctx.currentTime;
-  const osc=ctx.createOscillator(),gain=ctx.createGain(),filter=ctx.createBiquadFilter();
-  osc.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
-  filter.type="lowpass";
-  const sounds={
-   pickup:[260,420,.12,"sine"],drop:[150,75,.18,"triangle"],
-   cabinet:[110,65,.3,"triangle"],drawer:[180,105,.2,"triangle"],
-   rust:[85,38,.32,"sawtooth"],
-   store:[440,300,.12,"sine"],light:[520,650,.08,"sine"],
-   inspect:[330,260,.08,"sine"],battery:[420,780,.22,"sine"]
-  };
-  const s=sounds[type]||sounds.pickup;
-  osc.type=s[3];
-  osc.frequency.setValueAtTime(s[0],now);
-  osc.frequency.exponentialRampToValueAtTime(Math.max(30,s[1]),now+s[2]);
-  filter.frequency.setValueAtTime(1500,now);
-  gain.gain.setValueAtTime(.0001,now);
-  gain.gain.exponentialRampToValueAtTime(.12,now+.015);
-  gain.gain.exponentialRampToValueAtTime(.0001,now+s[2]);
-  osc.start(now);osc.stop(now+s[2]+.02);
- }catch(e){}
-}
-
-function startAmbience(){
- try{
-  const AudioCtx=window.AudioContext||window.webkitAudioContext;
-  if(!AudioCtx)return;
-  if(!audioContext)audioContext=new AudioCtx();
-  if(audioContext.state==="suspended")audioContext.resume();
-  if(ambienceOsc)return;
-  const ctx=audioContext;
-  ambienceOsc=ctx.createOscillator();
-  ambienceGain=ctx.createGain();
-  const filter=ctx.createBiquadFilter();
-  ambienceOsc.type="sawtooth";ambienceOsc.frequency.value=48;
-  filter.type="lowpass";filter.frequency.value=105;
-  ambienceGain.gain.value=.012;
-  ambienceOsc.connect(filter);filter.connect(ambienceGain);
-  ambienceGain.connect(ctx.destination);ambienceOsc.start();
- }catch(e){}
-}
-
-$("play").onclick=async()=>{
- if(gameStarted)return;
- $("play").disabled=true;$("status").textContent="CARREGANDO...";
- try{
-  await loadThree();
-  if(!scene)initGame();
-  $("menu").classList.add("hidden");
-  $("hud").classList.remove("hidden");
-  $("controls").classList.remove("hidden");
-  gameStarted=true;startAmbience();updateContextualButtons();
-  if(!isMobile())renderer.domElement.requestPointerLock?.();
- }catch(e){$("status").textContent="ERRO: "+e.message}
- finally{$("play").disabled=false}
-};
-
-async function loadThree(){
- if(window.THREE)return window.THREE;
- const urls=[
-  "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.149.0/three.min.js",
-  "https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"
- ];
- for(const url of urls){
-  try{
-   await new Promise((resolve,reject)=>{
-    const s=document.createElement("script");s.src=url;
-    s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
-   });
-   if(window.THREE)return window.THREE;
-  }catch(e){}
- }
- throw new Error("Verifique sua conexão com a internet.");
-}
-
-function isMobile(){return matchMedia("(pointer:coarse)").matches}
-function mat(color,roughness=1,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
-
-function box(w,h,d,x,y,z,color,rotation=0){
- const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
- m.position.set(x,y,z);m.rotation.y=rotation;scene.add(m);return m;
-}
-
-function cylinder(rt,rb,h,x,y,z,color,segments=10){
- const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,segments),mat(color,.85,.25));
- m.position.set(x,y,z);scene.add(m);return m;
-}
-
-function sphere(x,y,z,sx,sy,sz,color){
- const m=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),mat(color));
- m.position.set(x,y,z);m.scale.set(sx,sy,sz);scene.add(m);return m;
-}
-
-/* TEXTURAS V4.0 */
-function makeCanvasTexture(kind){
- const canvas=document.createElement("canvas");
- canvas.width=canvas.height=1024;
- const ctx=canvas.getContext("2d");
-
- if(kind==="floor"){
-  ctx.fillStyle="#777a73";
-  ctx.fillRect(0,0,1024,1024);
-
-  for(let y=0;y<1024;y+=128){
-   for(let x=0;x<1024;x+=128){
-    const shade=105+Math.floor(Math.random()*28);
-    ctx.fillStyle=`rgb(${shade},${shade+2},${shade-4})`;
-    ctx.fillRect(x+2,y+2,124,124);
-    ctx.strokeStyle="rgba(25,30,27,.65)";
-    ctx.lineWidth=3;
-    ctx.strokeRect(x+2,y+2,124,124);
-    ctx.strokeStyle="rgba(225,225,210,.12)";
-    ctx.lineWidth=1;
-    ctx.strokeRect(x+6,y+6,116,116);
-   }
-  }
-
-  for(let i=0;i<4200;i++){
-   const v=Math.floor(Math.random()*65);
-   ctx.fillStyle=`rgba(${v},${v+5},${v},${Math.random()*.2})`;
-   ctx.fillRect(Math.random()*1024,Math.random()*1024,1+Math.random()*7,1+Math.random()*5);
-  }
-
-  for(let i=0;i<90;i++){
-   const x=Math.random()*1024,y=Math.random()*1024;
-   const g=ctx.createRadialGradient(x,y,2,x,y,12+Math.random()*35);
-   g.addColorStop(0,"rgba(25,32,27,.22)");
-   g.addColorStop(1,"rgba(25,32,27,0)");
-   ctx.fillStyle=g;
-   ctx.fillRect(x-45,y-45,90,90);
-  }
-
- }else if(kind==="wall"){
-  ctx.fillStyle="#969990";
-  ctx.fillRect(0,0,1024,1024);
-
-  for(let i=0;i<5200;i++){
-   ctx.fillStyle=Math.random()>.5?
-    "rgba(45,53,47,.09)":"rgba(235,235,220,.10)";
-   ctx.fillRect(
-    Math.random()*1024,
-    Math.random()*1024,
-    2+Math.random()*25,
-    2+Math.random()*18
-   );
-  }
-
-  for(let i=0;i<48;i++){
-   const x=Math.random()*1024,y=Math.random()*1024;
-   const g=ctx.createRadialGradient(x,y,2,x,y,25+Math.random()*80);
-   g.addColorStop(0,"rgba(45,53,46,.26)");
-   g.addColorStop(1,"rgba(45,53,46,0)");
-   ctx.fillStyle=g;
-   ctx.fillRect(x-90,y-90,180,180);
-  }
-
-  for(let i=0;i<24;i++){
-   const x=Math.random()*1024,y=Math.random()*1024;
-   ctx.strokeStyle="rgba(45,50,45,.25)";
-   ctx.lineWidth=1+Math.random()*2;
-   ctx.beginPath();
-   ctx.moveTo(x,y);
-   ctx.lineTo(x+(Math.random()-.5)*35,y+15+Math.random()*45);
-   ctx.lineTo(x+(Math.random()-.5)*45,y+35+Math.random()*75);
-   ctx.stroke();
-  }
-
- }else{
-  ctx.fillStyle="#626861";
-  ctx.fillRect(0,0,1024,1024);
-
-  for(let y=0;y<1024;y+=128){
-   for(let x=0;x<1024;x+=128){
-    ctx.strokeStyle="rgba(25,30,27,.55)";
-    ctx.lineWidth=4;
-    ctx.strokeRect(x+2,y+2,124,124);
-   }
-  }
-
-  for(let i=0;i<2800;i++){
-   ctx.fillStyle="rgba(220,225,215,.07)";
-   ctx.fillRect(Math.random()*1024,Math.random()*1024,2+Math.random()*3,2+Math.random()*3);
-  }
- }
-
- const texture=new THREE.CanvasTexture(canvas);
- texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
- texture.colorSpace=THREE.SRGBColorSpace;
- texture.anisotropy=Math.min(4,renderer.capabilities.getMaxAnisotropy());
- texture.needsUpdate=true;
- return texture;
-}
-
-function makeNormalTexture(){
- const canvas=document.createElement("canvas");
- canvas.width=canvas.height=256;
- const ctx=canvas.getContext("2d");
- const image=ctx.createImageData(256,256);
-
- for(let i=0;i<image.data.length;i+=4){
-  const value=120+Math.floor(Math.random()*16);
-  image.data[i]=value;
-  image.data[i+1]=value;
-  image.data[i+2]=255;
-  image.data[i+3]=255;
- }
-
- ctx.putImageData(image,0,0);
- const texture=new THREE.CanvasTexture(canvas);
- texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
- texture.repeat.set(2,2);
- texture.needsUpdate=true;
- return texture;
-}
-
-function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
- const tex=texture.clone();
- tex.needsUpdate=true;
- tex.repeat.set(repeatX,repeatY);
-
- const normal=makeNormalTexture();
- normal.repeat.set(repeatX,repeatY);
-
- const material=new THREE.MeshStandardMaterial({
-  map:tex,
-  normalMap:normal,
-  normalScale:new THREE.Vector2(.12,.12),
-  roughness:.96,
-  metalness:0
- });
-
- const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
+function addBox(w,h,d,x,y,z,color){
+ const mesh=new THREE.Mesh(
+  new THREE.BoxGeometry(w,h,d),
+  new THREE.MeshStandardMaterial({color,roughness:.9})
+ );
  mesh.position.set(x,y,z);
  scene.add(mesh);
  return mesh;
 }
 
-function createComputerScreen(){
- computerCanvas=document.createElement("canvas");
- computerCanvas.width=512;computerCanvas.height=320;
- computerContext=computerCanvas.getContext("2d");
- computerTexture=new THREE.CanvasTexture(computerCanvas);
- computerTexture.colorSpace=THREE.SRGBColorSpace;
- computerTexture.minFilter=THREE.LinearFilter;
- computerTexture.magFilter=THREE.LinearFilter;
- const material=new THREE.MeshBasicMaterial({map:computerTexture,toneMapped:false});
- computerScreen=new THREE.Mesh(new THREE.PlaneGeometry(.69,.40),material);
- computerScreen.position.set(3,1.59,-.858);scene.add(computerScreen);
- drawComputerScreen();
+function addCollision(x,z,w,d){
+ collisionBoxes.push({
+  minX:x-w/2,maxX:x+w/2,
+  minZ:z-d/2,maxZ:z+d/2
+ });
 }
 
-function createComputerKeyboard(){
- const keyboard=new THREE.Group();
- const base=new THREE.Mesh(new THREE.BoxGeometry(.88,.045,.32),mat(0x343b38,.95));
- keyboard.add(base);
- const edge=new THREE.Mesh(new THREE.BoxGeometry(.86,.012,.30),mat(0x555d57,.95));
- edge.position.y=.024;keyboard.add(edge);
- const rows=[
-  {count:14,z:-.105},{count:14,z:-.045},
-  {count:13,z:.015},{count:11,z:.075}
- ];
- for(let r=0;r<rows.length;r++){
-  const row=rows[r],spacing=.057,start=-(row.count-1)*spacing/2;
-  for(let i=0;i<row.count;i++){
-   const key=new THREE.Mesh(new THREE.BoxGeometry(.049,.025,.045),
-    mat(Math.random()<.08?0x77776a:0x92968b,.95));
-   key.position.set(start+i*spacing,.043,row.z);keyboard.add(key);
-   const top=new THREE.Mesh(new THREE.BoxGeometry(.041,.004,.037),mat(0xb0b0a2,.9));
-   top.position.set(start+i*spacing,.058,row.z);keyboard.add(top);
-  }
- }
- const space=new THREE.Mesh(new THREE.BoxGeometry(.31,.025,.045),mat(0x858b80,.95));
- space.position.set(0,.043,.132);keyboard.add(space);
- keyboard.position.set(3,1.245,-.68);scene.add(keyboard);
-}
-
-function drawComputerScreen(){
- if(!computerContext||!computerTexture)return;
- const ctx=computerContext,w=512,h=320;
- ctx.clearRect(0,0,w,h);
- const gradient=ctx.createLinearGradient(0,0,w,h);
- gradient.addColorStop(0,"#071c1c");
- gradient.addColorStop(.55,"#0b2928");
- gradient.addColorStop(1,"#061414");
- ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
- ctx.fillStyle="#75e5d2";ctx.font="bold 20px Arial";
- ctx.fillText("AB GAMES",20,30);
- ctx.fillStyle="#91bdb5";ctx.font="13px Arial";
- ctx.fillText("SISTEMA HOSPITALAR",190,29);
- ctx.strokeStyle="#5b9d91";ctx.beginPath();ctx.moveTo(20,45);ctx.lineTo(492,45);ctx.stroke();
- ctx.fillStyle="#8ebbb1";ctx.font="13px Arial";
- ctx.fillText("REGISTRO DE MOVIMENTAÇÃO",25,85);
- ctx.fillStyle="#ff4545";ctx.font="bold 25px Arial";
- ctx.fillText("MOVIMENTO DETECTADO",25,130);
- ctx.fillStyle="#e0f4ed";ctx.font="17px Arial";
- ctx.fillText("Alguém passou pela",25,175);
- ctx.fillText("enfermaria.",25,201);
- ctx.fillStyle="#a7c9c0";ctx.font="14px Arial";
- ctx.fillText("HORÁRIO: 03:17:42",25,244);
- ctx.fillText("IDENTIFICAÇÃO: DESCONHECIDA",25,269);
- ctx.fillStyle="rgba(255,65,65,.13)";ctx.fillRect(18,282,476,28);
- ctx.fillStyle="#ff6565";ctx.font="bold 13px Arial";
- ctx.fillText("NÃO HÁ NINGUÉM CADASTRADO.",25,302);
- ctx.fillStyle="rgba(0,0,0,.13)";
- for(let y=0;y<h;y+=4)ctx.fillRect(0,y,w,1);
- computerTexture.needsUpdate=true;
-}
-
-function updateComputerScreen(dt){}
-
-function initGame(){
- scene=new THREE.Scene();raycaster=new THREE.Raycaster();raycaster.far=2.6;
- centerNdc=new THREE.Vector2(0,0);
- moveForward=new THREE.Vector3();moveRight=new THREE.Vector3();moveVector=new THREE.Vector3();
- scene.background=new THREE.Color(0x171b19);
- scene.fog=new THREE.FogExp2(0x171b19,.018);
- camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
- camera.position.set(0,1.65,4.2);camera.rotation.order="YXZ";
- renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"low-power"});
- renderer.setPixelRatio(isMobile()?Math.min(devicePixelRatio,1.2):Math.min(devicePixelRatio,.9));
- renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;
- renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;
- renderer.toneMappingExposure=1.05;
- document.body.appendChild(renderer.domElement);
- renderer.domElement.addEventListener("click",togglePointerLock);
- clock=new THREE.Clock();
-
- const ambientLight=new THREE.AmbientLight(0xffffff,.20);
- const hemisphereLight=new THREE.HemisphereLight(0xdce5e2,0x454b46,.14);
- scene.add(ambientLight);
- scene.add(hemisphereLight);
-
- roomAmbientLights=[
-  {light:ambientLight,base:.20},
-  {light:hemisphereLight,base:.14}
- ];
-
- const ceilingLight=new THREE.PointLight(0xe5e9e3,.85,18);
- ceilingLight.position.set(0,3.2,0);scene.add(ceilingLight);
- const leftLight=new THREE.PointLight(0xe5eae6,.20,13);
- leftLight.position.set(-5,2.5,0);scene.add(leftLight);
- const rightLight=new THREE.PointLight(0xe5eae6,.20,13);
- rightLight.position.set(5,2.5,0);scene.add(rightLight);
- const backLight=new THREE.PointLight(0xdce3df,.15,11);
- backLight.position.set(0,2.5,-4);scene.add(backLight);
-
- roomLights=[
-  {light:ceilingLight,base:.85,phase:0,flicker:1,timer:1},
-  {light:leftLight,base:.20,phase:1.7,flicker:1,timer:2},
-  {light:rightLight,base:.20,phase:3.1,flicker:1,timer:1.5},
-  {light:backLight,base:.15,phase:4.5,flicker:1,timer:2.5}
- ];
-
- roomLightTime=0;
- clock=new THREE.Clock();
-
- createRoom();
- createWallDamage();
- createFurniture();
- createComputerScreen();
- createComputerKeyboard();
- createMedicalEquipment();
- createFloorClutter();
- createRealisticDetails();
-
- /* As cadeiras e as colisões entram na PARTE 2. */
- createChairs();
- createItems();
- createExtraItems();
- createHand();
- createFlashlight();
- createCollisionSystem();
-
- renderBackpack();
- updateContextualButtons();
- window.addEventListener("resize",resize);
- if(!animationStarted){animationStarted=true;animate()}
-}
-
-/* ILUMINAÇÃO: 15 SEGUNDOS DE APAGÃO + 5 SEGUNDOS PISCANDO */
-function updateRoomLights(dt){
- roomLightTime+=dt;
- const cycle=roomLightTime%20;
- const blackout=cycle<15;
-
- if(blackout){
-  for(const entry of roomLights)entry.light.intensity=0;
-  for(const entry of roomAmbientLights)entry.light.intensity=0;
-  return;
- }
-
- const flickerTime=cycle-15;
-
- for(const entry of roomAmbientLights){
-  const randomFlicker=Math.random();
-  let intensity=0;
-  if(randomFlicker>.48)intensity=entry.base;
-  if(randomFlicker>.82)intensity=entry.base*.25;
-  entry.light.intensity=intensity;
- }
-
- for(const entry of roomLights){
-  entry.timer-=dt;
-  if(entry.timer<=0){
-   entry.timer=.06+Math.random()*.38;
-   const chance=Math.random();
-   if(chance<.30)entry.flicker=0;
-   else if(chance<.52)entry.flicker=.08;
-   else if(chance<.72)entry.flicker=.25;
-   else if(chance<.88)entry.flicker=.55;
-   else entry.flicker=1;
-  }
-  const wave=1+Math.sin(roomLightTime*12+entry.phase)*.12;
-  entry.light.intensity=entry.base*entry.flicker*wave;
- }
-
- if(flickerTime>4.5){
-  for(const entry of roomLights){
-   if(Math.random()>.65)entry.light.intensity=0;
-  }
- }
+function obstacle(w,h,d,x,y,z,color){
+ addBox(w,h,d,x,y,z,color);
+ addCollision(x,z,w,d);
 }
 
 function createRoom(){
- const ft=makeCanvasTexture("floor"),wt=makeCanvasTexture("wall"),ct=makeCanvasTexture("ceiling");
- texturedBox(16,.2,12,0,0,0,ft,4,3);
- texturedBox(16,.2,12,0,3.5,0,ct,4,3);
- texturedBox(.2,3.5,12,-8,1.75,0,wt,3,1);
- texturedBox(.2,3.5,12,8,1.75,0,wt,3,1);
- texturedBox(16,3.5,.2,0,1.75,6,wt,4,1);
+ // Piso e teto
+ addBox(16,.2,12,0,0,0,0x626860);
+ addBox(16,.2,12,0,3.5,0,0x454b47);
 
- /* Parede traseira preservando a abertura central. */
- texturedBox(6.8,3.5,.2,-4.6,1.75,-6,wt,2,1);
- texturedBox(6.8,3.5,.2,4.6,1.75,-6,wt,2,1);
- texturedBox(2.4,.65,.2,0,3.175,-6,wt,1,1);
+ // Paredes laterais e frontal
+ addBox(.2,3.5,12,-8,1.75,0,0x777b73);
+ addBox(.2,3.5,12,8,1.75,0,0x777b73);
+ addBox(16,3.5,.2,0,1.75,6,0x777b73);
 
- box(15.7,.16,.08,0,.19,5.86,0x626a63);
- box(15.7,.16,.08,0,.19,-5.86,0x626a63);
- box(.08,.16,11.7,-7.86,.19,0,0x626a63);
- box(.08,.16,11.7,7.86,.19,0,0x626a63);
+ // Parede traseira dividida: abertura central livre
+ addBox(6.8,3.5,.2,-4.6,1.75,-6,0x777b73);
+ addBox(6.8,3.5,.2,4.6,1.75,-6,0x777b73);
+ addBox(2.4,.65,.2,0,3.175,-6,0x777b73);
 
- for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
- box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
- box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);
- box(.12,2.85,.18,-1.1,1.425,-5.83,0x444a47);
- box(.12,2.85,.18,1.1,1.425,-5.83,0x444a47);
- box(2.3,.12,.18,0,2.85,-5.83,0x444a47);
- sphere(.75,1.25,-5.78,.045,.045,.045,0xb5ad91);
- box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
- box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
- box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
+ // Moldura da abertura
+ addBox(.12,2.85,.18,-1.2,1.425,-5.83,0x444a47);
+ addBox(.12,2.85,.18,1.2,1.425,-5.83,0x444a47);
+ addBox(2.5,.12,.18,0,2.85,-5.83,0x444a47);
+}
 
- for(let i=0;i<5;i++){
-  const c=new THREE.Mesh(new THREE.BoxGeometry(.67,1.9,.035),
-   new THREE.MeshStandardMaterial({color:0x87918b,transparent:true,opacity:.72,roughness:1}));
-  c.position.set(-4.8+i*.7,1.45,.5);scene.add(c);
+function createBed(x,z){
+ const g=new THREE.Group();
+ const m=new THREE.MeshStandardMaterial({color:0x555d60});
+ const mattress=new THREE.Mesh(
+  new THREE.BoxGeometry(2.12,.18,.96),
+  new THREE.MeshStandardMaterial({color:0x858984})
+ );
+ mattress.position.y=.75;
+ g.add(mattress);
+
+ const frame=new THREE.Mesh(new THREE.BoxGeometry(2.25,.16,1.05),m);
+ frame.position.y=.58;
+ g.add(frame);
+
+ for(const a of [-.95,.95]){
+  for(const b of [-.4,.4]){
+   const leg=new THREE.Mesh(new THREE.CylinderGeometry(.045,.055,.48,8),m);
+   leg.position.set(a,.32,b);
+   g.add(leg);
+  }
  }
+ g.position.set(x,0,z);
+ scene.add(g);
+ addCollision(x,z,2.45,1.25);
 }
 
-function createWallDamage(){
- const stains=[
-  [-7.87,1,-3,.025,.65,1.2],[-7.87,2.5,2,.025,.55,.8],
-  [7.87,1.2,-3,.025,.8,1.1],[7.87,2.6,2,.025,.5,.7],
-  [-4,1,-5.87,1.4,.45,.025],[4,2.5,-5.87,1.2,.5,.025],
-  [1,1,5.87,1.3,.35,.025]
- ];
- for(const s of stains)box(s[3],s[4],s[5],s[0],s[1],s[2],0x626760);
- for(let i=0;i<24;i++){
-  const side=i%2===0?-7.87:7.87;
-  const p=box(.04,.08+Math.random()*.28,.1+Math.random()*.5,
-   side,.4+Math.random()*2.5,-4.8+Math.random()*9.5,
-   i%3===0?0x555b55:0x777a72);
-  p.rotation.z=(Math.random()-.5)*.25;
- }
+function createCabinet(x,z){
+ const g=new THREE.Group();
+ const m=new THREE.MeshStandardMaterial({color:0x777c79});
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.95,1.85,.65),m);
+ body.position.y=1.02;
+ g.add(body);
+ const door=new THREE.Mesh(new THREE.BoxGeometry(.9,1.78,.045),m);
+ door.position.set(0,1.02,.35);
+ g.add(door);
+ g.position.set(x,0,z);
+ scene.add(g);
+ addCollision(x,z,1.15,.85);
 }
-
-/* FIM DA PARTE 1/3
-   Continue diretamente com a PARTE 2/3.
-*/
- // ======================================================
-// AB GAMES — ENCONTRE UMA SAÍDA! V4.0
-// PARTE 2/3 — MÓVEIS, CADEIRAS E COLISÕES
-// ======================================================
-
-const collisionBoxes = [];
-
-function addCollision(x,z,width,depth){
- collisionBoxes.push({
-  minX:x-width/2,
-  maxX:x+width/2,
-  minZ:z-depth/2,
-  maxZ:z+depth/2
- });
-}
-
-// ======================================================
-// CADEIRAS — PÉS APOIADOS NO CHÃO
-// ======================================================
 
 function createChair(x,z,rotation=0){
- const chair = new THREE.Group();
+ const g=new THREE.Group();
+ const wood=new THREE.MeshStandardMaterial({color:0x34383a});
+ const metal=new THREE.MeshStandardMaterial({color:0x24282a});
 
- const wood = new THREE.MeshStandardMaterial({
-  color:0x34383a,
-  roughness:.85
- });
+ function part(w,h,d,px,py,pz,mat){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(px,py,pz);
+  g.add(m);
+ }
 
- const metal = new THREE.MeshStandardMaterial({
-  color:0x24282a,
-  metalness:.55,
-  roughness:.65
- });
+ part(.52,.1,.52,0,.84,0,wood);
+ part(.52,.68,.09,0,1.18,-.215,wood);
 
- // Assento
- const seat = new THREE.Mesh(
-  new THREE.BoxGeometry(.52,.10,.52),
-  wood
- );
- seat.position.y=.84;
- chair.add(seat);
+ for(const [x,z] of [[-.2,.2],[.2,.2],[-.2,-.2],[.2,-.2]]){
+  part(.055,.74,.055,x,.47,z,metal);
+ }
 
- // Encosto
- const back = new THREE.Mesh(
-  new THREE.BoxGeometry(.52,.68,.09),
-  wood
- );
- back.position.set(0,1.18,-.215);
- chair.add(back);
-
- // Quatro pernas
- const legPositions=[
-  [-.20,.20],
-  [.20,.20],
-  [-.20,-.20],
-  [.20,-.20]
- ];
-
- legPositions.forEach(([px,pz])=>{
-  const leg = new THREE.Mesh(
-   new THREE.BoxGeometry(.055,.74,.055),
-   metal
-  );
-
-  // Parte inferior exatamente no nível do chão
-  leg.position.set(px,.47,pz);
-  chair.add(leg);
- });
-
- // Apoio inferior
- const support1 = new THREE.Mesh(
-  new THREE.BoxGeometry(.42,.035,.035),
-  metal
- );
- support1.position.set(0,.35,.20);
- chair.add(support1);
-
- const support2 = new THREE.Mesh(
-  new THREE.BoxGeometry(.42,.035,.035),
-  metal
- );
- support2.position.set(0,.35,-.20);
- chair.add(support2);
-
- chair.position.set(x,0,z);
- chair.rotation.y=rotation;
-
- scene.add(chair);
-
+ g.position.set(x,0,z);
+ g.rotation.y=rotation;
+ scene.add(g);
  addCollision(x,z,.65,.65);
-
- return chair;
 }
 
-// ======================================================
-// CAMA HOSPITALAR
-// ======================================================
+function createTable(x,z,w=1.25,d=.72){
+ const g=new THREE.Group();
+ const m=new THREE.MeshStandardMaterial({color:0x555c5d});
 
-function createHospitalBed(x,z){
- const group=new THREE.Group();
-
- const metal=new THREE.MeshStandardMaterial({
-  color:0x555d60,
-  metalness:.65,
-  roughness:.6
- });
-
- const mattress=new THREE.MeshStandardMaterial({
-  color:0x777d7b,
-  roughness:.95
- });
-
- const frame=new THREE.Mesh(
-  new THREE.BoxGeometry(2.25,.16,1.05),
-  metal
- );
- frame.position.y=.58;
- group.add(frame);
-
- const mattressMesh=new THREE.Mesh(
-  new THREE.BoxGeometry(2.12,.18,.96),
-  mattress
- );
- mattressMesh.position.y=.75;
- group.add(mattressMesh);
-
- for(const px of [-.95,.95]){
-  for(const pz of [-.40,.40]){
-   const leg=new THREE.Mesh(
-    new THREE.CylinderGeometry(.045,.055,.48,8),
-    metal
-   );
-   leg.position.set(px,.32,pz);
-   group.add(leg);
-  }
- }
-
- const head=new THREE.Mesh(
-  new THREE.BoxGeometry(.12,.65,1.05),
-  metal
- );
- head.position.set(-1.08,.88,0);
- group.add(head);
-
- group.position.set(x,0,z);
- scene.add(group);
-
- addCollision(x,z,2.45,1.25);
- return group;
-}
-
-// ======================================================
-// ARMÁRIOS
-// ======================================================
-
-function createMedicalCabinet(x,z){
- const group=new THREE.Group();
-
- const bodyMat=new THREE.MeshStandardMaterial({
-  color:0x777c79,
-  roughness:.8,
-  metalness:.2
- });
-
- const body=new THREE.Mesh(
-  new THREE.BoxGeometry(.95,1.85,.65),
-  bodyMat
- );
- body.position.y=1.02;
- group.add(body);
-
- const doorMat=new THREE.MeshStandardMaterial({
-  color:0x626966,
-  roughness:.7,
-  metalness:.25
- });
-
- const door=new THREE.Mesh(
-  new THREE.BoxGeometry(.90,1.78,.045),
-  doorMat
- );
- door.position.set(0,1.02,.35);
- group.add(door);
-
- const handle=new THREE.Mesh(
-  new THREE.BoxGeometry(.035,.25,.055),
-  new THREE.MeshStandardMaterial({
-   color:0x202526,
-   metalness:.7,
-   roughness:.4
-  })
- );
- handle.position.set(.34,1.05,.39);
- group.add(handle);
-
- group.position.set(x,0,z);
- scene.add(group);
-
- addCollision(x,z,1.15,.85);
- return group;
-}
-
-// ======================================================
-// MESA COM COMPUTADOR
-// ======================================================
-
-function createComputerDesk(x,z){
- const group=new THREE.Group();
-
- const deskMat=new THREE.MeshStandardMaterial({
-  color:0x454b4c,
-  roughness:.8
- });
-
- const top=new THREE.Mesh(
-  new THREE.BoxGeometry(2.05,.12,.82),
-  deskMat
- );
- top.position.y=.88;
- group.add(top);
-
- for(const px of [-.88,.88]){
-  for(const pz of [-.28,.28]){
-   const leg=new THREE.Mesh(
-    new THREE.BoxGeometry(.09,.86,.09),
-    deskMat
-   );
-   leg.position.set(px,.43,pz);
-   group.add(leg);
-  }
- }
-
- // Monitor
- const monitor=new THREE.Mesh(
-  new THREE.BoxGeometry(.95,.62,.09),
-  new THREE.MeshStandardMaterial({
-   color:0x111719,
-   roughness:.5,
-   metalness:.3
-  })
- );
- monitor.position.set(0,1.28,-.20);
- group.add(monitor);
-
- // Tela apagada
- const screen=new THREE.Mesh(
-  new THREE.PlaneGeometry(.84,.50),
-  new THREE.MeshBasicMaterial({
-   color:0x10191c
-  })
- );
- screen.position.set(0,1.29,-.148);
- group.add(screen);
-
- // Teclado
- const keyboard=new THREE.Mesh(
-  new THREE.BoxGeometry(.65,.035,.22),
-  new THREE.MeshStandardMaterial({
-   color:0x171b1c
-  })
- );
- keyboard.position.set(0,.97,.20);
- group.add(keyboard);
-
- group.position.set(x,0,z);
- scene.add(group);
-
- addCollision(x,z,2.25,1.05);
- return group;
-}
-
-// ======================================================
-// CARRINHO DE EQUIPAMENTOS
-// ======================================================
-
-function createEquipmentCart(x,z){
- const group=new THREE.Group();
-
- const metal=new THREE.MeshStandardMaterial({
-  color:0x777f80,
-  metalness:.7,
-  roughness:.55
- });
-
- const shelf1=new THREE.Mesh(
-  new THREE.BoxGeometry(.85,.07,.58),
-  metal
- );
- shelf1.position.y=.55;
- group.add(shelf1);
-
- const shelf2=new THREE.Mesh(
-  new THREE.BoxGeometry(.85,.07,.58),
-  metal
- );
- shelf2.position.y=1.05;
- group.add(shelf2);
-
- for(const px of [-.36,.36]){
-  for(const pz of [-.22,.22]){
-   const pole=new THREE.Mesh(
-    new THREE.CylinderGeometry(.025,.025,1.05,8),
-    metal
-   );
-   pole.position.set(px,.80,pz);
-   group.add(pole);
-  }
- }
-
- // Rodinhas
- for(const px of [-.34,.34]){
-  for(const pz of [-.20,.20]){
-   const wheel=new THREE.Mesh(
-    new THREE.CylinderGeometry(.065,.065,.045,10),
-    new THREE.MeshStandardMaterial({color:0x171a1b})
-   );
-   wheel.rotation.z=Math.PI/2;
-   wheel.position.set(px,.12,pz);
-   group.add(wheel);
-  }
- }
-
- group.position.set(x,0,z);
- scene.add(group);
-
- addCollision(x,z,1.05,.80);
- return group;
-}
-
-// ======================================================
-// MACA AUXILIAR
-// ======================================================
-
-function createSmallTable(x,z){
- const group=new THREE.Group();
-
- const top=new THREE.Mesh(
-  new THREE.BoxGeometry(1.25,.10,.72),
-  new THREE.MeshStandardMaterial({
-   color:0x555c5d,
-   metalness:.45,
-   roughness:.7
-  })
- );
+ const top=new THREE.Mesh(new THREE.BoxGeometry(w,.1,d),m);
  top.position.y=.82;
- group.add(top);
+ g.add(top);
 
- for(const px of [-.52,.52]){
-  for(const pz of [-.27,.27]){
-   const leg=new THREE.Mesh(
-    new THREE.BoxGeometry(.07,.78,.07),
-    new THREE.MeshStandardMaterial({color:0x343a3b})
-   );
-   leg.position.set(px,.41,pz);
-   group.add(leg);
+ for(const a of [-w*.42,w*.42]){
+  for(const b of [-d*.38,d*.38]){
+   const leg=new THREE.Mesh(new THREE.BoxGeometry(.07,.78,.07),m);
+   leg.position.set(a,.41,b);
+   g.add(leg);
   }
  }
-
- group.position.set(x,0,z);
- scene.add(group);
-
- addCollision(x,z,1.45,.90);
- return group;
+ g.position.set(x,0,z);
+ scene.add(g);
+ addCollision(x,z,w+.2,d+.2);
 }
-
-// ======================================================
-// SUPORTE DE SORO
-// ======================================================
-
-function createIVStand(x,z){
- const group=new THREE.Group();
-
- const metal=new THREE.MeshStandardMaterial({
-  color:0x929b9b,
-  metalness:.8,
-  roughness:.35
- });
-
- const pole=new THREE.Mesh(
-  new THREE.CylinderGeometry(.025,.035,2.05,8),
-  metal
- );
- pole.position.y=1.12;
- group.add(pole);
-
- const hook=new THREE.Mesh(
-  new THREE.TorusGeometry(.12,.018,6,12,Math.PI),
-  metal
- );
- hook.position.set(0,2.12,0);
- hook.rotation.z=Math.PI;
- group.add(hook);
-
- const base=new THREE.Mesh(
-  new THREE.CylinderGeometry(.25,.25,.07,12),
-  metal
- );
- base.position.y=.10;
- group.add(base);
-
- for(let i=0;i<3;i++){
-  const angle=i*Math.PI*2/3;
-  const wheel=new THREE.Mesh(
-   new THREE.SphereGeometry(.065,8,8),
-   new THREE.MeshStandardMaterial({color:0x171a1b})
-  );
-  wheel.position.set(
-   Math.cos(angle)*.20,
-   .055,
-   Math.sin(angle)*.20
-  );
-  group.add(wheel);
- }
-
- group.position.set(x,0,z);
- scene.add(group);
-
- addCollision(x,z,.55,.55);
- return group;
-}
-
-// ======================================================
-// OBJETOS PEQUENOS E DETALHES
-// ======================================================
-
-function createMedicalDetails(){
- const bottleMat=new THREE.MeshStandardMaterial({
-  color:0x9caeaa,
-  roughness:.3,
-  transparent:true,
-  opacity:.75
- });
-
- // Frascos sobre o carrinho
- const bottle1=new THREE.Mesh(
-  new THREE.CylinderGeometry(.09,.10,.28,10),
-  bottleMat
- );
- bottle1.position.set(4.35,.75,.3);
- scene.add(bottle1);
-
- const bottle2=new THREE.Mesh(
-  new THREE.CylinderGeometry(.07,.08,.22,10),
-  bottleMat
- );
- bottle2.position.set(4.62,.75,.3);
- scene.add(bottle2);
-
- // Caixa no chão
- const boxMat=new THREE.MeshStandardMaterial({
-  color:0x625c4e,
-  roughness:1
- });
-
- const boxObject=new THREE.Mesh(
-  new THREE.BoxGeometry(.42,.32,.38),
-  boxMat
- );
- boxObject.position.set(-5,.26,2.7);
- boxObject.rotation.y=.18;
- scene.add(boxObject);
-
- // Banquinho
- const stool=new THREE.Group();
-
- const stoolSeat=new THREE.Mesh(
-  new THREE.CylinderGeometry(.28,.28,.10,16),
-  new THREE.MeshStandardMaterial({color:0x414849})
- );
- stoolSeat.position.y=.78;
- stool.add(stoolSeat);
-
- for(let i=0;i<3;i++){
-  const angle=i*Math.PI*2/3;
-  const leg=new THREE.Mesh(
-   new THREE.CylinderGeometry(.035,.045,.73,8),
-   new THREE.MeshStandardMaterial({color:0x303637})
-  );
-  leg.position.set(
-   Math.cos(angle)*.18,
-   .415,
-   Math.sin(angle)*.18
-  );
-  stool.add(leg);
- }
-
- stool.position.set(4.5,0,.3);
- scene.add(stool);
-
- addCollision(4.5,.3,.65,.65);
-}
-
-// ======================================================
-// ORGANIZAÇÃO DOS MÓVEIS DA ENFERMARIA
-// ======================================================
 
 function createFurniture(){
- // Cama principal
- createHospitalBed(-3,-1);
+ createBed(-3,-1);
+ createBed(1.2,-3.8);
 
- // Armários
- createMedicalCabinet(-6,-2.7);
- createMedicalCabinet(5,-2.5);
+ createCabinet(-6,-2.7);
+ createCabinet(5,-2.5);
 
- // Mesa do computador
- createComputerDesk(3,-1);
+ createTable(3,-1,2.05,.82);
+ createTable(-1.1,3.8);
+ createTable(-6,.2);
 
- // Carrinho de equipamentos
- createEquipmentCart(4.5,.3);
-
- // Mesa auxiliar
- createSmallTable(-1.1,3.8);
- createSmallTable(-6,.2);
-
- // Suporte de soro
- createIVStand(5.9,1.8);
-
- // Maca auxiliar
- createHospitalBed(1.2,-3.8);
-
- // Cadeiras
  createChair(1.65,-.1,Math.PI);
- createChair(3.1,.45,0);
+ createChair(3.1,.45);
  createChair(-1.8,3.1,Math.PI);
-
- // Detalhes
- createMedicalDetails();
 }
 
-// ======================================================
-// SISTEMA DE COLISÃO
-// ======================================================
-
+// COLISÃO
 function createCollisionSystem(){
- collisionBoxes.length=0;
+ collisionBoxes=[];
 
- // Limites laterais e parede frontal
- // A abertura central da parede dos fundos fica livre.
- addCollision(-7.85,0,.30,12);
- addCollision(7.85,0,.30,12);
- addCollision(0,5.85,16,.30);
+ // Paredes laterais e frontal
+ addCollision(-7.85,0,.3,12);
+ addCollision(7.85,0,.3,12);
+ addCollision(0,5.85,16,.3);
 
- // Parede dos fundos: somente os dois lados.
- addCollision(-4.6,-5.85,6.8,.30);
- addCollision(4.6,-5.85,6.8,.30);
+ // Parede traseira: sem bloquear a abertura central
+ addCollision(-4.6,-5.85,6.8,.3);
+ addCollision(4.6,-5.85,6.8,.3);
 
- // Móveis principais
- addCollision(-3,-1,2.45,1.25);
- addCollision(-6,-2.7,1.15,.85);
- addCollision(5,-2.5,1.15,.85);
- addCollision(3,-1,2.25,1.05);
- addCollision(4.5,.3,1.05,.80);
- addCollision(-1.1,3.8,1.45,.90);
- addCollision(-6,.2,1.45,.90);
- addCollision(5.9,1.8,.55,.55);
- addCollision(1.2,-3.8,2.45,1.25);
-
- // Cadeiras
- addCollision(1.65,-.1,.65,.65);
- addCollision(3.1,.45,.65,.65);
- addCollision(-1.8,3.1,.65,.65);
+ // Os móveis registram suas próprias colisões
 }
-
-// ======================================================
-// VERIFICAÇÃO DE COLISÃO
-// ======================================================
 
 function collidesAt(x,z){
- const radius=.32;
-
- for(const obstacle of collisionBoxes){
-  const closestX=THREE.MathUtils.clamp(
-   x,
-   obstacle.minX,
-   obstacle.maxX
-  );
-
-  const closestZ=THREE.MathUtils.clamp(
-   z,
-   obstacle.minZ,
-   obstacle.maxZ
-  );
-
-  const dx=x-closestX;
-  const dz=z-closestZ;
-
-  if(dx*dx+dz*dz<radius*radius){
-   return true;
-  }
+ for(const o of collisionBoxes){
+  const cx=THREE.MathUtils.clamp(x,o.minX,o.maxX);
+  const cz=THREE.MathUtils.clamp(z,o.minZ,o.maxZ);
+  const dx=x-cx,dz=z-cz;
+  if(dx*dx+dz*dz<PLAYER_RADIUS*PLAYER_RADIUS)return true;
  }
-
  return false;
 }
 
-// ======================================================
-// MOVIMENTO COM DESLIZAMENTO
-// ======================================================
-
 function moveWithCollision(dx,dz){
- if(!camera)return;
-
- const oldX=camera.position.x;
- const oldZ=camera.position.z;
-
- // Primeiro tenta movimentar no eixo X.
- const nextX=oldX+dx;
-
- if(
-  nextX>=-7.35 &&
-  nextX<=7.35 &&
-  !collidesAt(nextX,oldZ)
- ){
-  camera.position.x=nextX;
+ const nx=camera.position.x+dx;
+ if(nx>-7.35&&nx<7.35&&!collidesAt(nx,camera.position.z)){
+  camera.position.x=nx;
  }
 
- // Depois tenta movimentar no eixo Z.
- const nextZ=oldZ+dz;
-
- if(
-  nextZ>=-5.35 &&
-  nextZ<=5.35 &&
-  !collidesAt(camera.position.x,nextZ)
- ){
-  camera.position.z=nextZ;
+ const nz=camera.position.z+dz;
+ if(nz>-5.35&&nz<5.35&&!collidesAt(camera.position.x,nz)){
+  camera.position.z=nz;
  }
 }
 
-// ======================================================
-// FIM DA PARTE 2/3
-// CONTINUE COM A PARTE 3
-// ======================================================
- <script>
-// ==========================================
-// AB GAMES — ENCONTRE UMA SAÍDA!
-// V4.0 — PARTE 3/3
-// MOVIMENTO, COLISÕES, CONTROLES E FINALIZAÇÃO
-// ==========================================
+function init(){
+ scene=new THREE.Scene();
+ scene.background=new THREE.Color(0x171b19);
+ scene.fog=new THREE.FogExp2(0x171b19,.018);
 
-// ESTADO DO JOGADOR
-const keys = window.keys || {};
-window.keys = keys;
+ camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
+ camera.position.set(0,1.65,4.2);
+ camera.rotation.order="YXZ";
 
-const movement = window.movement || {
- forward:false,
- back:false,
- left:false,
- right:false
-};
+ renderer=new THREE.WebGLRenderer({antialias:false});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,1));
+ renderer.setSize(innerWidth,innerHeight);
+ document.body.appendChild(renderer.domElement);
 
-window.movement = movement;
+ scene.add(new THREE.AmbientLight(0xffffff,.45));
+ const light=new THREE.PointLight(0xe5e9e3,1.1,18);
+ light.position.set(0,3,0);
+ scene.add(light);
 
-let inspecting = false;
-let backpackOpen = false;
-let flashlightOn = false;
-let batteryLevel = 100;
-let gameRunning = false;
+ createRoom();
+ createFurniture();
+ createCollisionSystem();
 
-// VETORES DE MOVIMENTO
-const moveForward = new THREE.Vector3();
-const moveRight = new THREE.Vector3();
-const moveVector = new THREE.Vector3();
-
-// ==========================================
-// MOVIMENTO COM COLISÃO E DESLIZAMENTO
-// ==========================================
-
-function updateMovement(dt){
- if(!camera || !gameRunning || inspecting || backpackOpen) return;
-
- const speed = isMobile() ? 2.5 : 3.1;
-
- const forward =
-  Number(keys.KeyW || movement.forward) -
-  Number(keys.KeyS || movement.back);
-
- const side =
-  Number(keys.KeyD || movement.right) -
-  Number(keys.KeyA || movement.left);
-
- moveForward.set(0,0,-1).applyQuaternion(camera.quaternion);
- moveForward.y = 0;
- moveForward.normalize();
-
- moveRight.set(1,0,0).applyQuaternion(camera.quaternion);
- moveRight.y = 0;
- moveRight.normalize();
-
- moveVector.set(0,0,0);
- moveVector.addScaledVector(moveForward,forward);
- moveVector.addScaledVector(moveRight,side);
-
- if(moveVector.lengthSq() > 0){
-  moveVector.normalize();
-
-  const dx = moveVector.x * speed * dt;
-  const dz = moveVector.z * speed * dt;
-
-  if(typeof moveWithCollision === "function"){
-   moveWithCollision(dx,dz);
-  }else{
-   camera.position.x += dx;
-   camera.position.z += dz;
-  }
- }
-
- camera.position.y = 1.65;
+ clock=new THREE.Clock();
+ animate();
 }
-
-// ==========================================
-// LANTERNA
-// ==========================================
-
-function toggleFlashlight(){
- if(!gameRunning) return;
-
- if(batteryLevel <= 0){
-  showMessage("A bateria acabou!");
-  return;
- }
-
- flashlightOn = !flashlightOn;
-
- if(typeof flashlight !== "undefined" && flashlight){
-  flashlight.visible = flashlightOn;
- }
-
- updateFlashlightUI();
-}
-
-function updateFlashlightUI(){
- const status = document.getElementById("flashlightStatus");
-
- if(status){
-  status.textContent = flashlightOn ? "LIGADA" : "DESLIGADA";
- }
-
- const battery = document.getElementById("batteryLevel");
-
- if(battery){
-  battery.textContent = Math.floor(batteryLevel) + "%";
- }
-}
-
-function updateBattery(dt){
- if(!flashlightOn || !gameRunning) return;
-
- batteryLevel -= dt * 0.45;
-
- if(batteryLevel <= 0){
-  batteryLevel = 0;
-  flashlightOn = false;
-
-  if(typeof flashlight !== "undefined" && flashlight){
-   flashlight.visible = false;
-  }
-
-  showMessage("A lanterna ficou sem bateria!");
- }
-
- updateFlashlightUI();
-}
-
-// ==========================================
-// MENSAGENS NA TELA
-// ==========================================
-
-function showMessage(message){
- const element = document.getElementById("gameMessage");
-
- if(!element) return;
-
- element.textContent = message;
- element.classList.add("visible");
-
- clearTimeout(element._messageTimer);
-
- element._messageTimer = setTimeout(()=>{
-  element.classList.remove("visible");
- },2200);
-}
-
-// ==========================================
-// CONTROLES DE TECLADO
-// ==========================================
-
-window.addEventListener("keydown",event=>{
- keys[event.code] = true;
-
- if(event.code === "KeyF"){
-  toggleFlashlight();
- }
-
- if(event.code === "KeyE"){
-  if(typeof interact === "function") interact();
- }
-
- if(event.code === "Tab"){
-  event.preventDefault();
-
-  if(typeof toggleInventory === "function"){
-   toggleInventory();
-  }
- }
-
- if(event.code === "Escape"){
-  if(typeof closeInventory === "function"){
-   closeInventory();
-  }
- }
-});
-
-window.addEventListener("keyup",event=>{
- keys[event.code] = false;
-});
-
-// ==========================================
-// CONTROLES MOBILE
-// ==========================================
-
-function setupMobileControls(){
- const controls = {
-  forward:"mobileForward",
-  back:"mobileBack",
-  left:"mobileLeft",
-  right:"mobileRight"
- };
-
- Object.entries(controls).forEach(([direction,id])=>{
-  const button = document.getElementById(id);
-  if(!button) return;
-
-  const start = event=>{
-   event.preventDefault();
-   movement[direction] = true;
-  };
-
-  const stop = event=>{
-   event.preventDefault();
-   movement[direction] = false;
-  };
-
-  button.addEventListener("pointerdown",start);
-  button.addEventListener("pointerup",stop);
-  button.addEventListener("pointerleave",stop);
-  button.addEventListener("pointercancel",stop);
- });
-}
-
-// ==========================================
-// OLHAR COM MOUSE OU TOQUE
-// ==========================================
-
-let touchLookId = null;
-let lastTouchX = 0;
-let lastTouchY = 0;
-
-const mobileLook = document.getElementById("mobileLook");
-
-if(mobileLook){
- mobileLook.addEventListener("pointerdown",event=>{
-  if(!gameRunning) return;
-
-  touchLookId = event.pointerId;
-  lastTouchX = event.clientX;
-  lastTouchY = event.clientY;
-
-  mobileLook.setPointerCapture(event.pointerId);
- });
-
- mobileLook.addEventListener("pointermove",event=>{
-  if(event.pointerId !== touchLookId || !camera) return;
-
-  const dx = event.clientX - lastTouchX;
-  const dy = event.clientY - lastTouchY;
-
-  lastTouchX = event.clientX;
-  lastTouchY = event.clientY;
-
-  const sensitivity = 0.003;
-
-  camera.rotation.order = "YXZ";
-  camera.rotation.y -= dx * sensitivity;
-  camera.rotation.x -= dy * sensitivity;
-
-  camera.rotation.x = THREE.MathUtils.clamp(
-   camera.rotation.x,
-   -Math.PI/2 + 0.05,
-   Math.PI/2 - 0.05
-  );
- });
-
- mobileLook.addEventListener("pointerup",()=>{
-  touchLookId = null;
- });
-
- mobileLook.addEventListener("pointercancel",()=>{
-  touchLookId = null;
- });
-}
-
-// ==========================================
-// POINTER LOCK — PC
-// ==========================================
-
-if(renderer && renderer.domElement){
- renderer.domElement.addEventListener("click",()=>{
-  if(!gameRunning || isMobile()) return;
-
-  if(document.pointerLockElement !== renderer.domElement){
-   renderer.domElement.requestPointerLock?.();
-  }
- });
-}
-
-document.addEventListener("mousemove",event=>{
- if(!gameRunning || isMobile()) return;
- if(document.pointerLockElement !== renderer?.domElement) return;
- if(!camera) return;
-
- const sensitivity = 0.002;
-
- camera.rotation.order = "YXZ";
- camera.rotation.y -= event.movementX * sensitivity;
- camera.rotation.x -= event.movementY * sensitivity;
-
- camera.rotation.x = THREE.MathUtils.clamp(
-  camera.rotation.x,
-  -Math.PI/2 + 0.05,
-  Math.PI/2 - 0.05
- );
-});
-
-// ==========================================
-// BOTÕES DA INTERFACE
-// ==========================================
-
-const flashlightButton = document.getElementById("flashlightButton");
-
-if(flashlightButton){
- flashlightButton.addEventListener("click",toggleFlashlight);
-}
-
-const interactButton = document.getElementById("interactButton");
-
-if(interactButton){
- interactButton.addEventListener("click",()=>{
-  if(typeof interact === "function") interact();
- });
-}
-
-const inventoryButton = document.getElementById("inventoryButton");
-
-if(inventoryButton){
- inventoryButton.addEventListener("click",()=>{
-  if(typeof toggleInventory === "function"){
-   toggleInventory();
-  }
- });
-}
-
-// ==========================================
-// LOOP PRINCIPAL
-// ==========================================
-
-const gameClock = new THREE.Clock();
 
 function animate(){
  requestAnimationFrame(animate);
+ const dt=Math.min(clock.getDelta(),.05);
 
- if(!renderer || !scene || !camera) return;
+ const forward=
+  Number(keys.KeyW||movement.forward)-
+  Number(keys.KeyS||movement.back);
 
- const dt = Math.min(gameClock.getDelta(),0.05);
+ const side=
+  Number(keys.KeyD||movement.right)-
+  Number(keys.KeyA||movement.left);
 
- if(gameRunning){
-  updateMovement(dt);
-  updateBattery(dt);
+ const f=new THREE.Vector3(0,0,-1).applyQuaternion(camera.quaternion);
+ f.y=0;f.normalize();
 
-  if(typeof updateRoomLights === "function"){
-   updateRoomLights(dt);
-  }
+ const r=new THREE.Vector3(1,0,0).applyQuaternion(camera.quaternion);
+ r.y=0;r.normalize();
 
-  if(typeof updateCabinet === "function"){
-   updateCabinet(dt);
-  }
+ const v=f.multiplyScalar(forward).add(r.multiplyScalar(side));
 
-  if(typeof updateDrawers === "function"){
-   updateDrawers(dt);
-  }
-
-  if(typeof updateHeldObject === "function"){
-   updateHeldObject(dt);
-  }
-
-  if(typeof updateInventory === "function"){
-   updateInventory(dt);
-  }
+ if(v.lengthSq()>0){
+  v.normalize().multiplyScalar(3.1*dt);
+  moveWithCollision(v.x,v.z);
  }
 
  renderer.render(scene,camera);
 }
 
-// ==========================================
-// INICIALIZAÇÃO DA PARTIDA
-// ==========================================
+$("play").onclick=()=>{
+ $("menu").style.display="none";
+ init();
+ renderer.domElement.requestPointerLock?.();
+};
 
-function startGameV40(){
- if(!scene || !camera || !renderer) return;
+function $(id){return document.getElementById(id)}
 
- if(typeof createFurniture === "function"){
-  createFurniture();
- }
+window.addEventListener("keydown",e=>keys[e.code]=true);
+window.addEventListener("keyup",e=>keys[e.code]=false);
 
- if(typeof createCollisionSystem === "function"){
-  createCollisionSystem();
- }
-
- gameRunning = true;
- gameClock.start();
-
- setupMobileControls();
- setupMobileLook();
-
- const menu = document.getElementById("mainMenu");
- if(menu) menu.style.display = "none";
-
- const hud = document.getElementById("gameHUD");
- if(hud) hud.style.display = "block";
-
- showMessage("Encontre uma saída...");
-}
-
-function setupMobileLook(){
- setupMobileControls();
-}
-
-window.addEventListener("blur",()=>{
- Object.keys(keys).forEach(key=>keys[key]=false);
-
- Object.keys(movement).forEach(key=>{
-  movement[key] = false;
- });
+document.addEventListener("mousemove",e=>{
+ if(document.pointerLockElement!==renderer?.domElement||!camera)return;
+ camera.rotation.y-=e.movementX*.002;
+ camera.rotation.x-=e.movementY*.002;
+ camera.rotation.x=THREE.MathUtils.clamp(camera.rotation.x,-1.5,1.5);
 });
 
-// ==========================================
-// INICIAR
-// ==========================================
+const directions=["forward","back","left","right"];
+directions.forEach(d=>{
+ const b=$(d);
+ const on=e=>{e.preventDefault();movement[d]=true};
+ const off=e=>{e.preventDefault();movement[d]=false};
+ b.addEventListener("pointerdown",on);
+ ["pointerup","pointercancel","pointerleave"].forEach(t=>b.addEventListener(t,off));
+});
 
-updateFlashlightUI();
-animate();
-
+window.addEventListener("resize",()=>{
+ if(!camera||!renderer)return;
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+});
 </script>
 </body>
 </html>

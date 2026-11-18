@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.3</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.4</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -52,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.3 • SISTEMA HOSPITALAR</div>
+  <div id="status">VERSÃO 3.4 • SISTEMA HOSPITALAR</div>
  </div>
 </div>
 
@@ -425,7 +426,7 @@ function createRoom(){
  box(15.7,.16,.08,0,.19,5.86,0x626a63);
  box(15.7,.16,.08,0,.19,-5.86,0x626a63);
  box(.08,.16,11.7,-7.86,.19,0,0x626a63);
- box(.08,.16,11.7,7.86,.19,0x626a63);
+ box(.08,.16,11.7,7.86,.19,0,0x626a63);
  for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
  box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
  box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);
@@ -496,6 +497,87 @@ function createFurniture(){
  box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
 }
 
+/* OBJETOS COLETÁVEIS QUE FICAM DENTRO DAS GAVETAS */
+function createDrawerPickup(drawer,index,name,type,position){
+ const item=new THREE.Group();
+ item.position.set(position.x,position.y,position.z);
+
+ if(type==="note"){
+  const paper=new THREE.Mesh(
+   new THREE.BoxGeometry(.28,.012,.2),
+   mat(0xc2bba5)
+  );
+  item.add(paper);
+
+  for(let i=0;i<3;i++){
+   const line=new THREE.Mesh(
+    new THREE.BoxGeometry(.19,.004,.006),
+    mat(0x56564e)
+   );
+   line.position.set(-.015,.009,-.045+i*.045);
+   item.add(line);
+  }
+  item.rotation.y=-.12;
+ }
+
+ if(type==="key"){
+  const ring=new THREE.Mesh(
+   new THREE.TorusGeometry(.055,.012,6,12),
+   mat(0x77776b,.45,.7)
+  );
+  ring.rotation.x=Math.PI/2;
+  ring.position.set(-.055,.015,0);
+  item.add(ring);
+
+  const shaft=new THREE.Mesh(
+   new THREE.BoxGeometry(.19,.018,.025),
+   mat(0x77776b,.45,.7)
+  );
+  shaft.position.set(.065,.015,0);
+  item.add(shaft);
+
+  const tooth=new THREE.Mesh(
+   new THREE.BoxGeometry(.035,.035,.025),
+   mat(0x77776b,.45,.7)
+  );
+  tooth.position.set(.12,.015,.015);
+  item.add(tooth);
+ }
+
+ if(type==="bandage"){
+  const roll=new THREE.Mesh(
+   new THREE.CylinderGeometry(.065,.065,.09,12),
+   mat(0xd2cbb7)
+  );
+  roll.rotation.x=Math.PI/2;
+  item.add(roll);
+
+  const center=new THREE.Mesh(
+   new THREE.CylinderGeometry(.025,.025,.095,10),
+   mat(0x716e61)
+  );
+  center.rotation.x=Math.PI/2;
+  item.add(center);
+ }
+
+ item.userData={
+  pickable:true,
+  type,
+  name,
+  stored:false,
+  physics:false,
+  velocity:new THREE.Vector3(),
+  holdTarget:new THREE.Vector3(.27,-.23,-.57),
+  holdRotation:new THREE.Euler(-.18,0,0),
+  inDrawer:true,
+  drawerIndex:index
+ };
+
+ drawer.add(item);
+ items.push(item);
+ return item;
+}
+
 function createDrawerCabinet(){
  const x=-4.65,z=-.9;
  box(.82,.92,.68,x,.52,z,0x777e76);
@@ -507,40 +589,73 @@ function createDrawerCabinet(){
 
  for(let i=0;i<3;i++){
   const g=new THREE.Group(),closedZ=z+.34;
-  g.userData={isDrawer:true,index:i,open:false,targetZ:0,closedZ};
-  const bottom=new THREE.Mesh(new THREE.BoxGeometry(.68,.045,.48),mat(0x858b80));
+  g.userData={
+   isDrawer:true,
+   index:i,
+   open:false,
+   targetZ:0,
+   closedZ
+  };
+
+  const bottom=new THREE.Mesh(
+   new THREE.BoxGeometry(.68,.045,.48),mat(0x858b80)
+  );
   g.add(bottom);
-  const leftSide=new THREE.Mesh(new THREE.BoxGeometry(.045,.21,.48),mat(0x777e76));
+
+  const leftSide=new THREE.Mesh(
+   new THREE.BoxGeometry(.045,.21,.48),mat(0x777e76)
+  );
   leftSide.position.set(-.34,.105,0);g.add(leftSide);
-  const rightSide=leftSide.clone();rightSide.position.x=.34;g.add(rightSide);
-  const back=new THREE.Mesh(new THREE.BoxGeometry(.68,.21,.045),mat(0x777e76));
+
+  const rightSide=leftSide.clone();
+  rightSide.position.x=.34;g.add(rightSide);
+
+  const back=new THREE.Mesh(
+   new THREE.BoxGeometry(.68,.21,.045),mat(0x777e76)
+  );
   back.position.set(0,.105,-.22);g.add(back);
-  const front=new THREE.Mesh(new THREE.BoxGeometry(.72,.23,.055),mat(0x999b90));
+
+  const front=new THREE.Mesh(
+   new THREE.BoxGeometry(.72,.23,.055),mat(0x999b90)
+  );
   front.position.set(0,.115,.255);g.add(front);
-  const handle=new THREE.Mesh(new THREE.BoxGeometry(.17,.035,.055),mat(0x555d5b,.45,.7));
+
+  const handle=new THREE.Mesh(
+   new THREE.BoxGeometry(.17,.035,.055),mat(0x555d5b,.45,.7)
+  );
   handle.position.set(0,.13,.31);g.add(handle);
-  const y=.76-i*.29;g.position.set(x,y,closedZ);scene.add(g);drawers.push(g);
 
+  const y=.76-i*.29;
+  g.position.set(x,y,closedZ);
+  scene.add(g);
+  drawers.push(g);
+
+  // OBJETOS INDIVIDUAIS EM CADA GAVETA.
   if(i===0){
-   const paper=new THREE.Mesh(new THREE.BoxGeometry(.28,.012,.2),mat(0xc2bba5));
-   paper.position.set(0,.035,-.06);g.add(paper);
-   const pen=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.22,6),mat(0x292f37));
-   pen.rotation.z=Math.PI/2;pen.position.set(.05,.05,.02);g.add(pen);
-  }
-  if(i===1){
-   const obj=new THREE.Mesh(new THREE.BoxGeometry(.22,.12,.16),mat(0x9b9b86));
-   obj.position.set(-.1,.08,-.04);g.add(obj);
-  }
-  if(i===2){
-   const bandage=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.08,10),mat(0xd2cbb7));
-   bandage.rotation.x=Math.PI/2;bandage.position.set(.08,.07,-.04);g.add(bandage);
+   createDrawerPickup(g,i,"Anotação","note",{x:0,y:.045,z:-.06});
   }
 
-  const target=new THREE.Mesh(new THREE.BoxGeometry(.78,.25,.16),
-   new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  if(i===1){
+   createDrawerPickup(g,i,"Chave enferrujada","key",{x:-.06,y:.075,z:-.04});
+  }
+
+  if(i===2){
+   createDrawerPickup(g,i,"Atadura","bandage",{x:.08,y:.075,z:-.04});
+  }
+
+  const target=new THREE.Mesh(
+   new THREE.BoxGeometry(.78,.25,.16),
+   new THREE.MeshBasicMaterial({
+    transparent:true,
+    opacity:0,
+    depthWrite:false
+   })
+  );
   target.position.set(x,y,closedZ+.34);
-  target.userData.drawerIndex=i;target.userData.isDrawerTarget=true;
-  scene.add(target);drawerTargets.push(target);
+  target.userData.drawerIndex=i;
+  target.userData.isDrawerTarget=true;
+  scene.add(target);
+  drawerTargets.push(target);
  }
 }
 
@@ -659,7 +774,6 @@ function createItems(){
   new THREE.MeshBasicMaterial({color:0xd8dfc8}));
  lens.position.z=-.345;flashlight.add(lens);
 
- // LANTERNA NA PRATELEIRA DE BAIXO.
  flashlight.position.set(-6.34,.84,-2.68);
  flashlight.userData={
   pickable:true,type:"flashlight",name:"Lanterna",
@@ -687,7 +801,6 @@ function createItems(){
 }
 
 function createExtraItems(){
- // KIT MÉDICO NA PRATELEIRA DE BAIXO.
  const kit=new THREE.Group();
  const kitBody=new THREE.Mesh(new THREE.BoxGeometry(.32,.19,.24),mat(0xd0d0c3));
  kit.add(kitBody);
@@ -707,7 +820,6 @@ function createExtraItems(){
  };
  scene.add(kit);items.push(kit);
 
- // PILHA NA PRATELEIRA DE BAIXO.
  const batteryItem=new THREE.Group();
  const cell=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.2,10),mat(0x343c3b,.45,.4));
  cell.rotation.z=Math.PI/2;batteryItem.add(cell);
@@ -801,8 +913,11 @@ function pickItem(){
  }
  if(item.userData.stored)return;
 
- scene.remove(item);camera.add(item);heldItem=item;
- item.userData.physics=false;item.userData.velocity.set(0,0,0);
+ camera.add(item);
+ heldItem=item;
+ item.userData.inDrawer=false;
+ item.userData.physics=false;
+ item.userData.velocity.set(0,0,0);
  item.userData.holdTarget=new THREE.Vector3(.27,-.23,-.57);
  item.userData.holdRotation=item.userData.type==="flashlight"?
   new THREE.Euler(0,0,0):new THREE.Euler(-.18,0,0);
@@ -833,6 +948,7 @@ function dropItem(){
  item.userData.velocity.set(0,0,0);
  item.userData.stored=false;
  item.userData.inCabinet=false;
+ item.userData.inDrawer=false;
  heldItem=null;setHandGrip(false);
 
  if(item.userData.type==="flashlight"&&flashlightOn){
@@ -969,9 +1085,10 @@ function selectBackpackSlot(index,quick=false){
   "Objetos trocados com sucesso.":"Objeto equipado: "+heldItem.userData.name+".";
  updateContextualButtons();
 }
+
 function updateCabinet(dt){
  if(!cabinetDoors.length)return;
- const openAngle=1.5; // PORTAS MAIS ABERTAS
+ const openAngle=1.18;
  cabinetDoors[0].userData.targetRotation=cabinetOpen?-openAngle:0;
  cabinetDoors[1].userData.targetRotation=cabinetOpen?openAngle:0;
  for(const door of cabinetDoors){
@@ -1035,9 +1152,7 @@ function resize(){
  camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
 }
 
-/* RAYCAST CORRIGIDO:
-   Primeiro procura os objetos coletáveis.
-   Só procura armário e gavetas se nenhum item estiver na mira. */
+/* RAYCAST: objetos, gavetas e armário */
 function updateRaycast(){
  if(!camera)return;
  if(backpackOpen||inspecting){
@@ -1045,49 +1160,47 @@ function updateRaycast(){
  }
 
  raycaster.setFromCamera(centerNdc,camera);
-
  currentTarget=null;
 
- // PRIMEIRA ETAPA: objetos que podem ser pegos.
  const pickableItems=items.filter(item=>
   !item.userData.stored&&
   !item.userData.physics&&
-  (!item.userData.inCabinet||cabinetOpen)
+  (!item.userData.inCabinet||cabinetOpen)&&
+  (
+   !item.userData.inDrawer||
+   (
+    drawers[item.userData.drawerIndex]&&
+    drawers[item.userData.drawerIndex].userData.open
+   )
+  )
  );
 
  const itemHits=raycaster.intersectObjects(pickableItems,true);
 
  for(const hit of itemHits){
   let obj=hit.object;
-
   while(obj.parent&&!obj.userData.pickable){
    obj=obj.parent;
   }
-
   if(obj.userData.pickable){
    currentTarget=obj;
    break;
   }
  }
 
- // SEGUNDA ETAPA: armário e gavetas.
  if(!currentTarget){
   const otherTargets=[...drawerTargets];
-
   if(cabinetTarget)otherTargets.push(cabinetTarget);
 
   const otherHits=raycaster.intersectObjects(otherTargets,true);
-
   if(otherHits.length){
    for(const hit of otherHits){
     let obj=hit.object;
-
     while(obj.parent&&
       !obj.userData.isDrawerTarget&&
       obj!==cabinetTarget){
      obj=obj.parent;
     }
-
     if(obj.userData.isDrawerTarget||obj===cabinetTarget){
      currentTarget=obj;
      break;

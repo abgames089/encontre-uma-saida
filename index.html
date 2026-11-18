@@ -969,10 +969,9 @@ function selectBackpackSlot(index,quick=false){
   "Objetos trocados com sucesso.":"Objeto equipado: "+heldItem.userData.name+".";
  updateContextualButtons();
 }
-
 function updateCabinet(dt){
  if(!cabinetDoors.length)return;
- const openAngle=1.18;
+ const openAngle=1.5; // PORTAS MAIS ABERTAS
  cabinetDoors[0].userData.targetRotation=cabinetOpen?-openAngle:0;
  cabinetDoors[1].userData.targetRotation=cabinetOpen?openAngle:0;
  for(const door of cabinetDoors){

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.0</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.1</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -52,7 +52,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.0 • SISTEMA HOSPITALAR</div>
+  <div id="status">VERSÃO 3.1 • SISTEMA HOSPITALAR</div>
  </div>
 </div>
 
@@ -117,7 +117,7 @@ let audioContext=null;
 let ambienceOsc=null,ambienceGain=null;
 let roomLights=[],roomLightTime=0,flickerTimer=5,flickerDuration=0;
 
-/* V3.0 — computador somente com mensagens */
+/* V3.1 — computador e teclado */
 let computerCanvas=null;
 let computerContext=null;
 let computerTexture=null;
@@ -288,7 +288,7 @@ function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
  mesh.position.set(x,y,z);scene.add(mesh);return mesh;
 }
 
-/* V3.0 — monitor com registro escrito */
+/* Monitor com registro escrito */
 function createComputerScreen(){
  computerCanvas=document.createElement("canvas");
  computerCanvas.width=512;
@@ -314,6 +314,81 @@ function createComputerScreen(){
  scene.add(computerScreen);
 
  drawComputerScreen();
+}
+
+/* NOVO V3.1 — teclado 3D na frente do monitor */
+function createComputerKeyboard(){
+ const keyboard=new THREE.Group();
+
+ // Base antiga do teclado
+ const base=new THREE.Mesh(
+  new THREE.BoxGeometry(.88,.045,.32),
+  mat(0x343b38,.95)
+ );
+ base.position.y=0;
+ keyboard.add(base);
+
+ // Borda superior desgastada
+ const edge=new THREE.Mesh(
+  new THREE.BoxGeometry(.86,.012,.30),
+  mat(0x555d57,.95)
+ );
+ edge.position.y=.024;
+ keyboard.add(edge);
+
+ // Teclas individuais
+ const rows=[
+  {count:14,z:-.105},
+  {count:14,z:-.045},
+  {count:13,z:.015},
+  {count:11,z:.075}
+ ];
+
+ for(let r=0;r<rows.length;r++){
+  const row=rows[r];
+  const spacing=.057;
+  const start=-(row.count-1)*spacing/2;
+
+  for(let i=0;i<row.count;i++){
+   const key=new THREE.Mesh(
+    new THREE.BoxGeometry(.049,.025,.045),
+    mat(Math.random()<.08?0x77776a:0x92968b,.95)
+   );
+
+   key.position.set(start+i*spacing,.043,row.z);
+   keyboard.add(key);
+
+   const top=new THREE.Mesh(
+    new THREE.BoxGeometry(.041,.004,.037),
+    mat(0xb0b0a2,.9)
+   );
+
+   top.position.set(start+i*spacing,.058,row.z);
+   keyboard.add(top);
+  }
+ }
+
+ // Barra de espaço
+ const space=new THREE.Mesh(
+  new THREE.BoxGeometry(.31,.025,.045),
+  mat(0x858b80,.95)
+ );
+ space.position.set(0,.043,.132);
+ keyboard.add(space);
+
+ // Pequenos detalhes de desgaste
+ for(let i=0;i<7;i++){
+  const mark=new THREE.Mesh(
+   new THREE.BoxGeometry(.025,.003,.008),
+   mat(0x555b54)
+  );
+  mark.position.set(-.35+Math.random()*.7,.062,-.13+Math.random()*.25);
+  keyboard.add(mark);
+ }
+
+ // Posicionado na frente do monitor, sobre a mesa
+ keyboard.position.set(3,1.245,-.68);
+ scene.add(keyboard);
 }
 
 function drawComputerScreen(){
@@ -423,6 +498,7 @@ function initGame(){
  createWallDamage();
  createFurniture();
  createComputerScreen();
+ createComputerKeyboard();
  createMedicalEquipment();
  createFloorClutter();
  createRealisticDetails();

@@ -1,3 +1,4 @@
+ 
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -104,6 +105,7 @@ button:active{background:#8c2020}
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
+
 let scene,camera,renderer,clock,raycaster,centerNdc;
 let moveForward,moveRight,moveVector;
 let items=[],selectedItem=null,heldItem=null;
@@ -112,15 +114,9 @@ let cabinetDoors=[],cabinetTarget=null,cabinetOpen=false,cabinetInteriorLight=nu
 let currentTarget=null,drawers=[],drawerTargets=[];
 let hand=null,inspecting=false;
 let backpack=[null,null,null,null],backpackOpen=false;
-let pickupAnimation=0,pickupAnimating=false;
-let audioContext=null;
-let ambienceOsc=null,ambienceGain=null;
+let audioContext=null,ambienceOsc=null,ambienceGain=null;
 let roomLights=[],roomLightTime=0,flickerTimer=5,flickerDuration=0;
-
-let computerCanvas=null;
-let computerContext=null;
-let computerTexture=null;
-let computerScreen=null;
+let flashlightGroup=null,flashlightLight=null;
 
 const keys={};
 const movement={forward:false,back:false,left:false,right:false};
@@ -173,16 +169,21 @@ function startAmbience(){
 
 $("play").onclick=async()=>{
  if(gameStarted)return;
- $("play").disabled=true;$("status").textContent="CARREGANDO...";
+ $("play").disabled=true;
+ $("status").textContent="CARREGANDO...";
  try{
   await loadThree();
   if(!scene)initGame();
   $("menu").classList.add("hidden");
   $("hud").classList.remove("hidden");
   $("controls").classList.remove("hidden");
-  gameStarted=true;startAmbience();updateContextualButtons();
+  gameStarted=true;
+  startAmbience();
+  updateContextualButtons();
   if(!isMobile())renderer.domElement.requestPointerLock?.();
- }catch(e){$("status").textContent="ERRO: "+e.message}
+ }catch(e){
+  $("status").textContent="ERRO: "+e.message;
+ }
  finally{$("play").disabled=false}
 };
 
@@ -195,19 +196,24 @@ async function loadThree(){
  for(const url of urls){
   try{
    await new Promise((resolve,reject)=>{
-    const s=document.createElement("script");s.src=url;
-    s.onload=resolve;s.onerror=reject;document.head.appendChild(s);
+    const s=document.createElement("script");
+    s.src=url;s.onload=resolve;s.onerror=reject;
+    document.head.appendChild(s);
    });
    if(window.THREE)return window.THREE;
   }catch(e){}
  }
  throw new Error("Verifique sua conexão com a internet.");
 }
+
 function isMobile(){return matchMedia("(pointer:coarse)").matches}
-function mat(color,roughness=1,metalness=0){return new THREE.MeshStandardMaterial({color,roughness,metalness})}
+function mat(color,roughness=1,metalness=0){
+ return new THREE.MeshStandardMaterial({color,roughness,metalness});
+}
 function box(w,h,d,x,y,z,color,rotation=0){
  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat(color));
- m.position.set(x,y,z);m.rotation.y=rotation;scene.add(m);return m;
+ m.position.set(x,y,z);m.rotation.y=rotation;scene.add(m);
+ return m;
 }
 function cylinder(rt,rb,h,x,y,z,color,segments=10){
  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,segments),mat(color,.85,.25));
@@ -215,20 +221,23 @@ function cylinder(rt,rb,h,x,y,z,color,segments=10){
 }
 function sphere(x,y,z,sx,sy,sz,color){
  const m=new THREE.Mesh(new THREE.SphereGeometry(1,10,8),mat(color));
- m.position.set(x,y,z);m.scale.set(sx,sy,sz);scene.add(m);return m;
+ m.position.set(x,y,z);m.scale.set(sx,sy,sz);scene.add(m);
+ return m;
 }
 
 function makeCanvasTexture(kind){
- const canvas=document.createElement("canvas");canvas.width=canvas.height=512;
+ const canvas=document.createElement("canvas");
+ canvas.width=canvas.height=512;
  const ctx=canvas.getContext("2d");
+
  if(kind==="floor"){
   ctx.fillStyle="#777a73";ctx.fillRect(0,0,512,512);
   for(let y=0;y<512;y+=128)for(let x=0;x<512;x+=128){
    const shade=105+Math.floor(Math.random()*28);
    ctx.fillStyle=`rgb(${shade},${shade+2},${shade-4})`;
    ctx.fillRect(x+2,y+2,124,124);
-   ctx.strokeStyle="rgba(25,30,27,.55)";ctx.lineWidth=3;
-   ctx.strokeRect(x+2,y+2,124,124);
+   ctx.strokeStyle="rgba(25,30,27,.55)";
+   ctx.lineWidth=3;ctx.strokeRect(x+2,y+2,124,124);
   }
   for(let i=0;i<1800;i++){
    const v=Math.floor(Math.random()*65);
@@ -244,14 +253,15 @@ function makeCanvasTexture(kind){
   for(let i=0;i<24;i++){
    const x=Math.random()*512,y=Math.random()*512;
    const g=ctx.createRadialGradient(x,y,2,x,y,20+Math.random()*55);
-   g.addColorStop(0,"rgba(45,53,46,.22)");g.addColorStop(1,"rgba(45,53,46,0)");
+   g.addColorStop(0,"rgba(45,53,46,.22)");
+   g.addColorStop(1,"rgba(45,53,46,0)");
    ctx.fillStyle=g;ctx.fillRect(x-70,y-70,140,140);
   }
  }else{
   ctx.fillStyle="#626861";ctx.fillRect(0,0,512,512);
   for(let y=0;y<512;y+=128)for(let x=0;x<512;x+=128){
-   ctx.strokeStyle="rgba(25,30,27,.45)";ctx.lineWidth=4;
-   ctx.strokeRect(x+2,y+2,124,124);
+   ctx.strokeStyle="rgba(25,30,27,.45)";
+   ctx.lineWidth=4;ctx.strokeRect(x+2,y+2,124,124);
   }
   for(let i=0;i<1200;i++){
    ctx.fillStyle="rgba(220,225,215,.05)";
@@ -260,15 +270,20 @@ function makeCanvasTexture(kind){
  }
  const texture=new THREE.CanvasTexture(canvas);
  texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
- texture.colorSpace=THREE.SRGBColorSpace;texture.anisotropy=2;
+ texture.colorSpace=THREE.SRGBColorSpace;
+ texture.anisotropy=2;
  return texture;
 }
+
 function texturedBox(w,h,d,x,y,z,texture,repeatX=1,repeatY=1){
- const tex=texture.clone();tex.needsUpdate=true;tex.repeat.set(repeatX,repeatY);
+ const tex=texture.clone();
+ tex.needsUpdate=true;tex.repeat.set(repeatX,repeatY);
  const material=new THREE.MeshStandardMaterial({map:tex,roughness:.96,metalness:0});
  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);
  mesh.position.set(x,y,z);scene.add(mesh);return mesh;
 }
+
+let computerCanvas=null,computerContext=null,computerTexture=null,computerScreen=null;
 
 function createComputerScreen(){
  computerCanvas=document.createElement("canvas");
@@ -280,28 +295,38 @@ function createComputerScreen(){
  computerTexture.magFilter=THREE.LinearFilter;
  const material=new THREE.MeshBasicMaterial({map:computerTexture,toneMapped:false});
  computerScreen=new THREE.Mesh(new THREE.PlaneGeometry(.69,.40),material);
- computerScreen.position.set(3,1.59,-.858);scene.add(computerScreen);
+ computerScreen.position.set(3,1.59,-.858);
+ scene.add(computerScreen);
  drawComputerScreen();
 }
+
 function drawComputerScreen(){
  if(!computerContext||!computerTexture)return;
  const ctx=computerContext,w=512,h=320;
  ctx.clearRect(0,0,w,h);
  const gradient=ctx.createLinearGradient(0,0,w,h);
- gradient.addColorStop(0,"#071c1c");gradient.addColorStop(.55,"#0b2928");
+ gradient.addColorStop(0,"#071c1c");
+ gradient.addColorStop(.55,"#0b2928");
  gradient.addColorStop(1,"#061414");
  ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
- ctx.fillStyle="#75e5d2";ctx.font="bold 20px Arial";ctx.fillText("AB GAMES",20,30);
- ctx.fillStyle="#91bdb5";ctx.font="13px Arial";ctx.fillText("SISTEMA HOSPITALAR",190,29);
- ctx.strokeStyle="#5b9d91";ctx.beginPath();ctx.moveTo(20,45);ctx.lineTo(492,45);ctx.stroke();
- ctx.fillStyle="#8ebbb1";ctx.font="13px Arial";ctx.fillText("REGISTRO DE MOVIMENTAÇÃO",25,85);
- ctx.fillStyle="#ff4545";ctx.font="bold 25px Arial";ctx.fillText("MOVIMENTO DETECTADO",25,130);
+ ctx.fillStyle="#75e5d2";ctx.font="bold 20px Arial";
+ ctx.fillText("AB GAMES",20,30);
+ ctx.fillStyle="#91bdb5";ctx.font="13px Arial";
+ ctx.fillText("SISTEMA HOSPITALAR",190,29);
+ ctx.strokeStyle="#5b9d91";
+ ctx.beginPath();ctx.moveTo(20,45);ctx.lineTo(492,45);ctx.stroke();
+ ctx.fillStyle="#8ebbb1";ctx.font="13px Arial";
+ ctx.fillText("REGISTRO DE MOVIMENTAÇÃO",25,85);
+ ctx.fillStyle="#ff4545";ctx.font="bold 25px Arial";
+ ctx.fillText("MOVIMENTO DETECTADO",25,130);
  ctx.fillStyle="#e0f4ed";ctx.font="17px Arial";
- ctx.fillText("Alguém passou pela",25,175);ctx.fillText("enfermaria.",25,201);
+ ctx.fillText("Alguém passou pela",25,175);
+ ctx.fillText("enfermaria.",25,201);
  ctx.fillStyle="#a7c9c0";ctx.font="14px Arial";
  ctx.fillText("HORÁRIO: 03:17:42",25,244);
  ctx.fillText("IDENTIFICAÇÃO: DESCONHECIDA",25,269);
- ctx.fillStyle="rgba(255,65,65,.13)";ctx.fillRect(18,282,476,28);
+ ctx.fillStyle="rgba(255,65,65,.13)";
+ ctx.fillRect(18,282,476,28);
  ctx.fillStyle="#ff6565";ctx.font="bold 13px Arial";
  ctx.fillText("NÃO HÁ NINGUÉM CADASTRADO.",25,302);
  ctx.fillStyle="rgba(0,0,0,.13)";
@@ -311,22 +336,33 @@ function drawComputerScreen(){
 function updateComputerScreen(dt){}
 
 function initGame(){
- scene=new THREE.Scene();raycaster=new THREE.Raycaster();raycaster.far=2.6;
+ scene=new THREE.Scene();
+ raycaster=new THREE.Raycaster();raycaster.far=2.6;
  centerNdc=new THREE.Vector2(0,0);
- moveForward=new THREE.Vector3();moveRight=new THREE.Vector3();moveVector=new THREE.Vector3();
- scene.background=new THREE.Color(0x252a27);scene.fog=new THREE.FogExp2(0x252a27,.011);
+ moveForward=new THREE.Vector3();
+ moveRight=new THREE.Vector3();
+ moveVector=new THREE.Vector3();
+
+ scene.background=new THREE.Color(0x252a27);
+ scene.fog=new THREE.FogExp2(0x252a27,.011);
  camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,.1,80);
- camera.position.set(0,1.65,4.2);camera.rotation.order="YXZ";
+ camera.position.set(0,1.65,4.2);
+ camera.rotation.order="YXZ";
+
  renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"low-power"});
  renderer.setPixelRatio(isMobile()?Math.min(devicePixelRatio,1.2):Math.min(devicePixelRatio,.9));
- renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=false;
+ renderer.setSize(innerWidth,innerHeight);
+ renderer.shadowMap.enabled=false;
  renderer.outputColorSpace=THREE.SRGBColorSpace;
- renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.08;
+ renderer.toneMapping=THREE.ACESFilmicToneMapping;
+ renderer.toneMappingExposure=1.08;
  document.body.appendChild(renderer.domElement);
  renderer.domElement.addEventListener("click",togglePointerLock);
  clock=new THREE.Clock();
+
  scene.add(new THREE.AmbientLight(0xffffff,.48));
  scene.add(new THREE.HemisphereLight(0xdce5e2,0x454b46,.38));
+
  const ceilingLight=new THREE.PointLight(0xe5e9e3,1.25,21);
  ceilingLight.position.set(0,3.2,0);scene.add(ceilingLight);
  const leftLight=new THREE.PointLight(0xe5eae6,.32,15);
@@ -335,6 +371,7 @@ function initGame(){
  rightLight.position.set(5,2.5,0);scene.add(rightLight);
  const backLight=new THREE.PointLight(0xdce3df,.25,13);
  backLight.position.set(0,2.5,-4);scene.add(backLight);
+
  roomLights=[
   {light:ceilingLight,base:1.25,phase:0},
   {light:leftLight,base:.32,phase:1.7},
@@ -342,23 +379,42 @@ function initGame(){
   {light:backLight,base:.25,phase:4.5}
  ];
  roomLightTime=0;flickerTimer=5;flickerDuration=0;
- createRoom();createWallDamage();createFurniture();createComputerScreen();
- createMedicalEquipment();createFloorClutter();createRealisticDetails();
- createItems();createExtraItems();createHand();createFlashlight();
- renderBackpack();updateContextualButtons();
+
+ createRoom();
+ createWallDamage();
+ createFurniture();
+ createComputerScreen();
+ createMedicalEquipment();
+ createFloorClutter();
+ createRealisticDetails();
+ createItems();
+ createExtraItems();
+ createHand();
+ createFlashlight();
+
+ renderBackpack();
+ updateContextualButtons();
  window.addEventListener("resize",resize);
- if(!animationStarted){animationStarted=true;animate()}
+
+ if(!animationStarted){
+  animationStarted=true;
+  animate();
+ }
 }
 
 function updateRoomLights(dt){
  roomLightTime+=dt;flickerTimer-=dt;
  if(flickerTimer<=0&&flickerDuration<=0){
-  flickerDuration=.2+Math.random()*.35;flickerTimer=2.2+Math.random()*3.2;
+  flickerDuration=.2+Math.random()*.35;
+  flickerTimer=2.2+Math.random()*3.2;
  }
  let flicker=1;
  if(flickerDuration>0){
-  flickerDuration-=dt;const pulse=Math.random();
-  if(pulse<.45)flicker=.08;else if(pulse<.75)flicker=.28;else flicker=.55;
+  flickerDuration-=dt;
+  const pulse=Math.random();
+  if(pulse<.45)flicker=.08;
+  else if(pulse<.75)flicker=.28;
+  else flicker=.55;
  }
  for(const entry of roomLights){
   const wave=1+Math.sin(roomLightTime*1.15+entry.phase)*.035;
@@ -367,7 +423,10 @@ function updateRoomLights(dt){
 }
 
 function createRoom(){
- const ft=makeCanvasTexture("floor"),wt=makeCanvasTexture("wall"),ct=makeCanvasTexture("ceiling");
+ const ft=makeCanvasTexture("floor");
+ const wt=makeCanvasTexture("wall");
+ const ct=makeCanvasTexture("ceiling");
+
  texturedBox(16,.2,12,0,0,0,ft,4,3);
  texturedBox(16,.2,12,0,3.5,0,ct,4,3);
  texturedBox(.2,3.5,12,-8,1.75,0,wt,3,1);
@@ -376,10 +435,12 @@ function createRoom(){
  texturedBox(6.8,3.5,.2,-4.6,1.75,-6,wt,2,1);
  texturedBox(6.8,3.5,.2,4.6,1.75,-6,wt,2,1);
  texturedBox(2.4,.65,.2,0,3.175,-6,wt,1,1);
+
  box(15.7,.16,.08,0,.19,5.86,0x626a63);
  box(15.7,.16,.08,0,.19,-5.86,0x626a63);
  box(.08,.16,11.7,-7.86,.19,0,0x626a63);
  box(.08,.16,11.7,7.86,.19,0x626a63);
+
  for(let x=-6;x<=6;x+=3)box(2.75,.025,2.4,x,3.385,0,0x777e77);
  box(2.2,.035,.42,0,3.365,-.2,0xc0c4b9);
  box(2.05,2.7,.12,0,1.35,-5.92,0x555b57);
@@ -387,20 +448,29 @@ function createRoom(){
  box(.12,2.85,.18,1.1,1.425,-5.83,0x444a47);
  box(2.3,.12,.18,0,2.85,-5.83,0x444a47);
  sphere(.75,1.25,-5.78,.045,.045,.045,0xb5ad91);
+
  box(.08,2.1,.08,-5,1.4,.5,0x555b5a);
  box(.08,2.1,.08,-1.5,1.4,.5,0x555b5a);
  box(3.6,.06,.06,-3.25,2.5,.5,0x444948);
+
  for(let i=0;i<5;i++){
   const c=new THREE.Mesh(new THREE.BoxGeometry(.67,1.9,.035),
    new THREE.MeshStandardMaterial({color:0x87918b,transparent:true,opacity:.72,roughness:1}));
-  c.position.set(-4.8+i*.7,1.45,.5);scene.add(c);
+  c.position.set(-4.8+i*.7,1.45,.5);
+  scene.add(c);
  }
 }
+
 function createWallDamage(){
- const stains=[[-7.87,1,-3,.025,.65,1.2],[-7.87,2.5,2,.025,.55,.8],
- [7.87,1.2,-3,.025,.8,1.1],[7.87,2.6,2,.025,.5,.7],
- [-4,1,-5.87,1.4,.45,.025],[4,2.5,-5.87,1.2,.5,.025],
- [1,1,5.87,1.3,.35,.025]];
+ const stains=[
+  [-7.87,1,-3,.025,.65,1.2],
+  [-7.87,2.5,2,.025,.55,.8],
+  [7.87,1.2,-3,.025,.8,1.1],
+  [7.87,2.6,2,.025,.5,.7],
+  [-4,1,-5.87,1.4,.45,.025],
+  [4,2.5,-5.87,1.2,.5,.025],
+  [1,1,5.87,1.3,.35,.025]
+ ];
  for(const s of stains)box(s[3],s[4],s[5],s[0],s[1],s[2],0x626760);
  for(let i=0;i<24;i++){
   const side=i%2===0?-7.87:7.87;
@@ -411,9 +481,35 @@ function createWallDamage(){
  }
 }
 
-/* A cama nova será adicionada na função createFurniture() na parte 2. */
+/* A cama e os móveis da enfermaria */
+function createFurniture(){
+ createHospitalBed();
+
+ // Mesa ao lado da cama
+ box(1,.12,.7,-5.15,.85,-1,0x565e58);
+ for(const x of [-5.58,-4.72]){
+  for(const z of [-1.27,-.73]){
+   box(.07,.8,.07,x,.4,z,0x424944);
+  }
+ }
+
+ // Armário hospitalar
+ createInteractiveCabinet(5.5,1.05,-2.5);
+
+ // Balcão com gavetas
+ createDrawerCabinet(3.8,.75,2.8);
+
+ // Cadeira
+ box(.65,.12,.65,5,.55,2,0x454d49);
+ box(.65,.65,.1,5,.9,2.3,0x515b55);
+ for(const x of [4.72,5.28]){
+  for(const z of [1.72,2.28]){
+   box(.07,.55,.07,x,.28,z,0x343b38);
+  }
+ }
+}
+
 function createHospitalBed(){
- // Estrutura metálica
  const metal=0x555e5b;
  const darkMetal=0x303936;
 
@@ -433,44 +529,33 @@ function createHospitalBed(){
  box(2.25,.09,.1,-3,.76,-1.78,metal);
  box(2.25,.09,.1,-3,.76,-.22,metal);
 
- // Base da cama
+ // Base e colchão
  box(2.2,.12,1.5,-3,.84,-1,0x68716d);
-
- // Colchão
  box(2.12,.28,1.42,-3,1.02,-1,0xb8b9ae);
-
- // Lençol branco
  box(2.08,.045,1.36,-3,1.185,-1,0xe0dfd4);
 
- // Travesseiro na nova cabeceira
+ // Travesseiro na ponta da cama
  box(.72,.13,.43,-3,1.27,-.49,0xe7e5dc);
  box(.68,.025,.39,-3,1.345,-.49,0xf0eee5);
 
- // Cobertor sobre a cama
+ // Cobertor
  box(1.65,.085,.79,-3,1.255,-.72,0x69766f);
-
- // Parte dobrada do cobertor
  box(1.65,.07,.19,-3,1.32,-1.16,0x849087);
-
- // Laterais caídas do cobertor
  box(1.65,.31,.07,-3,1.08,-.29,0x626f68);
  box(.07,.25,.48,-4.05,1.12,-.78,0x626f68);
 
  // Grades laterais
  for(const x of [-4.08,-1.92]){
   box(.055,.055,1.5,x,1.48,-1,metal);
-
   for(const z of [-1.68,-1.3,-.92,-.54,-.3]){
    box(.045,.48,.045,x,1.25,z,metal);
   }
-
   box(.09,.07,1.58,x,1.03,-1,0x424b47);
  }
 
- // Cabeceira e peseira invertidas
+ // Cabeceira e peseira
  box(2.22,.12,.1,-3,1.28,-.17,0x737d76);
  box(2.22,.12,.1,-3,1.28,-1.83,0x737d76);
-
  box(2.15,.32,.08,-3,1.46,-.17,0x59635e);
  box(2.15,.32,.08,-3,1.46,-1.83,0x59635e);
 
@@ -480,27 +565,23 @@ function createHospitalBed(){
   cylinder(.035,.035,.12,x,1.56,-1.83,0x9ca39b,8);
  }
 
- // Pequenos detalhes do colchão
  box(.025,.025,1.25,-4.065,1.02,-1,0x8c9289);
  box(.025,.025,1.25,-1.935,1.02,-1,0x8c9289);
 }
+
 function createDrawerCabinet(x,y,z){
  box(1.4,1.5,.7,x,y,z,0x555e58);
 
  for(let i=0;i<3;i++){
   const drawer=box(1.25,.35,.06,x,y-.43+i*.43,z-.38,0x777f77);
   drawer.userData={
-   type:"drawer",
-   open:false,
-   baseZ:z-.38,
-   x:x,
-   y:y-.43+i*.43
+   type:"drawer",open:false,baseZ:z-.38,
+   x:x,y:y-.43+i*.43
   };
   drawers.push(drawer);
 
   const handle=box(.28,.045,.055,x,y-.43+i*.43,z-.43,0x333b37);
   handle.userData.parentDrawer=drawer;
-  drawerTargets.push(handle);
  }
 }
 
@@ -512,10 +593,8 @@ function createInteractiveCabinet(x,y,z){
 
  const handle=box(.055,.4,.06,x+.42,y,z-.45,0x292f2c);
  handle.userData.parentDoor=door;
-
  cabinetDoors.push(door);
 
- // Interior
  box(1.05,.07,.48,x,y+.55,z-.05,0x303833);
  box(1.05,.07,.48,x,y-.1,z-.05,0x303833);
  box(.06,1.5,.48,x-.53,y,z-.05,0x39423c);
@@ -526,6 +605,7 @@ function createMedicalEquipment(){
  // Carrinho médico
  box(.8,.1,.55,1.9,.85,-2.8,0x89918a);
  box(.75,.55,.5,1.9,.55,-2.8,0x626b65);
+
  for(const x of [1.58,2.22]){
   for(const z of [-3.02,-2.58]){
    cylinder(.075,.075,.07,x,.1,z,0x292f2c,10);
@@ -536,9 +616,11 @@ function createMedicalEquipment(){
  cylinder(.035,.035,2.3,1.2,1.35,-1.8,0x8c9690,8);
  cylinder(.025,.025,.7,1.2,2.42,-1.8,0x9ca49e,8);
  box(.55,.035,.035,1.2,2.75,-1.8,0x929a93);
+
  for(const x of [.95,1.45]){
   cylinder(.025,.025,.35,x,2.56,-1.8,0x929a93,8);
  }
+
  cylinder(.32,.025,.055,1.2,.08,-1.8,0x303734,12);
 
  // Caixa de equipamentos
@@ -564,13 +646,13 @@ function createFloorClutter(){
   const w=.12+Math.random()*.25;
   const h=.025+Math.random()*.04;
   const d=.12+Math.random()*.25;
+
   const obj=box(w,h,d,x,.12,z,colors[i%colors.length]);
   obj.rotation.y=Math.random()*Math.PI;
  }
 }
 
 function createRealisticDetails(){
- // Manchas e detalhes nas paredes
  for(let i=0;i<18;i++){
   const x=-7.7+Math.random()*15.4;
   const z=-5.5+Math.random()*11;
@@ -597,11 +679,8 @@ function createItems(){
  for(const def of definitions){
   const mesh=box(.25,.12,.12,def.x,def.y,def.z,def.color);
   mesh.userData={
-   type:"item",
-   name:def.name,
-   description:def.description,
-   itemType:def.type,
-   picked:false,
+   type:"item",name:def.name,description:def.description,
+   itemType:def.type,picked:false,
    originalPosition:mesh.position.clone()
   };
   items.push(mesh);
@@ -626,24 +705,20 @@ function createHand(){
  hand=new THREE.Group();
 
  const palm=new THREE.Mesh(
-  new THREE.BoxGeometry(.16,.12,.2),
-  mat(0x8d7969)
+  new THREE.BoxGeometry(.16,.12,.2),mat(0x8d7969)
  );
- palm.position.set(0,0,0);
  hand.add(palm);
 
  for(let i=0;i<4;i++){
   const finger=new THREE.Mesh(
-   new THREE.BoxGeometry(.035,.11,.045),
-   mat(0x927e6d)
+   new THREE.BoxGeometry(.035,.11,.045),mat(0x927e6d)
   );
   finger.position.set(-.055+i*.037,-.065,-.075);
   hand.add(finger);
  }
 
  const thumb=new THREE.Mesh(
-  new THREE.BoxGeometry(.045,.1,.045),
-  mat(0x927e6d)
+  new THREE.BoxGeometry(.045,.1,.045),mat(0x927e6d)
  );
  thumb.position.set(-.105,-.02,-.015);
  thumb.rotation.z=-.5;
@@ -651,18 +726,17 @@ function createHand(){
 
  hand.position.set(.38,-.34,-.58);
  camera.add(hand);
- scene.add(camera);
 }
 
 function createFlashlight(){
- const group=new THREE.Group();
+ flashlightGroup=new THREE.Group();
 
  const body=new THREE.Mesh(
   new THREE.CylinderGeometry(.045,.055,.32,10),
   mat(0x333a37,.55,.5)
  );
  body.rotation.x=Math.PI/2;
- group.add(body);
+ flashlightGroup.add(body);
 
  const head=new THREE.Mesh(
   new THREE.CylinderGeometry(.075,.055,.09,10),
@@ -670,49 +744,41 @@ function createFlashlight(){
  );
  head.rotation.x=Math.PI/2;
  head.position.z=-.18;
- group.add(head);
+ flashlightGroup.add(head);
 
  const lens=new THREE.Mesh(
   new THREE.CircleGeometry(.06,12),
   new THREE.MeshBasicMaterial({color:0xe8e6c9})
  );
  lens.position.z=-.23;
- group.add(lens);
+ flashlightGroup.add(lens);
 
- group.position.set(.38,-.34,-.58);
- camera.add(group);
+ flashlightGroup.position.set(.38,-.34,-.58);
+ flashlightGroup.visible=false;
+ camera.add(flashlightGroup);
 
- const light=new THREE.SpotLight(0xfff3d6,0,18,Math.PI/7,.5,1.4);
- light.position.set(0,0,0);
- light.target.position.set(0,0,-1);
- camera.add(light);
- camera.add(light.target);
-
- heldItem={name:"LANTERNA",type:"flashlight",group,light};
- group.visible=false;
+ flashlightLight=new THREE.SpotLight(0xfff3d6,0,18,Math.PI/7,.5,1.4);
+ flashlightLight.position.set(0,0,0);
+ flashlightLight.target.position.set(0,0,-1);
+ camera.add(flashlightLight);
+ camera.add(flashlightLight.target);
 }
 
 function setHandGrip(){
- if(!hand)return;
- hand.visible=!heldItem||heldItem.type!=="flashlight";
+ if(hand)hand.visible=!heldItem||heldItem.type!=="flashlight";
 }
 
 function updateInventoryText(){
- if(heldItem){
-  $("inventory").textContent="MÃO: "+heldItem.name;
- }else{
-  $("inventory").textContent="MÃO: VAZIA";
- }
+ $("inventory").textContent=heldItem?
+  "MÃO: "+heldItem.name:"MÃO: VAZIA";
  setHandGrip();
 }
 
 function updateBattery(){
  $("battery").textContent="LANTERNA: "+
   (flashlightOn?"LIGADA":"DESLIGADA")+" • "+Math.floor(battery)+"%";
-
- if(heldItem&&heldItem.type==="flashlight"&&heldItem.group){
-  heldItem.group.visible=true;
- }
+ if(flashlightGroup)flashlightGroup.visible=
+  !!heldItem&&heldItem.type==="flashlight";
 }
 
 function setButtonVisible(id,visible){
@@ -742,12 +808,10 @@ function pickItem(item){
   mesh:item
  };
 
- if(heldItem.type==="flashlight"&&window.flashlightGroup){
-  heldItem.group=window.flashlightGroup;
- }
-
- if(heldItem.type==="flashlight"&&typeof flashlightGroup!=="undefined"){
+ if(heldItem.type==="flashlight"){
   heldItem.group=flashlightGroup;
+  heldItem.light=flashlightLight;
+  flashlightGroup.visible=true;
  }
 
  playSound("pickup");
@@ -760,7 +824,8 @@ function dropItem(){
 
  if(heldItem.type==="flashlight"){
   flashlightOn=false;
-  if(heldItem.group)heldItem.group.visible=false;
+  flashlightLight.intensity=0;
+  flashlightGroup.visible=false;
  }
 
  const dropped=heldItem.mesh||box(.22,.12,.15,
@@ -768,7 +833,9 @@ function dropItem(){
 
  dropped.position.copy(camera.position);
  dropped.position.y-=.35;
- dropped.position.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(.8));
+ dropped.position.add(
+  camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(.8)
+ );
 
  dropped.userData={
   type:"item",
@@ -797,18 +864,13 @@ function toggleLight(){
  }
 
  flashlightOn=!flashlightOn;
-
- if(heldItem.light){
-  heldItem.light.intensity=flashlightOn?3.2:0;
- }
-
+ flashlightLight.intensity=flashlightOn?3.2:0;
  playSound("light");
  updateBattery();
 }
 
 function useBatteryItem(){
  if(!heldItem||heldItem.type!=="battery")return;
-
  battery=Math.min(100,battery+40);
  heldItem=null;
  playSound("battery");
@@ -829,8 +891,8 @@ function storeHeldItem(){
 
  if(heldItem.type==="flashlight"){
   flashlightOn=false;
-  if(heldItem.light)heldItem.light.intensity=0;
-  if(heldItem.group)heldItem.group.visible=false;
+  flashlightLight.intensity=0;
+  flashlightGroup.visible=false;
  }
 
  heldItem=null;
@@ -871,8 +933,8 @@ function selectBackpackSlot(index){
  if(heldItem){
   if(heldItem.type==="flashlight"){
    flashlightOn=false;
-   if(heldItem.light)heldItem.light.intensity=0;
-   if(heldItem.group)heldItem.group.visible=false;
+   flashlightLight.intensity=0;
+   flashlightGroup.visible=false;
   }
   backpack[index]=heldItem;
  }else{
@@ -880,9 +942,11 @@ function selectBackpackSlot(index){
  }
 
  heldItem=item;
- if(heldItem.type==="flashlight"&&heldItem.group){
-  heldItem.group.visible=true;
+
+ if(heldItem.type==="flashlight"){
+  flashlightGroup.visible=true;
  }
+
  renderBackpack();
  updateContextualButtons();
  playSound("pickup");
@@ -902,10 +966,6 @@ function interact(){
   const data=currentTarget.userData;
 
   if(data.type==="item"){
-   if(data.itemType==="battery"&&heldItem&&heldItem.type==="battery"){
-    $("message").textContent="VOCÊ JÁ ESTÁ SEGURANDO UMA BATERIA.";
-    return;
-   }
    if(heldItem){
     $("message").textContent="SOLTE OU GUARDE O OBJETO PRIMEIRO.";
     return;
@@ -924,7 +984,6 @@ function interact(){
 
   if(data.type==="drawer"){
    data.open=!data.open;
-   currentTarget.position.z=data.baseZ+(data.open?-.42:0);
    playSound("drawer");
    $("message").textContent=data.open?"GAVETA ABERTA.":"GAVETA FECHADA.";
    return;
@@ -961,7 +1020,6 @@ function resize(){
 
 function updateRaycast(){
  if(!camera||!raycaster)return;
-
  raycaster.setFromCamera(centerNdc,camera);
 
  const targets=[
@@ -999,12 +1057,9 @@ function updateDrawers(dt){
 
 function updateHeldItem(){
  if(!heldItem)return;
-
  if(heldItem.type==="flashlight"){
-  if(heldItem.group)heldItem.group.visible=true;
-  if(heldItem.light){
-   heldItem.light.intensity=flashlightOn?3.2:0;
-  }
+  flashlightGroup.visible=true;
+  flashlightLight.intensity=flashlightOn?3.2:0;
  }
 }
 
@@ -1015,7 +1070,7 @@ function updateBatteryDrain(dt){
   battery=Math.max(0,battery-dt*.55);
   if(battery<=0){
    flashlightOn=false;
-   if(heldItem&&heldItem.light)heldItem.light.intensity=0;
+   flashlightLight.intensity=0;
    $("message").textContent="A LANTERNA FICOU SEM BATERIA.";
   }
   updateBattery();
@@ -1035,7 +1090,8 @@ function updateMovement(dt){
  const x=right-left;
 
  camera.getWorldDirection(moveForward);
- moveForward.y=0;moveForward.normalize();
+ moveForward.y=0;
+ moveForward.normalize();
 
  moveRight.crossVectors(moveForward,new THREE.Vector3(0,1,0)).normalize();
 
@@ -1067,12 +1123,6 @@ function animate(){
  updateBatteryDrain(dt);
  updateRoomLights(dt);
  updateComputerScreen(dt);
-
- if(hand&&heldItem&&heldItem.type==="flashlight"){
-  hand.visible=false;
- }else if(hand){
-  hand.visible=true;
- }
 
  renderer.render(scene,camera);
 }
@@ -1128,7 +1178,8 @@ function bindMoveButton(id,direction){
  const stop=()=>movement[direction]=false;
 
  button.addEventListener("pointerdown",e=>{
-  e.preventDefault();start();
+  e.preventDefault();
+  start();
  });
  button.addEventListener("pointerup",stop);
  button.addEventListener("pointerleave",stop);

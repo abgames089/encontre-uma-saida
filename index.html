@@ -1373,6 +1373,68 @@ function updateBatteryDrain(dt){
  updateBattery();
 }
 
+/* COLISÃO COM OS OBJETOS DA ENFERMARIA */
+const objectCollisions = [
+ // Cama da esquerda
+ {x:-3,z:-1,w:2.3,d:1.05},
+
+ // Mesa e computador
+ {x:3,z:-1,w:2.1,d:.85},
+
+ // Cadeira
+ {x:4.5,z:.3,w:.75,d:.75},
+
+ // Banco
+ {x:2.1,z:1.7,w:.75,d:.75},
+
+ // Armário com gavetas
+ {x:-4.65,z:-.9,w:.95,d:.8},
+
+ // Armário grande
+ {x:-6,z:-2.7,w:1.2,d:.85},
+
+ // Mesa lateral
+ {x:-6,z:.2,w:1.6,d:.75},
+
+ // Equipamento médico
+ {x:1.2,z:-3.8,w:1.6,d:.8},
+
+ // Equipamento com suporte
+ {x:5.9,z:1.8,w:.75,d:.75},
+
+ // Mesa de equipamentos
+ {x:5,z:-2.5,w:1.3,d:.8},
+
+ // Mesa próxima à parede
+ {x:-1.1,z:3.8,w:1.35,d:.75},
+
+ // Equipamento cilíndrico
+ {x:6.5,z:-.4,w:.65,d:.65}
+];
+
+function collidesWithObjects(x,z){
+ const radius=.30;
+
+ for(const obj of objectCollisions){
+  const closestX=THREE.MathUtils.clamp(
+   x,obj.x-obj.w/2,obj.x+obj.w/2
+  );
+
+  const closestZ=THREE.MathUtils.clamp(
+   z,obj.z-obj.d/2,obj.z+obj.d/2
+  );
+
+  const dx=x-closestX;
+  const dz=z-closestZ;
+
+  if(dx*dx+dz*dz<radius*radius){
+   return true;
+  }
+ }
+
+ return false;
+}
+
 function updateMovement(dt){
  if(!camera||inspecting||backpackOpen)return;
  const speed=isMobile()?2.5:3.1;

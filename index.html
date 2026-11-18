@@ -442,10 +442,10 @@ function createHospitalBed(){
  // Lençol branco
  box(2.08,.045,1.36,-3,1.185,-1,0xe0dfd4);
 
- // Travesseiro
-box(.72,.13,.43,-3,1.27,-0.49,0xe7e5dc);
-box(.68,.025,.39,-3,1.345,-0.49,0xf0eee5);
- 
+ // Travesseiro na nova cabeceira
+ box(.72,.13,.43,-3,1.27,-.49,0xe7e5dc);
+ box(.68,.025,.39,-3,1.345,-.49,0xf0eee5);
+
  // Cobertor sobre a cama
  box(1.65,.085,.79,-3,1.255,-.72,0x69766f);
 
@@ -459,55 +459,31 @@ box(.68,.025,.39,-3,1.345,-0.49,0xf0eee5);
  // Grades laterais
  for(const x of [-4.08,-1.92]){
   box(.055,.055,1.5,x,1.48,-1,metal);
+
   for(const z of [-1.68,-1.3,-.92,-.54,-.3]){
    box(.045,.48,.045,x,1.25,z,metal);
   }
+
   box(.09,.07,1.58,x,1.03,-1,0x424b47);
  }
 
- // Cabeceira e peseira
- box(2.22,.12,.1,-3,1.28,-1.83,0x737d76);
+ // Cabeceira e peseira invertidas
  box(2.22,.12,.1,-3,1.28,-.17,0x737d76);
- box(2.15,.32,.08,-3,1.46,-1.83,0x59635e);
+ box(2.22,.12,.1,-3,1.28,-1.83,0x737d76);
+
  box(2.15,.32,.08,-3,1.46,-.17,0x59635e);
+ box(2.15,.32,.08,-3,1.46,-1.83,0x59635e);
 
  // Detalhes metálicos
  for(const x of [-3.9,-2.1]){
-  cylinder(.035,.035,.12,x,1.56,-1.83,0x9ca39b,8);
   cylinder(.035,.035,.12,x,1.56,-.17,0x9ca39b,8);
+  cylinder(.035,.035,.12,x,1.56,-1.83,0x9ca39b,8);
  }
 
  // Pequenos detalhes do colchão
  box(.025,.025,1.25,-4.065,1.02,-1,0x8c9289);
  box(.025,.025,1.25,-1.935,1.02,-1,0x8c9289);
 }
-
-function createFurniture(){
- createHospitalBed();
-
- // Mesa ao lado da cama
- box(1,.12,.7, -4.9,.85,-1,0x565d58);
- box(.08,.8,.08,-5.3,.4,-1.25,0x424944);
- box(.08,.8,.08,-4.5,.4,-1.25,0x424944);
- box(.08,.8,.08,-5.3,.4,-.75,0x424944);
- box(.08,.8,.08,-4.5,.4,-.75,0x424944);
-
- // Armário hospitalar
- createInteractiveCabinet(5.5,1.05,-2.5);
-
- // Balcão com gavetas
- createDrawerCabinet(3.8,.75,2.8);
-
- // Cadeira
- box(.65,.12,.65,5,.55,2,0x454d49);
- box(.65,.65,.1,5,.9,2.3,0x515b55);
- for(const x of [4.72,5.28]){
-  for(const z of [1.72,2.28]){
-   box(.07,.55,.07,x,.28,z,0x343b38);
-  }
- }
-}
-
 function createDrawerCabinet(x,y,z){
  box(1.4,1.5,.7,x,y,z,0x555e58);
 

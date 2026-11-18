@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.5</title>
+<title>ENCONTRE UMA SAÍDA! | AB GAMES — V3.6</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#080a0c;color:white;font-family:Arial;overflow:hidden}
@@ -53,7 +53,7 @@ button:active{background:#8c2020}
   <h1>ENCONTRE UMA SAÍDA!</h1>
   <p>Você acordou em um lugar onde nunca deveria estar.</p>
   <button id="play">JOGAR</button>
-  <div id="status">VERSÃO 3.5 • SISTEMA HOSPITALAR</div>
+  <div id="status">VERSÃO 3.6 • SISTEMA HOSPITALAR</div>
  </div>
 </div>
 
@@ -136,6 +136,7 @@ function playSound(type){
   const sounds={
    pickup:[260,420,.12,"sine"],drop:[150,75,.18,"triangle"],
    cabinet:[110,65,.3,"triangle"],drawer:[180,105,.2,"triangle"],
+   rust:[85,38,.32,"sawtooth"],
    store:[440,300,.12,"sine"],light:[520,650,.08,"sine"],
    inspect:[330,260,.08,"sine"],battery:[420,780,.22,"sine"]
   };
@@ -497,7 +498,7 @@ function createFurniture(){
  box(1.02,.66,.025,5.9,2.3,-5.70,0x99998a);
 }
 
-/* OBJETOS COLETÁVEIS QUE FICAM DENTRO DAS GAVETAS */
+/* OBJETOS COLETÁVEIS DENTRO DAS GAVETAS */
 function createDrawerPickup(drawer,index,name,type,position){
  const item=new THREE.Group();
  item.position.set(position.x,position.y,position.z);
@@ -578,7 +579,70 @@ function createDrawerPickup(drawer,index,name,type,position){
  return item;
 }
 
-/* GAVETAS COM ABERTURA INICIAL E LIMITE CORRETO */
+/* DETALHES DE FERRUGEM NA PRIMEIRA GAVETA */
+function addRustToDrawer(drawer){
+ const rustColors=[
+  0x6f3825,0x8c482b,0x593323,0x9a542e,0x70402c
+ ];
+
+ // Manchas irregulares na frente da gaveta.
+ for(let i=0;i<13;i++){
+  const patch=new THREE.Mesh(
+   new THREE.BoxGeometry(
+    .035+Math.random()*.12,
+    .018+Math.random()*.075,
+    .008
+   ),
+   mat(rustColors[Math.floor(Math.random()*rustColors.length)],1,0)
+  );
+
+  patch.position.set(
+   -.32+Math.random()*.64,
+   .035+Math.random()*.16,
+   .284
+  );
+
+  patch.rotation.z=(Math.random()-.5)*.6;
+  drawer.add(patch);
+ }
+
+ // Marcas verticais de ferrugem escorrida.
+ for(let i=0;i<5;i++){
+  const streak=new THREE.Mesh(
+   new THREE.BoxGeometry(.012+Math.random()*.018,.055+Math.random()*.11,.009),
+   mat(i%2===0?0x713b26:0x98502d)
+  );
+
+  streak.position.set(
+   -.27+i*.13,
+   .025+Math.random()*.04,
+   .286
+  );
+
+  streak.rotation.z=(Math.random()-.5)*.12;
+  drawer.add(streak);
+ }
+
+ // Alça antiga e corroída.
+ const rustyHandle=new THREE.Mesh(
+  new THREE.BoxGeometry(.19,.04,.06),
+  mat(0x633b2a,.95,.25)
+ );
+ rustyHandle.position.set(0,.13,.315);
+ drawer.add(rustyHandle);
+
+ // Pequenas manchas ao redor da alça.
+ for(let i=0;i<4;i++){
+  const spot=new THREE.Mesh(
+   new THREE.BoxGeometry(.025,.025,.009),
+   mat(0x9b542e)
+  );
+  spot.position.set(-.12+i*.08,.13,.29);
+  drawer.add(spot);
+ }
+}
+
+/* GAVETAS V3.6 */
 function createDrawerCabinet(){
  const x=-4.65,z=-.9;
  box(.82,.92,.68,x,.52,z,0x777e76);
@@ -591,14 +655,13 @@ function createDrawerCabinet(){
  for(let i=0;i<3;i++){
   const g=new THREE.Group();
   const closedZ=z+.34;
-
-  // Abertura inicial diferente e discreta em cada gaveta.
   const initialOffset=.12+Math.random()*.035;
 
   g.userData={
    isDrawer:true,
    index:i,
    open:false,
+   stuck:i===0,
    initialOffset,
    targetZ:initialOffset,
    closedZ,
@@ -624,14 +687,19 @@ function createDrawerCabinet(){
   back.position.set(0,.105,-.22);g.add(back);
 
   const front=new THREE.Mesh(
-   new THREE.BoxGeometry(.72,.23,.055),mat(0x999b90)
+   new THREE.BoxGeometry(.72,.23,.055),
+   mat(i===0?0x594b40:0x999b90)
   );
   front.position.set(0,.115,.255);g.add(front);
 
   const handle=new THREE.Mesh(
-   new THREE.BoxGeometry(.17,.035,.055),mat(0x555d5b,.45,.7)
+   new THREE.BoxGeometry(.17,.035,.055),
+   mat(0x555d5b,.45,.7)
   );
   handle.position.set(0,.13,.31);g.add(handle);
+
+  // A primeira gaveta recebe ferrugem e fica emperrada.
+  if(i===0)addRustToDrawer(g);
 
   const y=.76-i*.29;
 
@@ -639,13 +707,10 @@ function createDrawerCabinet(){
   scene.add(g);
   drawers.push(g);
 
-  // OBJETOS INDIVIDUAIS EM CADA GAVETA.
-  if(i===0){
-   createDrawerPickup(g,i,"Anotação","note",{x:0,y:.045,z:-.06});
-  }
-
+  // A anotação foi transferida para a segunda gaveta.
   if(i===1){
-   createDrawerPickup(g,i,"Chave enferrujada","key",{x:-.06,y:.075,z:-.04});
+   createDrawerPickup(g,i,"Anotação","note",{x:.16,y:.045,z:-.06});
+   createDrawerPickup(g,i,"Chave enferrujada","key",{x:-.13,y:.075,z:-.04});
   }
 
   if(i===2){
@@ -902,7 +967,12 @@ function updateContextualButtons(){
   $("use").textContent=cabinetOpen?"FECHAR ARMÁRIO":"ABRIR ARMÁRIO";
  else if(currentTarget.userData&&currentTarget.userData.isDrawerTarget){
   const drawer=drawers[currentTarget.userData.drawerIndex];
-  $("use").textContent=drawer.userData.open?"FECHAR GAVETA":"ABRIR GAVETA";
+
+  if(drawer.userData.stuck){
+   $("use").textContent="TENTAR ABRIR";
+  }else{
+   $("use").textContent=drawer.userData.open?"FECHAR GAVETA":"ABRIR GAVETA";
+  }
  }else if(currentTarget.userData&&currentTarget.userData.pickable)
   $("use").textContent="PEGAR";
 
@@ -1126,12 +1196,21 @@ function interact(){
     "As portas do armário estão fechando.";
    updateContextualButtons();return;
   }
+
   if(currentTarget.userData&&currentTarget.userData.isDrawerTarget){
-   const index=currentTarget.userData.drawerIndex,drawer=drawers[index];
+   const index=currentTarget.userData.drawerIndex;
+   const drawer=drawers[index];
+
+   // A primeira gaveta está emperrada pela ferrugem.
+   if(drawer.userData.stuck){
+    playSound("rust");
+    $("message").textContent="A gaveta está emperrada pela ferrugem.";
+    updateContextualButtons();
+    return;
+   }
 
    drawer.userData.open=!drawer.userData.open;
 
-   // Aberta completamente ou retornando à abertura inicial.
    drawer.userData.targetZ=drawer.userData.open?
     drawer.userData.fullOpenOffset:
     drawer.userData.initialOffset;
@@ -1142,6 +1221,7 @@ function interact(){
 
    updateContextualButtons();return;
   }
+
   if(currentTarget.userData&&currentTarget.userData.pickable){
    selectedItem=currentTarget;pickItem();return;
   }

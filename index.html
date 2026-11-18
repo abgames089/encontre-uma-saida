@@ -412,3 +412,809 @@ function createWallDamage(){
 }
 
 /* A cama nova será adicionada na função createFurniture() na parte 2. */
+function createHospitalBed(){
+ // Estrutura metálica
+ const metal=0x555e5b;
+ const darkMetal=0x303936;
+
+ // Pés e rodinhas
+ for(const x of [-4,-2]){
+  for(const z of [-1.75,-.25]){
+   box(.075,.72,.075,x,.38,z,metal);
+   cylinder(.105,.105,.055,x,.09,z,0x242927,12);
+   cylinder(.035,.035,.12,x,.16,z,0x777e79,10);
+  }
+ }
+
+ // Estrutura inferior
+ box(2.25,.09,.1,-3,.76,-1,metal);
+ box(.1,.09,1.55,-4,.76,-1,metal);
+ box(.1,.09,1.55,-2,.76,-1,metal);
+ box(2.25,.09,.1,-3,.76,-1.78,metal);
+ box(2.25,.09,.1,-3,.76,-.22,metal);
+
+ // Base da cama
+ box(2.2,.12,1.5,-3,.84,-1,0x68716d);
+
+ // Colchão
+ box(2.12,.28,1.42,-3,1.02,-1,0xb8b9ae);
+
+ // Lençol branco
+ box(2.08,.045,1.36,-3,1.185,-1,0xe0dfd4);
+
+ // Travesseiro
+ box(.72,.13,.43,-3,1.27,-1.51,0xe7e5dc);
+ box(.68,.025,.39,-3,1.345,-1.51,0xf0eee5);
+
+ // Cobertor sobre a cama
+ box(1.65,.085,.79,-3,1.255,-.72,0x69766f);
+
+ // Parte dobrada do cobertor
+ box(1.65,.07,.19,-3,1.32,-1.16,0x849087);
+
+ // Laterais caídas do cobertor
+ box(1.65,.31,.07,-3,1.08,-.29,0x626f68);
+ box(.07,.25,.48,-4.05,1.12,-.78,0x626f68);
+
+ // Grades laterais
+ for(const x of [-4.08,-1.92]){
+  box(.055,.055,1.5,x,1.48,-1,metal);
+  for(const z of [-1.68,-1.3,-.92,-.54,-.3]){
+   box(.045,.48,.045,x,1.25,z,metal);
+  }
+  box(.09,.07,1.58,x,1.03,-1,0x424b47);
+ }
+
+ // Cabeceira e peseira
+ box(2.22,.12,.1,-3,1.28,-1.83,0x737d76);
+ box(2.22,.12,.1,-3,1.28,-.17,0x737d76);
+ box(2.15,.32,.08,-3,1.46,-1.83,0x59635e);
+ box(2.15,.32,.08,-3,1.46,-.17,0x59635e);
+
+ // Detalhes metálicos
+ for(const x of [-3.9,-2.1]){
+  cylinder(.035,.035,.12,x,1.56,-1.83,0x9ca39b,8);
+  cylinder(.035,.035,.12,x,1.56,-.17,0x9ca39b,8);
+ }
+
+ // Pequenos detalhes do colchão
+ box(.025,.025,1.25,-4.065,1.02,-1,0x8c9289);
+ box(.025,.025,1.25,-1.935,1.02,-1,0x8c9289);
+}
+
+function createFurniture(){
+ createHospitalBed();
+
+ // Mesa ao lado da cama
+ box(1,.12,.7, -4.9,.85,-1,0x565d58);
+ box(.08,.8,.08,-5.3,.4,-1.25,0x424944);
+ box(.08,.8,.08,-4.5,.4,-1.25,0x424944);
+ box(.08,.8,.08,-5.3,.4,-.75,0x424944);
+ box(.08,.8,.08,-4.5,.4,-.75,0x424944);
+
+ // Armário hospitalar
+ createInteractiveCabinet(5.5,1.05,-2.5);
+
+ // Balcão com gavetas
+ createDrawerCabinet(3.8,.75,2.8);
+
+ // Cadeira
+ box(.65,.12,.65,5,.55,2,0x454d49);
+ box(.65,.65,.1,5,.9,2.3,0x515b55);
+ for(const x of [4.72,5.28]){
+  for(const z of [1.72,2.28]){
+   box(.07,.55,.07,x,.28,z,0x343b38);
+  }
+ }
+}
+
+function createDrawerCabinet(x,y,z){
+ box(1.4,1.5,.7,x,y,z,0x555e58);
+
+ for(let i=0;i<3;i++){
+  const drawer=box(1.25,.35,.06,x,y-.43+i*.43,z-.38,0x777f77);
+  drawer.userData={
+   type:"drawer",
+   open:false,
+   baseZ:z-.38,
+   x:x,
+   y:y-.43+i*.43
+  };
+  drawers.push(drawer);
+
+  const handle=box(.28,.045,.055,x,y-.43+i*.43,z-.43,0x333b37);
+  handle.userData.parentDrawer=drawer;
+  drawerTargets.push(handle);
+ }
+}
+
+function createInteractiveCabinet(x,y,z){
+ box(1.25,2,.7,x,y,z,0x4c5550);
+
+ const door=box(1.18,1.88,.07,x,y,z-.39,0x727a72);
+ door.userData={type:"cabinetDoor",open:false,baseX:x};
+
+ const handle=box(.055,.4,.06,x+.42,y,z-.45,0x292f2c);
+ handle.userData.parentDoor=door;
+
+ cabinetDoors.push(door);
+
+ // Interior
+ box(1.05,.07,.48,x,y+.55,z-.05,0x303833);
+ box(1.05,.07,.48,x,y-.1,z-.05,0x303833);
+ box(.06,1.5,.48,x-.53,y,z-.05,0x39423c);
+ box(.06,1.5,.48,x+.53,y,z-.05,0x39423c);
+}
+
+function createMedicalEquipment(){
+ // Carrinho médico
+ box(.8,.1,.55,1.9,.85,-2.8,0x89918a);
+ box(.75,.55,.5,1.9,.55,-2.8,0x626b65);
+ for(const x of [1.58,2.22]){
+  for(const z of [-3.02,-2.58]){
+   cylinder(.075,.075,.07,x,.1,z,0x292f2c,10);
+  }
+ }
+
+ // Suporte de soro
+ cylinder(.035,.035,2.3,1.2,1.35,-1.8,0x8c9690,8);
+ cylinder(.025,.025,.7,1.2,2.42,-1.8,0x9ca49e,8);
+ box(.55,.035,.035,1.2,2.75,-1.8,0x929a93);
+ for(const x of [.95,1.45]){
+  cylinder(.025,.025,.35,x,2.56,-1.8,0x929a93,8);
+ }
+ cylinder(.32,.025,.055,1.2,.08,-1.8,0x303734,12);
+
+ // Caixa de equipamentos
+ box(.7,.5,.45,2.8,.45,1.2,0x5b655e);
+ box(.72,.06,.47,2.8,.72,1.2,0x353d39);
+
+ // Monitor médico
+ box(.85,.65,.12,3,1.65,-.8,0x343c39);
+ box(.72,.49,.025,3,1.67,-.73,0x091817);
+ box(.25,.25,.18,3,1.18,-.8,0x555e58);
+ box(.5,.07,.35,3,1.04,-.8,0x434b46);
+}
+
+function createFloorClutter(){
+ const colors=[0x777d75,0x555d58,0x99998b,0x414944];
+
+ for(let i=0;i<14;i++){
+  const x=-6+Math.random()*12;
+  const z=-5+Math.random()*10;
+
+  if(Math.abs(x+3)<1.7&&Math.abs(z+1)<1.5)continue;
+
+  const w=.12+Math.random()*.25;
+  const h=.025+Math.random()*.04;
+  const d=.12+Math.random()*.25;
+  const obj=box(w,h,d,x,.12,z,colors[i%colors.length]);
+  obj.rotation.y=Math.random()*Math.PI;
+ }
+}
+
+function createRealisticDetails(){
+ // Manchas e detalhes nas paredes
+ for(let i=0;i<18;i++){
+  const x=-7.7+Math.random()*15.4;
+  const z=-5.5+Math.random()*11;
+  box(.025,.025,.025,x,.25,z,0x343a35);
+ }
+
+ // Luminária no teto
+ box(1.8,.07,.55,0,3.28,0,0xc4c8bc);
+ box(1.55,.025,.35,0,3.23,0,0xd4d7cc);
+
+ // Placa da enfermaria
+ box(1.7,.55,.07,0,2.65,-5.78,0x424b45);
+ box(1.5,.36,.025,0,2.65,-5.73,0x737c72);
+}
+
+function createItems(){
+ const definitions=[
+  {name:"LANTERNA",description:"Uma lanterna usada. Ainda parece funcionar.",type:"flashlight",color:0x777f79,x:-4.9,y:1.05,z:-1},
+  {name:"CARTÃO DE ACESSO",description:"Um cartão antigo. Talvez abra alguma porta.",type:"card",color:0x4c777b,x:4.9,y:.35,z:1},
+  {name:"KIT MÉDICO",description:"Um pequeno kit de primeiros socorros.",type:"medkit",color:0xd9d9cf,x:2.8,y:.95,z:1.2},
+  {name:"BATERIA",description:"Uma bateria que pode recarregar a lanterna.",type:"battery",color:0x777b45,x:-5.4,y:.3,z:3}
+ ];
+
+ for(const def of definitions){
+  const mesh=box(.25,.12,.12,def.x,def.y,def.z,def.color);
+  mesh.userData={
+   type:"item",
+   name:def.name,
+   description:def.description,
+   itemType:def.type,
+   picked:false,
+   originalPosition:mesh.position.clone()
+  };
+  items.push(mesh);
+ }
+}
+
+function createExtraItems(){
+ const paper=box(.28,.012,.2,2,.16,3,0xc8c5b5);
+ paper.rotation.y=.3;
+ paper.userData={
+  type:"item",
+  name:"ANOTAÇÃO",
+  description:"A anotação diz: NÃO CONFIE NO REGISTRO DE HORÁRIOS.",
+  itemType:"paper",
+  picked:false,
+  originalPosition:paper.position.clone()
+ };
+ items.push(paper);
+}
+
+function createHand(){
+ hand=new THREE.Group();
+
+ const palm=new THREE.Mesh(
+  new THREE.BoxGeometry(.16,.12,.2),
+  mat(0x8d7969)
+ );
+ palm.position.set(0,0,0);
+ hand.add(palm);
+
+ for(let i=0;i<4;i++){
+  const finger=new THREE.Mesh(
+   new THREE.BoxGeometry(.035,.11,.045),
+   mat(0x927e6d)
+  );
+  finger.position.set(-.055+i*.037,-.065,-.075);
+  hand.add(finger);
+ }
+
+ const thumb=new THREE.Mesh(
+  new THREE.BoxGeometry(.045,.1,.045),
+  mat(0x927e6d)
+ );
+ thumb.position.set(-.105,-.02,-.015);
+ thumb.rotation.z=-.5;
+ hand.add(thumb);
+
+ hand.position.set(.38,-.34,-.58);
+ camera.add(hand);
+ scene.add(camera);
+}
+
+function createFlashlight(){
+ const group=new THREE.Group();
+
+ const body=new THREE.Mesh(
+  new THREE.CylinderGeometry(.045,.055,.32,10),
+  mat(0x333a37,.55,.5)
+ );
+ body.rotation.x=Math.PI/2;
+ group.add(body);
+
+ const head=new THREE.Mesh(
+  new THREE.CylinderGeometry(.075,.055,.09,10),
+  mat(0x707a73,.45,.5)
+ );
+ head.rotation.x=Math.PI/2;
+ head.position.z=-.18;
+ group.add(head);
+
+ const lens=new THREE.Mesh(
+  new THREE.CircleGeometry(.06,12),
+  new THREE.MeshBasicMaterial({color:0xe8e6c9})
+ );
+ lens.position.z=-.23;
+ group.add(lens);
+
+ group.position.set(.38,-.34,-.58);
+ camera.add(group);
+
+ const light=new THREE.SpotLight(0xfff3d6,0,18,Math.PI/7,.5,1.4);
+ light.position.set(0,0,0);
+ light.target.position.set(0,0,-1);
+ camera.add(light);
+ camera.add(light.target);
+
+ heldItem={name:"LANTERNA",type:"flashlight",group,light};
+ group.visible=false;
+}
+
+function setHandGrip(){
+ if(!hand)return;
+ hand.visible=!heldItem||heldItem.type!=="flashlight";
+}
+
+function updateInventoryText(){
+ if(heldItem){
+  $("inventory").textContent="MÃO: "+heldItem.name;
+ }else{
+  $("inventory").textContent="MÃO: VAZIA";
+ }
+ setHandGrip();
+}
+
+function updateBattery(){
+ $("battery").textContent="LANTERNA: "+
+  (flashlightOn?"LIGADA":"DESLIGADA")+" • "+Math.floor(battery)+"%";
+
+ if(heldItem&&heldItem.type==="flashlight"&&heldItem.group){
+  heldItem.group.visible=true;
+ }
+}
+
+function setButtonVisible(id,visible){
+ $(id).classList.toggle("hidden",!visible);
+}
+
+function updateContextualButtons(){
+ const hasItem=!!heldItem;
+ setButtonVisible("drop",hasItem);
+ setButtonVisible("inspect",hasItem);
+ setButtonVisible("light",hasItem&&heldItem.type==="flashlight");
+ setButtonVisible("store",hasItem);
+ updateInventoryText();
+ updateBattery();
+}
+
+function pickItem(item){
+ if(!item||item.userData.picked||heldItem)return;
+
+ item.userData.picked=true;
+ scene.remove(item);
+
+ heldItem={
+  name:item.userData.name,
+  description:item.userData.description,
+  type:item.userData.itemType,
+  mesh:item
+ };
+
+ if(heldItem.type==="flashlight"&&window.flashlightGroup){
+  heldItem.group=window.flashlightGroup;
+ }
+
+ if(heldItem.type==="flashlight"&&typeof flashlightGroup!=="undefined"){
+  heldItem.group=flashlightGroup;
+ }
+
+ playSound("pickup");
+ $("message").textContent=heldItem.name+" PEGADO.";
+ updateContextualButtons();
+}
+
+function dropItem(){
+ if(!heldItem)return;
+
+ if(heldItem.type==="flashlight"){
+  flashlightOn=false;
+  if(heldItem.group)heldItem.group.visible=false;
+ }
+
+ const dropped=heldItem.mesh||box(.22,.12,.15,
+  camera.position.x,camera.position.y-.3,camera.position.z-.6,0x777777);
+
+ dropped.position.copy(camera.position);
+ dropped.position.y-=.35;
+ dropped.position.add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(.8));
+
+ dropped.userData={
+  type:"item",
+  name:heldItem.name,
+  description:heldItem.description,
+  itemType:heldItem.type,
+  picked:false,
+  originalPosition:dropped.position.clone()
+ };
+
+ scene.add(dropped);
+ items.push(dropped);
+ heldItem=null;
+
+ playSound("drop");
+ $("message").textContent="OBJETO SOLTO.";
+ updateContextualButtons();
+}
+
+function toggleLight(){
+ if(!heldItem||heldItem.type!=="flashlight")return;
+
+ if(battery<=0){
+  $("message").textContent="A BATERIA ACABOU.";
+  return;
+ }
+
+ flashlightOn=!flashlightOn;
+
+ if(heldItem.light){
+  heldItem.light.intensity=flashlightOn?3.2:0;
+ }
+
+ playSound("light");
+ updateBattery();
+}
+
+function useBatteryItem(){
+ if(!heldItem||heldItem.type!=="battery")return;
+
+ battery=Math.min(100,battery+40);
+ heldItem=null;
+ playSound("battery");
+ $("message").textContent="BATERIA RECARREGADA.";
+ updateContextualButtons();
+}
+
+function storeHeldItem(){
+ if(!heldItem)return;
+
+ const empty=backpack.findIndex(slot=>slot===null);
+ if(empty===-1){
+  $("message").textContent="MOCHILA CHEIA.";
+  return;
+ }
+
+ backpack[empty]=heldItem;
+
+ if(heldItem.type==="flashlight"){
+  flashlightOn=false;
+  if(heldItem.light)heldItem.light.intensity=0;
+  if(heldItem.group)heldItem.group.visible=false;
+ }
+
+ heldItem=null;
+ playSound("store");
+ renderBackpack();
+ updateContextualButtons();
+ $("message").textContent="OBJETO GUARDADO.";
+}
+
+function renderBackpack(){
+ document.querySelectorAll(".backpackSlot").forEach((slot,i)=>{
+  const item=backpack[i];
+  slot.innerHTML=item?
+   "ESPAÇO "+(i+1)+"<br>"+item.name:
+   "ESPAÇO "+(i+1)+"<br>VAZIO";
+ });
+}
+
+function openBackpack(){
+ backpackOpen=true;
+ $("backpackPanel").classList.remove("hidden");
+}
+
+function closeBackpack(){
+ backpackOpen=false;
+ $("backpackPanel").classList.add("hidden");
+}
+
+function toggleBackpack(){
+ if(backpackOpen)closeBackpack();
+ else openBackpack();
+}
+
+function selectBackpackSlot(index){
+ const item=backpack[index];
+ if(!item)return;
+
+ if(heldItem){
+  if(heldItem.type==="flashlight"){
+   flashlightOn=false;
+   if(heldItem.light)heldItem.light.intensity=0;
+   if(heldItem.group)heldItem.group.visible=false;
+  }
+  backpack[index]=heldItem;
+ }else{
+  backpack[index]=null;
+ }
+
+ heldItem=item;
+ if(heldItem.type==="flashlight"&&heldItem.group){
+  heldItem.group.visible=true;
+ }
+ renderBackpack();
+ updateContextualButtons();
+ playSound("pickup");
+ closeBackpack();
+}
+
+function updateCabinet(door){
+ const open=door.userData.open;
+ door.position.x=door.userData.baseX+(open?-.65:0);
+ door.rotation.y=open?-.8:0;
+}
+
+function interact(){
+ if(inspecting||backpackOpen)return;
+
+ if(currentTarget){
+  const data=currentTarget.userData;
+
+  if(data.type==="item"){
+   if(data.itemType==="battery"&&heldItem&&heldItem.type==="battery"){
+    $("message").textContent="VOCÊ JÁ ESTÁ SEGURANDO UMA BATERIA.";
+    return;
+   }
+   if(heldItem){
+    $("message").textContent="SOLTE OU GUARDE O OBJETO PRIMEIRO.";
+    return;
+   }
+   pickItem(currentTarget);
+   return;
+  }
+
+  if(data.type==="cabinetDoor"){
+   data.open=!data.open;
+   updateCabinet(currentTarget);
+   playSound("cabinet");
+   $("message").textContent=data.open?"ARMÁRIO ABERTO.":"ARMÁRIO FECHADO.";
+   return;
+  }
+
+  if(data.type==="drawer"){
+   data.open=!data.open;
+   currentTarget.position.z=data.baseZ+(data.open?-.42:0);
+   playSound("drawer");
+   $("message").textContent=data.open?"GAVETA ABERTA.":"GAVETA FECHADA.";
+   return;
+  }
+ }
+
+ if(heldItem&&heldItem.type==="battery"){
+  useBatteryItem();
+  return;
+ }
+
+ $("message").textContent="NÃO HÁ NADA PARA INTERAGIR.";
+}
+
+function inspectItem(){
+ if(!heldItem)return;
+ inspecting=true;
+ $("inspectPanel").classList.remove("hidden");
+ $("message").textContent=heldItem.description||"Objeto desconhecido.";
+ playSound("inspect");
+}
+
+function closeInspect(){
+ inspecting=false;
+ $("inspectPanel").classList.add("hidden");
+}
+
+function resize(){
+ if(!camera||!renderer)return;
+ camera.aspect=innerWidth/innerHeight;
+ camera.updateProjectionMatrix();
+ renderer.setSize(innerWidth,innerHeight);
+}
+
+function updateRaycast(){
+ if(!camera||!raycaster)return;
+
+ raycaster.setFromCamera(centerNdc,camera);
+
+ const targets=[
+  ...items.filter(i=>!i.userData.picked),
+  ...cabinetDoors,
+  ...drawers
+ ];
+
+ const hits=raycaster.intersectObjects(targets,false);
+ currentTarget=hits.length?hits[0].object:null;
+
+ if(currentTarget){
+  const type=currentTarget.userData.type;
+  if(type==="item"){
+   $("use").textContent="PEGAR";
+   $("use").classList.add("visible");
+  }else if(type==="cabinetDoor"||type==="drawer"){
+   $("use").textContent="INTERAGIR";
+   $("use").classList.add("visible");
+  }else{
+   $("use").classList.remove("visible");
+  }
+ }else{
+  $("use").classList.remove("visible");
+ }
+}
+
+function updateDrawers(dt){
+ for(const drawer of drawers){
+  const target=drawer.userData.open?
+   drawer.userData.baseZ-.42:drawer.userData.baseZ;
+  drawer.position.z+=(target-drawer.position.z)*Math.min(1,dt*8);
+ }
+}
+
+function updateHeldItem(){
+ if(!heldItem)return;
+
+ if(heldItem.type==="flashlight"){
+  if(heldItem.group)heldItem.group.visible=true;
+  if(heldItem.light){
+   heldItem.light.intensity=flashlightOn?3.2:0;
+  }
+ }
+}
+
+function updateDroppedItems(){}
+
+function updateBatteryDrain(dt){
+ if(flashlightOn){
+  battery=Math.max(0,battery-dt*.55);
+  if(battery<=0){
+   flashlightOn=false;
+   if(heldItem&&heldItem.light)heldItem.light.intensity=0;
+   $("message").textContent="A LANTERNA FICOU SEM BATERIA.";
+  }
+  updateBattery();
+ }
+}
+
+function updateMovement(dt){
+ if(inspecting||backpackOpen)return;
+
+ const speed=3.1;
+ const forward=(keys.KeyW||keys.ArrowUp||movement.forward)?1:0;
+ const backward=(keys.KeyS||keys.ArrowDown||movement.back)?1:0;
+ const left=(keys.KeyA||keys.ArrowLeft||movement.left)?1:0;
+ const right=(keys.KeyD||keys.ArrowRight||movement.right)?1:0;
+
+ const z=backward-forward;
+ const x=right-left;
+
+ camera.getWorldDirection(moveForward);
+ moveForward.y=0;moveForward.normalize();
+
+ moveRight.crossVectors(moveForward,new THREE.Vector3(0,1,0)).normalize();
+
+ moveVector.set(0,0,0);
+ moveVector.addScaledVector(moveForward,z);
+ moveVector.addScaledVector(moveRight,x);
+
+ if(moveVector.lengthSq()>0){
+  moveVector.normalize();
+  camera.position.addScaledVector(moveVector,speed*dt);
+ }
+
+ camera.position.x=Math.max(-7.4,Math.min(7.4,camera.position.x));
+ camera.position.z=Math.max(-5.4,Math.min(5.4,camera.position.z));
+ camera.position.y=1.65;
+}
+
+function animate(){
+ requestAnimationFrame(animate);
+ if(!renderer||!scene||!camera)return;
+
+ const dt=Math.min(clock.getDelta(),.05);
+
+ updateMovement(dt);
+ updateRaycast();
+ updateDrawers(dt);
+ updateHeldItem();
+ updateDroppedItems();
+ updateBatteryDrain(dt);
+ updateRoomLights(dt);
+ updateComputerScreen(dt);
+
+ if(hand&&heldItem&&heldItem.type==="flashlight"){
+  hand.visible=false;
+ }else if(hand){
+  hand.visible=true;
+ }
+
+ renderer.render(scene,camera);
+}
+
+function togglePointerLock(){
+ if(isMobile()||!gameStarted||inspecting||backpackOpen)return;
+ if(document.pointerLockElement!==renderer.domElement){
+  renderer.domElement.requestPointerLock?.();
+ }
+}
+
+document.addEventListener("pointerlockchange",()=>{
+ if(document.pointerLockElement!==renderer?.domElement)return;
+});
+
+document.addEventListener("mousemove",e=>{
+ if(document.pointerLockElement!==renderer?.domElement)return;
+ if(inspecting||backpackOpen)return;
+
+ camera.rotation.y-=e.movementX*.002;
+ camera.rotation.x-=e.movementY*.002;
+ camera.rotation.x=Math.max(-1.45,Math.min(1.45,camera.rotation.x));
+});
+
+document.addEventListener("keydown",e=>{
+ keys[e.code]=true;
+
+ if(e.code==="KeyE"||e.code==="Enter")interact();
+ if(e.code==="KeyF")toggleLight();
+ if(e.code==="KeyG")dropItem();
+ if(e.code==="KeyR"){
+  if(inspecting)closeInspect();
+  else if(heldItem)inspectItem();
+ }
+ if(e.code==="KeyQ")storeHeldItem();
+ if(e.code==="Tab"){
+  e.preventDefault();
+  toggleBackpack();
+ }
+ if(e.code==="Escape"){
+  closeInspect();
+  closeBackpack();
+ }
+});
+
+document.addEventListener("keyup",e=>{
+ keys[e.code]=false;
+});
+
+function bindMoveButton(id,direction){
+ const button=$(id);
+ const start=()=>movement[direction]=true;
+ const stop=()=>movement[direction]=false;
+
+ button.addEventListener("pointerdown",e=>{
+  e.preventDefault();start();
+ });
+ button.addEventListener("pointerup",stop);
+ button.addEventListener("pointerleave",stop);
+ button.addEventListener("pointercancel",stop);
+}
+
+bindMoveButton("forward","forward");
+bindMoveButton("back","back");
+bindMoveButton("left","left");
+bindMoveButton("right","right");
+
+$("use").addEventListener("click",interact);
+$("drop").addEventListener("click",dropItem);
+$("inspect").addEventListener("click",inspectItem);
+$("light").addEventListener("click",toggleLight);
+$("store").addEventListener("click",storeHeldItem);
+$("backpack").addEventListener("click",toggleBackpack);
+$("closeInspect").addEventListener("click",closeInspect);
+$("closeBackpack").addEventListener("click",closeBackpack);
+
+$("rotateLeft").addEventListener("click",()=>{
+ if(heldItem&&heldItem.group)heldItem.group.rotation.y-=.3;
+ if(heldItem&&heldItem.mesh)heldItem.mesh.rotation.y-=.3;
+});
+
+$("rotateRight").addEventListener("click",()=>{
+ if(heldItem&&heldItem.group)heldItem.group.rotation.y+=.3;
+ if(heldItem&&heldItem.mesh)heldItem.mesh.rotation.y+=.3;
+});
+
+document.querySelectorAll(".backpackSlot").forEach(slot=>{
+ slot.addEventListener("click",()=>{
+  selectBackpackSlot(Number(slot.dataset.slot));
+ });
+});
+
+let touchLook=null;
+
+$("lookArea").addEventListener("pointerdown",e=>{
+ if(!gameStarted||!isMobile())return;
+ touchLook={x:e.clientX,y:e.clientY};
+ $("lookArea").setPointerCapture(e.pointerId);
+});
+
+$("lookArea").addEventListener("pointermove",e=>{
+ if(!touchLook||!isMobile()||inspecting||backpackOpen)return;
+
+ const dx=e.clientX-touchLook.x;
+ const dy=e.clientY-touchLook.y;
+
+ camera.rotation.y-=dx*.004;
+ camera.rotation.x-=dy*.004;
+ camera.rotation.x=Math.max(-1.45,Math.min(1.45,camera.rotation.x));
+
+ touchLook={x:e.clientX,y:e.clientY};
+});
+
+$("lookArea").addEventListener("pointerup",()=>touchLook=null);
+$("lookArea").addEventListener("pointercancel",()=>touchLook=null);
+
+updateContextualButtons();
+renderBackpack();
+</script>
+</body>
+</html>
